@@ -1,0 +1,80 @@
+:host {
+  display: block;
+  height: 100dvh;
+}
+
+/* rapetin form space-y-5 */
+:host ::ng-deep form.space-y-5 {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+/* label text-sm */
+:host ::ng-deep label.text-sm {
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+}
+
+/* input py-3 */
+:host ::ng-deep input.py-3 {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+}
+
+/* wrapper input mt-2 */
+:host ::ng-deep .mt-2 {
+  margin-top: 6px !important;
+}
+
+/* error text */
+:host ::ng-deep p.text-red-500.text-sm {
+  font-size: 10.5px !important;
+  line-height: 1.1 !important;
+}
+:host ::ng-deep .mt-1 {
+  margin-top: 4px !important;
+}
+
+/* password strength component biasanya makan tinggi, kecilkan scale */
+:host ::ng-deep app-password-strength {
+  display: block;
+  transform: scale(0.92);
+  transform-origin: left top;
+}
+
+/* checkbox section space-y-3 pt-2 */
+:host ::ng-deep .space-y-3 {
+  display: grid !important;
+  gap: 8px !important;
+}
+:host ::ng-deep .pt-2 {
+  padding-top: 6px !important;
+}
+
+/* tombol submit py-3 */
+:host ::ng-deep button.py-3 {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  font-size: 12px !important;
+}
+
+/* link bawah */
+:host ::ng-deep p.text-center.text-sm {
+  font-size: 10.5px !important;
+}
+
+/* layar pendek: scale form sedikit */
+@media (max-height: 720px) {
+  :host ::ng-deep form {
+    transform: scale(0.94);
+    transform-origin: top center;
+  }
+}
+
+@media (max-height: 660px) {
+  :host ::ng-deep form {
+    transform: scale(0.90);
+  }
+}

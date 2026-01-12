@@ -1,0 +1,27 @@
+<div class="field unit-wrapper">
+  <label>Unit Kerja <span class="req">*</span></label>
+  <input
+    #unitInput
+    type="text"
+    formControlName="unitKerja"
+    placeholder="Ketik nama unit kerja..."
+    (focus)="onUnitInput()"
+    (input)="onUnitInput()"
+    autocomplete="off"
+  />
+
+  <div class="dropdown" *ngIf="showDropdown">
+    <button
+      type="button"
+      class="option"
+      *ngFor="let u of filteredUnitKerja"
+      (click)="pickUnit(u)"
+    >
+      {{ u.name }} ({{ u.code }})
+    </button>
+
+    <div class="empty" *ngIf="filteredUnitKerja.length === 0">
+      Tidak ada yang cocok.
+    </div>
+  </div>
+</div>

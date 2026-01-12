@@ -1,0 +1,100 @@
+
+<div class="page">
+  <header class="topbar">
+    <div class="brand">Edit Profile</div>
+
+    <div class="profile-menu">
+      <button type="button" class="profile-btn" (click)="toggleDropdown()">
+        Profile <span class="caret">▾</span>
+      </button>
+
+      <div class="dropdown" *ngIf="dropdownOpen">
+        <button type="button" class="item" (click)="goDashboard()">Dashboard</button>
+        <button type="button" class="item danger" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <!-- CARD: Data Diri -->
+    <section class="card">
+      <h3>Data Diri</h3>
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <div class="field">
+          <label>Jabatan <span class="req">*</span></label>
+          <input formControlName="jabatan" />
+          <small class="error" *ngIf="profileForm.controls.jabatan.touched && profileForm.controls.jabatan.invalid">
+            Jabatan wajib diisi.
+          </small>
+        </div>
+
+        <div class="field unit-wrapper">
+  <label>Unit Kerja</label>
+  <input
+    #unitInput
+    formControlName="unitKerja"
+    placeholder="Ketik nama unit kerja..."
+    (focus)="onUnitFocus()"
+    (input)="onUnitInput()"
+    autocomplete="off"
+  />
+
+  <div class="unit-dropdown" *ngIf="showUnitDropdown">
+    <button
+      type="button"
+      class="unit-option"
+      *ngFor="let u of filteredUnitKerja"
+      (click)="pickUnit(u)"
+    >
+      {{ u }}
+    </button>
+
+    <div class="unit-empty" *ngIf="filteredUnitKerja.length === 0">
+      Tidak ada yang cocok.
+    </div>
+  </div>
+</div>
+
+
+
+        <div class="field">
+          <label>Nomor HP</label>
+          <input formControlName="nomorHp" />
+        </div>
+
+        <div class="actions">
+          <button type="submit">Simpan Perubahan</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- CARD: Ganti Password -->
+    <section class="card">
+      <h3>Ganti Password</h3>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+        <div class="field">
+          <label>Password Saat Ini</label>
+          <input type="password" formControlName="currentPassword" />
+        </div>
+
+        <div class="field">
+          <label>Password Baru</label>
+          <input type="password" formControlName="newPassword" />
+          <small class="hint">Minimal 8 karakter.</small>
+        </div>
+
+        <div class="field">
+          <label>Konfirmasi Password Baru</label>
+          <input type="password" formControlName="confirmPassword" />
+          <small class="error" *ngIf="passError">{{ passError }}</small>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Ubah Password</button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>

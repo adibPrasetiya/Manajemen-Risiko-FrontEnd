@@ -1,0 +1,21 @@
+<div class="page">
+  <header class="topbar">
+    <div class="brand">Dashboard</div>
+
+    <div class="profile-menu">
+      <button type="button" class="profile-btn" (click)="toggleDropdown()">
+        {{ displayName }}
+        <span class="caret">▾</span>
+      </button>
+
+      <div class="dropdown" *ngIf="dropdownOpen">
+        <button type="button" class="item" (click)="goEditProfile()">Edit Profile</button>
+        <button type="button" class="item danger" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <!-- kosong dulu sesuai request -->
+  </main>
+</div>
