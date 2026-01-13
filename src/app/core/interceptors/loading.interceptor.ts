@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import {
-  HttpEvent, HttpHandler, HttpInterceptor, HttpRequest
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { Observable, finalize } from 'rxjs';
 import { UiService } from '../services/ui.service';
 
 @Injectable()

@@ -22,34 +22,39 @@ export class LoginComponent {
   ) {}
 
   form = this.fb.group({
-    username: ['', [Validators.required]],  // bisa username / email (identifier)
+    username: ['', [Validators.required]], // identifier (username/email)
     password: ['', [Validators.required]],
     remember: [false],
   });
 
   submit() {
-  if (this.form.invalid) {
-    this.form.markAllAsTouched();
-    return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    const identifier = (this.form.value.username ?? '').trim();
+    const password = this.form.value.password ?? '';
+
+    this.auth.login({ identifier, password }).subscribe({
+      next: (res) => {
+        // token sudah disimpan di AuthService tap()
+        // kalau mau tetap simpan username untuk header:
+        localStorage.setItem('auth_username', res.data.user.username);
+
+        // redirect
+        this.router.navigate(['/auth/dashboard']);
+      },
+      error: (e) => {
+        this.errorMsg = e?.error?.errors ?? e?.error?.message ?? 'Login gagal';
+        this.loading = false;
+      },
+      complete: () => {
+        this.loading = false;
+      },
+    });
   }
-
-  const identifier = (this.form.value.username ?? '').trim();
-  const password = this.form.value.password ?? '';
-
-  this.auth.login({ identifier, password }).subscribe({
-    next: (res) => {
-      const hasProfile = !!res.data.user.hasProfile;
-      localStorage.setItem('auth_username', res.data.user.username);
-
-      if (!hasProfile) {
-        this.router.navigate(['/auth/profile']);
-        return;
-      }
-      this.router.navigate(['/auth/dashboard']);
-    },
-    error: (e) => {
-      alert(e?.error?.errors ?? e?.error?.message ?? 'Login gagal');
-    },
-  });
-}
 }

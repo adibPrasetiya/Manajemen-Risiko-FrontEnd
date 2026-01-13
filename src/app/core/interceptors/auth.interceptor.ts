@@ -4,9 +4,9 @@ import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
-  HttpErrorResponse
+  HttpErrorResponse,
 } from '@angular/common/http';
-import { Observable, catchError, switchMap, throwError } from 'rxjs';
+import { Observable, throwError, switchMap, catchError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 @Injectable()
@@ -14,24 +14,42 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private auth: AuthService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const token = this.auth.getAccessToken();
+    const token = localStorage.getItem('accessToken') ?? '';
 
-    const withAuth = token
-      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-      : req;
+    const isAuthFreeEndpoint =
+      req.url.includes('/users/login') ||
+      req.url.endsWith('/users') || // register
+      req.url.includes('/users/refresh-token');
 
-    return next.handle(withAuth).pipe(
+    const authReq =
+      token && !isAuthFreeEndpoint
+        ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+        : req;
+
+    return next.handle(authReq).pipe(
       catchError((err: HttpErrorResponse) => {
-        if (err.status === 401) {
-          return this.auth.refreshToken().pipe(
-            switchMap(() => {
-              const newToken = this.auth.getAccessToken();
-              const retried = req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } });
-              return next.handle(retried);
-            })
-          );
+        if (err.status !== 401 || isAuthFreeEndpoint) {
+          return throwError(() => err);
         }
-        return throwError(() => err);
+
+        return this.auth.refreshToken().pipe(
+          switchMap((res) => {
+            const newToken = res?.data?.accessToken;
+            if (!newToken) return throwError(() => err);
+
+            localStorage.setItem('accessToken', newToken);
+
+            const retryReq = req.clone({
+              setHeaders: { Authorization: `Bearer ${newToken}` },
+            });
+
+            return next.handle(retryReq);
+          }),
+          catchError((e2) => {
+            localStorage.removeItem('accessToken');
+            return throwError(() => e2);
+          })
+        );
       })
     );
   }

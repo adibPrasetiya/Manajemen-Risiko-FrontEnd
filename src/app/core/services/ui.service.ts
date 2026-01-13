@@ -6,7 +6,9 @@ export type UiToastMode = 'success' | 'error' | 'info';
 export type UiToast = {
   mode: UiToastMode;
   message: string;
+  title?: string;
   time: number;
+  durationMs: number;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -29,19 +31,55 @@ export class UiService {
     if (this.loadingCount === 0) this._loading.next(false);
   }
 
-  // toast otomatis hilang
-  toast(mode: UiToastMode, message: string, durationMs = 1400) {
-    const payload: UiToast = { mode, message, time: Date.now() };
-    this._toast.next(payload);
-
-    window.setTimeout(() => {
-      // hanya clear kalau toast masih yang sama
-      const current = this._toast.value;
-      if (current?.time === payload.time) this._toast.next(null);
-    }, durationMs);
+  clearToast() {
+    this._toast.next(null);
   }
 
-  success(message: string) { this.toast('success', message); }
-  error(message: string) { this.toast('error', message, 2200); }
-  info(message: string) { this.toast('info', message); }
+  /**
+   * Toast akan tampil:
+   * - kalau sedang loading: ditunda sampai loading selesai (halus, no stutter)
+   * - auto hide setelah durationMs
+   */
+  toast(mode: UiToastMode, message: string, title?: string, durationMs = 1400) {
+    const payload: UiToast = {
+      mode,
+      message,
+      title,
+      time: Date.now(),
+      durationMs,
+    };
+
+    const emit = () => {
+      this._toast.next(payload);
+
+      window.setTimeout(() => {
+        const current = this._toast.value;
+        if (current?.time === payload.time) this._toast.next(null);
+      }, durationMs);
+    };
+
+    // ✅ kalau masih loading, tunggu selesai dulu biar gak "stutter"
+    if (this._loading.value) {
+      const check = window.setInterval(() => {
+        if (!this._loading.value) {
+          window.clearInterval(check);
+          // sedikit delay biar overlay benar-benar hilang
+          window.setTimeout(emit, 80);
+        }
+      }, 50);
+      return;
+    }
+
+    emit();
+  }
+
+  success(message: string, title = 'Sukses', durationMs = 1400) {
+    this.toast('success', message, title, durationMs);
+  }
+  error(message: string, title = 'Error', durationMs = 2200) {
+    this.toast('error', message, title, durationMs);
+  }
+  info(message: string, title = 'Info', durationMs = 1400) {
+    this.toast('info', message, title, durationMs);
+  }
 }

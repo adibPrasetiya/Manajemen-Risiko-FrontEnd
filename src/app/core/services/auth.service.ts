@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
-type LoginRes = {
+export type LoginRes = {
   message: string;
   data: {
     user: {
@@ -14,72 +15,80 @@ type LoginRes = {
       mustChangePassword?: boolean;
     };
     accessToken: string;
-    refreshToken?: string;
+    refreshToken?: string; // kadang ada di body, tapi yang dipakai seharusnya cookie
   };
+};
+
+export type RegisterPayload = {
+  username: string;
+  name: string; // backend pakai "name"
+  email: string;
+  password: string;
 };
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  // ✅ base URL kamu
-  private base = 'http://api.dev.simulasibimtekd31.com';
+  private base = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) {}
 
-  register(payload: { username: string; name: string; email: string; password: string }) {
-  return this.http.post(`${this.base}/users`, payload, { withCredentials: true });
-}
+  register(payload: RegisterPayload) {
+    return this.http.post(`${this.base}/users`, payload, {
+      withCredentials: true,
+    });
+  }
+
+  // ✅ API baru: POST /users/login
   login(payload: { identifier: string; password: string }): Observable<LoginRes> {
-    return this.http.post<LoginRes>(`${this.base}/users`, payload, { withCredentials: true }).pipe(
-      tap((res) => {
-        localStorage.setItem('access_token', res.data.accessToken);
-        localStorage.setItem('auth_username', res.data.user.username);
-      })
-    );
+    return this.http
+      .post<LoginRes>(`${this.base}/users/login`, payload, { withCredentials: true })
+      .pipe(
+        tap((res) => {
+          // ✅ 1 standar key saja
+          localStorage.setItem('accessToken', res.data.accessToken);
+          localStorage.setItem('auth_username', res.data.user.username);
+        })
+      );
   }
 
-  refreshToken() {
-
-    return this.http.post<{ data: { accessToken: string } }>(
-      `${this.base}/user/refresh-token`,
-      {},
-      { withCredentials: true }
-    ).pipe(
-      tap((r) => localStorage.setItem('access_token', r.data.accessToken))
-    );
+  // ✅ API baru: POST /users/refresh-token (pakai cookie refreshToken)
+  refreshToken(): Observable<{ message: string; data: { accessToken: string } }> {
+    return this.http
+      .post<{ message: string; data: { accessToken: string } }>(
+        `${this.base}/users/refresh-token`,
+        null,
+        { withCredentials: true }
+      )
+      .pipe(
+        tap((r) => {
+          localStorage.setItem('accessToken', r.data.accessToken);
+        })
+      );
   }
 
+  // ✅ API baru: DELETE /users/me/logout
   logout() {
-    // doc kamu ada POST /user/logout
-    return this.http.post(`${this.base}/user/logout`, {}, { withCredentials: true }).pipe(
-      tap(() => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('auth_username');
-        localStorage.removeItem('user_profile');
-      })
-    );
+    return this.http
+      .delete(`${this.base}/users/me/logout`, { withCredentials: true })
+      .pipe(
+        tap(() => {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('auth_username');
+          localStorage.removeItem('user_profile');
+        })
+      );
   }
 
-  // ✅ fallback: PUT /user/password (doc A) -> kalau 404 coba PATCH /users/me/password (doc B)
+  // ✅ API baru: PATCH /users/me/password
   changePassword(currentPassword: string, newPassword: string) {
-    return this.http.put(
-      `${this.base}/user/password`,
+    return this.http.patch(
+      `${this.base}/users/me/password`,
       { currentPassword, newPassword },
       { withCredentials: true }
-    ).pipe(
-      catchError((err) => {
-        if (err?.status === 404) {
-          return this.http.patch(
-            `${this.base}/users/me/password`,
-            { currentPassword, newPassword },
-            { withCredentials: true }
-          );
-        }
-        return throwError(() => err);
-      })
     );
   }
 
   getAccessToken() {
-    return localStorage.getItem('access_token') ?? '';
+    return localStorage.getItem('accessToken') ?? '';
   }
 }
