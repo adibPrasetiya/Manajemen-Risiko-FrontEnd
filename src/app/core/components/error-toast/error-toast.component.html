@@ -1,0 +1,11 @@
+<div class="toast-wrap" *ngIf="(errors.errors$ | async) as list">
+  <div class="toast" *ngFor="let e of list">
+    <div class="msg">
+      <div class="title">Error</div>
+      <div class="text">{{ e.message }}</div>
+      <div class="meta" *ngIf="e.status">HTTP {{ e.status }}</div>
+    </div>
+
+    <button type="button" class="x" (click)="close(e.time)">✕</button>
+  </div>
+</div>

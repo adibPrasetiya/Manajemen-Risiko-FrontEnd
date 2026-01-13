@@ -50,7 +50,6 @@ export class TotpComponent {
     }
   }
 
-  // sementara mock: anggap benar kalau "123456"
   private verifyTotp(code: string): Promise<boolean> {
     return new Promise((resolve) => {
       setTimeout(() => resolve(code === '123456'), 500);

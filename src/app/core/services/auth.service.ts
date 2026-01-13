@@ -26,10 +26,8 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   register(payload: { username: string; name: string; email: string; password: string }) {
-    return this.http.post(`${this.base}/users`, payload, { withCredentials: true });
-  }
-
-  // ✅ pakai endpoint yang “utama”: POST /users (login)
+  return this.http.post(`${this.base}/users`, payload, { withCredentials: true });
+}
   login(payload: { identifier: string; password: string }): Observable<LoginRes> {
     return this.http.post<LoginRes>(`${this.base}/users`, payload, { withCredentials: true }).pipe(
       tap((res) => {
@@ -40,8 +38,7 @@ export class AuthService {
   }
 
   refreshToken() {
-    // doc ada /user/refresh-token dan juga typo refersh-token di doc lain.
-    // kita pakai yang paling umum dulu:
+
     return this.http.post<{ data: { accessToken: string } }>(
       `${this.base}/user/refresh-token`,
       {},

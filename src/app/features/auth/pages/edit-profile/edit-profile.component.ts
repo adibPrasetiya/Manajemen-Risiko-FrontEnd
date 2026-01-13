@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { UiService } from '../../../../core/services/ui.service';
+
 
 type UserProfile = {
   jabatan: string;
@@ -65,7 +67,8 @@ export class EditProfileComponent {
 
   constructor(
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private ui: UiService
   ) {
     // Prefill dari localStorage
     const raw = localStorage.getItem('user_profile');
@@ -178,8 +181,8 @@ export class EditProfileComponent {
   };
 
   localStorage.setItem('user_profile', JSON.stringify(payload));
-alert('Profil berhasil diperbarui ✅');
-this.router.navigate(['/auth/dashboard']);
+  this.ui.success('Profil berhasil diperbarui');
+  this.router.navigate(['/auth/dashboard']);
 }
 
 

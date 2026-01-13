@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { UnitKerja, UnitKerjaService } from '../../services/unit-kerja.service';
-import { ProfileService } from '../../services/profile.service';
+import { UnitKerja, UnitKerjaService } from '../../../../core/services/unit-kerja.service';
+import { ProfileService } from '../../../../core/services/profile.service';
 
 type UserProfileLocal = {
   jabatan: string;

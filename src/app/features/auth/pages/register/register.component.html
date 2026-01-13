@@ -9,7 +9,9 @@
     <div>
       <label class="text-xs font-semibold text-gray-700">Full Name</label>
       <div class="mt-1 relative">
-        <i class="fa-solid fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <i
+          class="fa-solid fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"
+        ></i>
         <input
           class="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder="Enter your full name"
@@ -28,7 +30,9 @@
     <div>
       <label class="text-xs font-semibold text-gray-700">Username</label>
       <div class="mt-1 relative">
-        <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <i
+          class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"
+        ></i>
         <input
           class="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder="Choose a username"
@@ -47,7 +51,9 @@
     <div>
       <label class="text-xs font-semibold text-gray-700">Email</label>
       <div class="mt-1 relative">
-        <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <i
+          class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"
+        ></i>
         <input
           type="email"
           class="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -68,7 +74,9 @@
       <label class="text-xs font-semibold text-gray-700">Password</label>
 
       <div class="mt-1 relative">
-        <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <i
+          class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"
+        ></i>
 
         <input
           [type]="showPassword ? 'text' : 'password'"
@@ -82,7 +90,11 @@
           (click)="showPassword = !showPassword"
           class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
         >
-          <i class="fa-solid" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+          <i
+            class="fa-solid"
+            [class.fa-eye]="!showPassword"
+            [class.fa-eye-slash]="showPassword"
+          ></i>
         </button>
       </div>
 
@@ -90,12 +102,15 @@
         *ngIf="form.get('password')?.touched && form.get('password')?.invalid"
         class="text-red-500 text-xs mt-1"
       >
-        Password must be at least 8 characters and include an uppercase letter, a number, and a symbol.
+        Password must be at least 8 characters and include an uppercase letter,
+        a number, and a symbol.
       </p>
 
       <!-- Password Strength -->
       <div class="mt-1 scale-100 origin-top-left">
-        <app-password-strength [password]="passwordValue()"></app-password-strength>
+        <app-password-strength
+          [password]="passwordValue()"
+        ></app-password-strength>
       </div>
     </div>
 
@@ -103,7 +118,9 @@
     <div>
       <label class="text-xs font-semibold text-gray-700">Confirm Password</label>
       <div class="mt-1 relative">
-        <i class="fa-solid fa-shield-halved absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <i
+          class="fa-solid fa-shield-halved absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"
+        ></i>
 
         <input
           [type]="showConfirmPassword ? 'text' : 'password'"
@@ -117,7 +134,11 @@
           (click)="showConfirmPassword = !showConfirmPassword"
           class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
         >
-          <i class="fa-solid" [class.fa-eye]="!showConfirmPassword" [class.fa-eye-slash]="showConfirmPassword"></i>
+          <i
+            class="fa-solid"
+            [class.fa-eye]="!showConfirmPassword"
+            [class.fa-eye-slash]="showConfirmPassword"
+          ></i>
         </button>
       </div>
 
@@ -129,43 +150,77 @@
     <!-- Privacy & Policy (required) -->
     <div class="space-y-2 pt-1">
       <label class="flex items-start gap-2 text-xs text-gray-700">
-        <input type="checkbox" class="mt-1 rounded border-gray-300" formControlName="acceptPrivacy" />
+        <input
+          type="checkbox"
+          class="mt-1 rounded border-gray-300"
+          formControlName="acceptPrivacy"
+        />
         <span>
           I agree to the
-          <a href="#" class="font-semibold text-primary hover:underline">Privacy Policy</a>
+          <a href="#" class="font-semibold text-primary hover:underline"
+            >Privacy Policy</a
+          >
           <span class="text-red-500">*</span>
         </span>
       </label>
 
       <label class="flex items-start gap-2 text-xs text-gray-700">
-        <input type="checkbox" class="mt-1 rounded border-gray-300" formControlName="acceptPolicy" />
+        <input
+          type="checkbox"
+          class="mt-1 rounded border-gray-300"
+          formControlName="acceptPolicy"
+        />
         <span>
           I agree to the
-          <a href="#" class="font-semibold text-primary hover:underline">Terms & Conditions</a>
+          <a href="#" class="font-semibold text-primary hover:underline"
+            >Terms & Conditions</a
+          >
           <span class="text-red-500">*</span>
         </span>
       </label>
 
       <p
-        *ngIf="(form.get('acceptPrivacy')?.touched && form.get('acceptPrivacy')?.invalid) || (form.get('acceptPolicy')?.touched && form.get('acceptPolicy')?.invalid)"
+        *ngIf="
+          (form.get('acceptPrivacy')?.touched &&
+            form.get('acceptPrivacy')?.invalid) ||
+          (form.get('acceptPolicy')?.touched &&
+            form.get('acceptPolicy')?.invalid)
+        "
         class="text-red-500 text-xs"
       >
         You must accept Privacy Policy and Terms to continue.
       </p>
     </div>
 
+    <!-- ✅ ERROR + LOADING (taruh di sini, tepat sebelum tombol submit) -->
+    <div
+      *ngIf="errorMsg"
+      class="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 whitespace-pre-line"
+    >
+      {{ errorMsg }}
+    </div>
+
+    <div *ngIf="loading" class="text-xs text-gray-600">
+      Memproses registrasi...
+    </div>
+
     <!-- Submit -->
     <button
       type="submit"
-      class="w-full py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition"
+      [disabled]="loading"
+      class="w-full py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
     >
-      Create Account
+      {{ loading ? 'Processing...' : 'Create Account' }}
     </button>
 
     <!-- Link -->
     <p class="text-center text-xs text-gray-600">
       Already have an account?
-      <a routerLink="/auth/login" class="font-semibold text-primary hover:underline">Login</a>
+      <a
+        routerLink="/auth/login"
+        class="font-semibold text-primary hover:underline"
+        >Login</a
+      >
     </p>
   </form>
 </app-auth-layout>

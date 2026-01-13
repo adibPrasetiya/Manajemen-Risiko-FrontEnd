@@ -8,9 +8,9 @@ import {
   ValidationErrors,
 } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { AuthLayoutComponent } from '../../../shared/components/auth-layout/auth-layout.component';
-import { PasswordStrengthComponent } from '../../../shared/components/password-strength/password-strength.component';
-import { AuthService } from '../../services/auth.service';
+import { AuthLayoutComponent } from '../../../../shared/components/auth-layout/auth-layout.component';
+import { PasswordStrengthComponent } from '../../../../shared/components/password-strength/password-strength.component';
+import { AuthService } from '../../../../core/services/auth.service';
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -38,7 +38,6 @@ export class RegisterComponent {
   loading = false;
   errorMsg = '';
 
-  // input password strength (REACTIVE)
   passwordValue = signal<string>('');
 
   constructor(
@@ -82,6 +81,18 @@ export class RegisterComponent {
     return !!(this.form.hasError('passwordMismatch') && interacted);
   }
 
+  private buildApiError(err: any): string {
+    // dukung format backend: { errors: string, details: [{path, detail}] }
+    const api = err?.error ?? err;
+
+    if (Array.isArray(api?.details) && api.details.length > 0) {
+      // gabung jadi 1 string yg enak dibaca
+      return api.details.map((d: any) => `• ${d.detail ?? d.message ?? d}`).join('\n');
+    }
+
+    return api?.errors || api?.message || 'Register gagal. Coba lagi.';
+  }
+
   submit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -93,21 +104,21 @@ export class RegisterComponent {
 
     const payload = {
       username: (this.form.value.username ?? '').trim(),
-      name: (this.form.value.fullName ?? '').trim(),
+      name: (this.form.value.fullName ?? '').trim(), // ✅ fullName -> name (sesuai backend)
       email: (this.form.value.email ?? '').trim(),
       password: this.form.value.password ?? '',
     };
 
     this.auth.register(payload).subscribe({
-      next: () => {
-        // optional: simpan username supaya dashboard bisa tampil (kalau user langsung login)
+      next: (res) => {
+        // optional: simpan username untuk tampilan
         localStorage.setItem('auth_username', payload.username);
 
         // selesai register -> ke login
         this.router.navigate(['/auth/login']);
       },
-      error: (e) => {
-        this.errorMsg = e?.error?.message ?? 'Register gagal. Coba lagi.';
+      error: (err) => {
+        this.errorMsg = this.buildApiError(err);
         this.loading = false;
       },
       complete: () => {
