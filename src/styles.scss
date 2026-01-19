@@ -3,6 +3,33 @@
 @tailwind utilities;
 @import "@fortawesome/fontawesome-free/css/all.min.css";
 
+:root {
+  // Sidebar Dark Theme
+  --sidebar-bg: #1e2433;
+  --sidebar-bg-dark: #171c28;
+  --sidebar-border: #2d3548;
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-hover: #252d3f;
+  --sidebar-active: #3b4a6b;
+  --sidebar-accent: #4c6ef5;
+  --sidebar-accent-light: #6882f8;
+
+  // Topbar
+  --topbar-bg: #ffffff;
+  --topbar-border: #e5e7eb;
+  --topbar-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  // Layout dimensions
+  --topbar-height: 64px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+
+  // Transitions
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+}
+
 html, body {
   font-family: Inter, sans-serif;
   background: #f8f9fa;

@@ -14,6 +14,11 @@ export class ErrorInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(
       catchError((err: unknown) => {
         if (err instanceof HttpErrorResponse) {
+          // Skip 401 - biarkan AuthInterceptor handle refresh token
+          if (err.status === 401) {
+            return throwError(() => err);
+          }
+
           const msg =
             (typeof err.error === 'object' && err.error?.errors) ||
             err.message ||

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { AuthLayoutComponent } from '../../../../shared/components/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from '../../../../layouts/auth/auth-layout.component';
 import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({

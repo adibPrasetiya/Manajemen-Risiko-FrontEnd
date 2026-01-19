@@ -8,7 +8,7 @@ import {
   ValidationErrors,
 } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { AuthLayoutComponent } from '../../../../shared/components/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from '../../../../layouts/auth/auth-layout.component';
 import { PasswordStrengthComponent } from '../../../../shared/components/password-strength/password-strength.component';
 import { AuthService } from '../../../../core/services/auth.service';
 

@@ -1,0 +1,178 @@
+<div class="session-page">
+  <!-- Filters -->
+  <div class="card">
+    <div class="card-head">
+      <div class="head-left">
+        <span class="head-ico"><i class="fa-solid fa-filter"></i></span>
+        <span class="head-title">Filters</span>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="filters-grid">
+        <div class="field">
+          <label>Username</label>
+          <input [(ngModel)]="fUsername" placeholder="Cari username..." />
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <input [(ngModel)]="fEmail" placeholder="Cari email..." />
+        </div>
+
+        <div class="field">
+          <label>Status</label>
+          <select [(ngModel)]="fStatus">
+            <option value="ALL">Semua</option>
+            <option value="ACTIVE">Active</option>
+            <option value="EXPIRED">Expired</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Created Dari</label>
+          <input type="date" [(ngModel)]="fFrom" />
+        </div>
+
+        <div class="field">
+          <label>Created Hingga</label>
+          <input type="date" [(ngModel)]="fTo" />
+        </div>
+      </div>
+
+      <div class="actions">
+  <button class="btn primary" type="button" (click)="applyFilters()" [disabled]="loading">
+
+    Apply Filter
+  </button>
+
+  <button class="btn" type="button" (click)="resetFilters()" [disabled]="loading">
+    <i class="fa-solid fa-rotate-right"></i>
+    Reset
+  </button>
+
+  <!-- Revoke all expired -->
+  <button
+    class="btn danger"
+    type="button"
+    (click)="revokeAllExpired()"
+    [disabled]="loading || revokeExpiredLoading"
+    title="Hapus semua session expired"
+  >
+    <i class="fa-solid fa-trash-can"></i>
+    {{ revokeExpiredLoading ? 'Revoking...' : 'Revoke all' }}
+  </button>
+</div>
+
+
+      <div *ngIf="loading" class="hint">Loading...</div>
+      <div *ngIf="errorMsg" class="hint warn">{{ errorMsg }}</div>
+      <div *ngIf="successMsg" class="hint ok">{{ successMsg }}</div>
+
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>DEVICE</th>
+            <th>USER</th>
+            <th>IP ADDRESS</th>
+            <th>STATUS</th>
+            <th>CREATED</th>
+            <th>EXPIRES</th>
+            <th class="th-actions">ACTIONS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let s of filtered; trackBy: trackById">
+            <!-- DEVICE -->
+            <td>
+              <div class="cell-stack">
+                <div class="primary">{{ s.deviceName }}</div>
+                <div class="sub muted mono">{{ shortDeviceId(s.deviceId) }}</div>
+              </div>
+            </td>
+
+            <!-- USER -->
+            <td>
+              <div class="cell-stack">
+                <div class="primary">{{ s.user?.name }}</div>
+                <div class="sub muted">{{ s.user?.username }}</div>
+                <div class="sub muted">{{ s.user?.email }}</div>
+              </div>
+            </td>
+
+            <!-- IP -->
+            <td class="mono">{{ s.ipAddress }}</td>
+
+            <!-- STATUS -->
+            <td>
+              <span class="badge status" [ngClass]="getStatusClass(s)">
+                {{ getStatusLabel(s) }}
+              </span>
+            </td>
+
+            <!-- CREATED -->
+            <td class="muted">
+              <span class="dt">
+                <span class="dt-ico"><i class="fa-solid fa-plus"></i></span>
+                {{ s.createdAt | date:'d MMM y, HH.mm' }}
+              </span>
+            </td>
+
+            <!-- EXPIRES -->
+            <td class="muted">
+              <span class="dt" [class.expired]="isExpired(s.expiresAt)">
+                <span class="dt-ico" [class.expired]="isExpired(s.expiresAt)">
+                  <i class="fa-solid fa-clock"></i>
+                </span>
+                {{ s.expiresAt | date:'d MMM y, HH.mm' }}
+              </span>
+            </td>
+
+            <!-- ACTIONS -->
+            <td class="td-actions">
+              <button
+                type="button"
+                class="danger-btn"
+                title="Revoke"
+                (click)="revokeSession(s)"
+                [disabled]="actionLoadingId === s.id"
+              >
+                <i class="fa-solid fa-trash-can" *ngIf="actionLoadingId !== s.id"></i>
+                <i class="fa-solid fa-spinner fa-spin" *ngIf="actionLoadingId === s.id"></i>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && filtered.length === 0">
+            <td colspan="7" class="empty">No sessions found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pager" *ngIf="pagination">
+      <div class="pager-left">
+        Page {{ pagination.page }} / {{ pagination.totalPages }}
+        <span class="dot">•</span>
+        Total {{ pagination.total }} sessions
+      </div>
+
+      <div class="pager-right">
+        <button class="pager-btn" type="button" (click)="prevPage()" [disabled]="loading || !pagination.hasPrevPage">
+          Prev
+        </button>
+        <button class="pager-btn" type="button" (click)="nextPage()" [disabled]="loading || !pagination.hasNextPage">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

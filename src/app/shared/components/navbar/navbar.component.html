@@ -1,0 +1,29 @@
+<header class="topbar">
+  <div class="topbar-left">
+    <button type="button" class="collapse-toggle" (click)="onToggleSidebar()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="brand">PRISMA</div>
+  </div>
+
+  <div class="profile-menu">
+    <button type="button" class="profile-btn" (click)="toggleDropdown()">
+      <div class="profile-text">
+        <div class="profile-name">{{ displayName }}</div>
+        <div class="profile-email" *ngIf="displayEmail">{{ displayEmail }}</div>
+      </div>
+      <span class="caret"><i class="fa-solid fa-chevron-down"></i></span>
+    </button>
+
+    <div class="dropdown" *ngIf="dropdownOpen">
+      <button type="button" class="item" (click)="goEditProfile()">
+        <i class="fa-solid fa-user"></i>
+        <span>Profile</span>
+      </button>
+      <button type="button" class="item danger" (click)="logout()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </div>
+</header>
