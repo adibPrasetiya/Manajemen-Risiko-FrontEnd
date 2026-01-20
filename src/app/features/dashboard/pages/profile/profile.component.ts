@@ -128,7 +128,7 @@ export class ProfileComponent {
         localStorage.setItem('hasProfile', 'true'); // ✅ biar route guard lolos
 
         this.loading = false;
-        this.router.navigate(['/auth/dashboard']);
+        this.router.navigate(['/dashboard']);
       },
       error: (e) => {
         this.loading = false;

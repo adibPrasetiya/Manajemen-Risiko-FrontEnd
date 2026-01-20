@@ -42,7 +42,7 @@ export class TotpComponent {
       }
 
       // ✅ sukses -> arahkan ke profile
-      this.router.navigate(['/auth/profile']);
+      this.router.navigate(['/dashboard/profile']);
     } catch (e) {
       this.errorMsg = 'Terjadi kesalahan. Coba lagi.';
     } finally {

@@ -98,7 +98,7 @@ private isUnitValid(value: string | null | undefined): boolean {
 
   goDashboard() {
     this.dropdownOpen = false;
-    this.router.navigate(['/auth/dashboard']);
+    this.router.navigate(['/dashboard']);
   }
 
   logout() {

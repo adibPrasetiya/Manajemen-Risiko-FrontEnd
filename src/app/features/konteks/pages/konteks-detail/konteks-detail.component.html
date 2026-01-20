@@ -3,7 +3,7 @@
   <div class="card">
     <div class="card-head">
       <div class="head-left">
-        <span class="head-ico">📄</span>
+        <span class="head-ico"><i class="fa-solid fa-file-lines"></i></span>
         <div class="head-stack">
           <div class="head-title">
             {{ konteksName || 'Detail Konteks' }}
@@ -14,10 +14,103 @@
       </div>
 
       <div class="head-actions">
-        <button class="btn" type="button" (click)="openEditKonteks()" [disabled]="loading">
-           Edit Konteks
+        <button
+          *ngIf="konteksDetail && !konteksDetail.isActive"
+          class="btn btn-activate"
+          type="button"
+          (click)="activateKonteks()"
+          [disabled]="loading">
+          <i class="fa-solid fa-toggle-on"></i> Aktifkan
         </button>
-        <button class="btn" type="button" (click)="back()">Back</button>
+        <button
+          *ngIf="konteksDetail && konteksDetail.isActive"
+          class="btn btn-deactivate"
+          type="button"
+          (click)="deactivateKonteks()"
+          [disabled]="loading">
+          <i class="fa-solid fa-toggle-off"></i> Nonaktifkan
+        </button>
+        <button class="btn" type="button" (click)="openEditKonteks()" [disabled]="loading">
+          <i class="fa-solid fa-pen-to-square"></i> Edit Konteks
+        </button>
+        <button class="btn" type="button" (click)="back()">
+          <i class="fa-solid fa-arrow-left"></i> Back
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KONTEKS INFO CARD -->
+  <div class="card konteks-info-card" *ngIf="konteksDetail">
+    <div class="card-body">
+      <div class="info-grid">
+        <!-- Basic Info -->
+        <div class="info-section">
+          <div class="section-label">Informasi Dasar</div>
+          <div class="info-row">
+            <span class="info-label">Nama:</span>
+            <span class="info-value">{{ konteksDetail.name || '-' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Kode:</span>
+            <span class="info-value mono">{{ konteksDetail.code || '-' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Deskripsi:</span>
+            <span class="info-value long-text">{{ konteksDetail.description || '-' }}</span>
+          </div>
+        </div>
+
+        <!-- Period & Matrix -->
+        <div class="info-section">
+          <div class="section-label">Periode & Matrix</div>
+          <div class="info-row">
+            <span class="info-label">Periode:</span>
+            <span class="info-value">{{ konteksDetail.periodStart }} - {{ konteksDetail.periodEnd }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Matrix Size:</span>
+            <span class="info-value">{{ konteksDetail.matrixSize ? konteksDetail.matrixSize + 'x' + konteksDetail.matrixSize : '-' }}</span>
+          </div>
+        </div>
+
+        <!-- Risk Appetite -->
+        <div class="info-section">
+          <div class="section-label">Risk Appetite</div>
+          <div class="info-row">
+            <span class="info-label">Level:</span>
+            <span class="info-value">
+              <span class="appetite-badge" [ngClass]="getRiskAppetiteBadgeClass()">
+                {{ konteksDetail.riskAppetiteLevel || '-' }}
+              </span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Deskripsi:</span>
+            <span class="info-value long-text">{{ konteksDetail.riskAppetiteDescription || '-' }}</span>
+          </div>
+        </div>
+
+        <!-- Status & Count -->
+        <div class="info-section">
+          <div class="section-label">Status & Data</div>
+          <div class="info-row">
+            <span class="info-label">Status:</span>
+            <span class="info-value">
+              <span class="status-badge" [ngClass]="konteksDetail.isActive ? 'active' : 'inactive'">
+                {{ konteksDetail.isActive ? 'Aktif' : 'Tidak Aktif' }}
+              </span>
+            </span>
+          </div>
+          <div class="info-row" *ngIf="konteksDetail._count">
+            <span class="info-label">Risk Categories:</span>
+            <span class="info-value">{{ konteksDetail._count.riskCategories || 0 }}</span>
+          </div>
+          <div class="info-row" *ngIf="konteksDetail._count">
+            <span class="info-label">Risk Matrices:</span>
+            <span class="info-value">{{ konteksDetail._count.riskMatrices || 0 }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -40,7 +133,7 @@
     </div>
 
     <div class="card-body">
-      <div *ngIf="loading" class="hint">Loading...</div>
+      <div *ngIf="loading" class="hint"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
       <div *ngIf="errorMsg" class="hint warn">{{ errorMsg }}</div>
 
       <!-- ===================== TAB: RISK CATEGORY ===================== -->
@@ -48,14 +141,8 @@
         <div class="toolbar-like">
           <div class="toolbar-left">
             <div class="search-pill">
-              <span class="ico">🔎</span>
+              <i class="fa-solid fa-magnifying-glass search-ico"></i>
               <input [(ngModel)]="qSearch" (keyup)="onSearchKeyup()" placeholder="Cari Kategori" />
-            </div>
-
-            <div class="select-pill">
-              <select [(ngModel)]="fGroup">
-                <option *ngFor="let g of groupOptions" [value]="g">{{ g }}</option>
-              </select>
             </div>
           </div>
 
@@ -91,8 +178,8 @@
                 <td class="muted">{{ c.description || '-' }}</td>
 
                 <td class="td-actions">
-                  <button type="button" class="icon-btn" (click)="openEditRC(c)" title="Edit">✎</button>
-                  <button type="button" class="icon-btn danger" (click)="deleteRC(c)" title="Delete">🗑</button>
+                  <button type="button" class="icon-btn" (click)="openEditRC(c)" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button type="button" class="icon-btn danger" (click)="deleteRC(c)" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
 
@@ -166,8 +253,8 @@
                 <td class="muted">{{ l.description || '-' }}</td>
 
                 <td class="td-actions">
-                  <button type="button" class="icon-btn" (click)="openEditLK(l)" title="Edit">✎</button>
-                  <button type="button" class="icon-btn danger" (click)="deleteLK(l)" title="Delete">🗑</button>
+                  <button type="button" class="icon-btn" (click)="openEditLK(l)" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button type="button" class="icon-btn danger" (click)="deleteLK(l)" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
 
@@ -227,7 +314,7 @@
   <div class="modal">
     <div class="modal-head">
       <h3>{{ rcModalMode === 'CREATE' ? 'Tambah Kategori Risiko' : 'Ubah Kategori Risiko' }}</h3>
-      <button type="button" class="icon-close" (click)="closeRCModal()">✕</button>
+      <button type="button" class="icon-close" (click)="closeRCModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
     <div class="modal-body">
@@ -263,7 +350,7 @@
   <div class="modal">
     <div class="modal-head">
       <h3>{{ lkModalMode === 'CREATE' ? 'Tambah Likelihood' : 'Ubah Likelihood' }}</h3>
-      <button type="button" class="icon-close" (click)="closeLKModal()">✕</button>
+      <button type="button" class="icon-close" (click)="closeLKModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
     <div class="modal-body">
@@ -294,103 +381,47 @@
   </div>
 </div>
 
-<!-- ===================== MODAL: EDIT KONTEKS (UI seperti USERS) ===================== -->
+<!-- ===================== MODAL: EDIT KONTEKS ===================== -->
 <div class="modal-backdrop" *ngIf="showKonteksModal">
-  <div class="modal modal-lg">
-    <div class="modal-head modal-head-lg">
-      <h3 class="modal-title">Ubah Data Konteks</h3>
-
-      <button type="button" class="icon-close icon-close-lg" (click)="closeKonteksModal()">✕</button>
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Ubah Data Konteks</h3>
+      <button type="button" class="icon-close" (click)="closeKonteksModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <div class="modal-body modal-body-lg">
-      <!-- FORM GRID -->
-      <div class="grid-2">
-        <div class="field">
-          <label>Nama</label>
-          <input [(ngModel)]="konteksForm.name" placeholder="Konteks Risiko 2026" />
-        </div>
-
-        <div class="field">
-          <label>Code</label>
-          <input [(ngModel)]="konteksForm.code" placeholder="RISK_2026" />
-        </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Nama</label>
+        <input [(ngModel)]="konteksForm.name" placeholder="Konteks Risiko 2026" />
       </div>
 
       <div class="field">
-        <label>Deskripsi</label>
-        <input [(ngModel)]="konteksForm.description" placeholder="Deskripsi konteks" />
+        <label>Deskripsi <span class="char-hint">(maks. 500 karakter)</span></label>
+        <textarea [(ngModel)]="konteksForm.description" placeholder="Deskripsi konteks" rows="3" maxlength="500"></textarea>
       </div>
 
       <div class="divider"></div>
 
-      <div class="section-title">Periode & Matrix</div>
+      <div class="section-title">Risk Appetite</div>
 
-      <div class="grid-2">
-        <div class="field">
-          <label>Period Start</label>
-          <input type="number" [(ngModel)]="konteksForm.periodStart" placeholder="2026" />
-        </div>
-
-        <div class="field">
-          <label>Period End</label>
-          <input type="number" [(ngModel)]="konteksForm.periodEnd" placeholder="2027" />
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="field">
-          <label>Matrix Size</label>
-          <input type="number" [(ngModel)]="konteksForm.matrixSize" placeholder="5" />
-        </div>
-
-        <div class="field">
-          <label>Risk Appetite Level</label>
-          <select [(ngModel)]="konteksForm.riskAppetiteLevel">
-            <option *ngFor="let a of appetiteOptions" [value]="a">{{ a }}</option>
-          </select>
-        </div>
+      <div class="field">
+        <label>Level</label>
+        <select [(ngModel)]="konteksForm.riskAppetiteLevel">
+          <option *ngFor="let a of appetiteOptions" [value]="a">{{ a }}</option>
+        </select>
       </div>
 
       <div class="field">
-        <label>Risk Appetite Description</label>
-        <input [(ngModel)]="konteksForm.riskAppetiteDescription" placeholder="Tingkat selera risiko..." />
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- STATUS SECTION (card seperti USERS) -->
-      <div class="section-title">Status</div>
-
-      <div class="pick-grid">
-        <label class="pick-card" [class.active]="konteksForm.isActive">
-          <input type="checkbox" [(ngModel)]="konteksForm.isActive" />
-          <div class="pick-content">
-            <div class="pick-title">Active</div>
-            <div class="pick-desc">Konteks aktif untuk digunakan</div>
-          </div>
-        </label>
-
-        <!-- optional: kalau suatu saat ada field lain, siap ditambah card kedua -->
-        <div class="pick-card ghost">
-          <div class="pick-content">
-            <div class="pick-title">Info</div>
-            <div class="pick-desc">Perubahan akan tersimpan ke server</div>
-          </div>
-        </div>
+        <label>Deskripsi Risk Appetite <span class="char-hint">(maks. 500 karakter)</span></label>
+        <textarea [(ngModel)]="konteksForm.riskAppetiteDescription" placeholder="Tingkat selera risiko..." rows="3" maxlength="500"></textarea>
       </div>
 
       <small class="error" *ngIf="konteksModalError">{{ konteksModalError }}</small>
-    </div>
 
-    <!-- FOOTER BUTTONS seperti USERS -->
-    <div class="modal-footer modal-footer-lg">
-      <button type="button" class="btn secondary" (click)="closeKonteksModal()" [disabled]="loading">
-        Batal
-      </button>
-      <button type="button" class="btn primary" (click)="saveKonteks()" [disabled]="loading">
-        Simpan
-      </button>
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeKonteksModal()" [disabled]="loading">Batal</button>
+        <button type="button" class="btn primary" (click)="saveKonteks()" [disabled]="loading">Simpan</button>
+      </div>
     </div>
   </div>
 </div>

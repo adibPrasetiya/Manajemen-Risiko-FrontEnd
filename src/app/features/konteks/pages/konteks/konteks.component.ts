@@ -159,7 +159,7 @@ export class KonteksComponent implements OnInit {
   constructor(private http: HttpClient, private router: Router) {}
   openDropdown: string | null = null;
   openKonteksDetail(k: any): void {
-  this.router.navigate(['/auth/konteks', k.id]);
+  this.router.navigate(['/konteks-management', k.id]);
 }
   ngOnInit(): void {
     this.buildPeriodeOptions();

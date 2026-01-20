@@ -42,6 +42,12 @@
       </a>
     </div>
 
+    @if (errorMsg) {
+      <div class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+        {{ errorMsg }}
+      </div>
+    }
+
     <button type="submit" class="w-full py-3 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition">
       Login
     </button>

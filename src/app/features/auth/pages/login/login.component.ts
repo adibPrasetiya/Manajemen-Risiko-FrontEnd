@@ -48,11 +48,11 @@ export class LoginComponent {
 
 
   if (!hasProfile) {
-    this.router.navigate(['/auth/profile']);
+    this.router.navigate(['/dashboard/profile']);
     return;
   }
 
-  this.router.navigate(['/auth/dashboard']);
+  this.router.navigate(['/dashboard']);
 },
 
       error: (e) => {

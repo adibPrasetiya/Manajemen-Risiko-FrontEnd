@@ -2,151 +2,29 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  HttpClient,
-  HttpClientModule,
-  HttpHeaders,
-  HttpParams,
-} from '@angular/common/http';
-import { forkJoin } from 'rxjs';
 import { ConfirmModalComponent } from '../../../../shared/components/confirm-modal/confirm-modal.component';
-
-type Pagination = {
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-};
-
-type RiskCategory = {
-  id: string;
-  konteksId: string;
-  name: string;
-  description: string;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-  konteks?: {
-    id: string;
-    name: string;
-    code: string;
-    periodStart?: number;
-    periodEnd?: number;
-    isActive?: boolean;
-  };
-};
-
-type RiskCategoryResponse = {
-  message: string;
-  data: RiskCategory[];
-  pagination: Pagination;
-};
-
-type LikelihoodScale = {
-  id: string;
-  riskCategoryId: string;
-  level: number;
-  label: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-  riskCategory?: {
-    id: string;
-    name: string;
-    order: number;
-    konteks?: {
-      id: string;
-      name: string;
-      code: string;
-      periodStart: number;
-      periodEnd: number;
-      isActive: boolean;
-    };
-  };
-};
-
-type LikelihoodResponse = {
-  message: string;
-  data: LikelihoodScale[];
-  pagination: Pagination;
-};
-
-type TabKey = 'RISK_CATEGORY' | 'RISK_IMPACT' | 'LIKELIHOOD' | 'RISK_MATRIX';
-
-type CreateRiskCategoryPayload = {
-  name: string;
-  description: string;
-  order: number;
-};
-
-type UpdateRiskCategoryPayload = {
-  name: string;
-  description: string;
-  order: number;
-};
-
-type CreateLikelihoodPayload = {
-  level: number;
-  label: string;
-  description: string;
-};
-
-type UpdateLikelihoodPayload = {
-  level: number;
-  label: string;
-  description: string;
-};
-
-// ===================== KONTEKS (EDIT) =====================
-type KonteksItem = {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  periodStart: number;
-  periodEnd: number;
-  matrixSize: number;
-  riskAppetiteLevel: string;
-  riskAppetiteDescription: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  _count?: {
-    riskCategories: number;
-    riskMatrices: number;
-  };
-};
-
-type KonteksResponse = {
-  message: string;
-  data: KonteksItem[];
-  pagination: Pagination;
-};
-
-type UpdateKonteksPayload = {
-  name: string;
-  code: string;
-  description: string;
-  periodStart: number;
-  periodEnd: number;
-  matrixSize: number;
-  riskAppetiteLevel: string;
-  riskAppetiteDescription: string;
-  isActive: boolean;
-};
+import { KonteksService } from '../../../../core/services/konteks.service';
+import {
+  Pagination,
+  KonteksItem,
+  RiskCategory,
+  LikelihoodScale,
+  UpdateKonteksPayload,
+  CreateRiskCategoryPayload,
+  UpdateRiskCategoryPayload,
+  CreateLikelihoodPayload,
+  UpdateLikelihoodPayload,
+  TabKey,
+} from '../../../../core/models/konteks.model';
 
 @Component({
   selector: 'app-konteks-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, ConfirmModalComponent],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './konteks-detail.component.html',
   styleUrl: './konteks-detail.component.scss',
 })
 export class KonteksDetailComponent implements OnInit {
-  private baseUrl = 'http://api.dev.simulasibimtekd31.com';
-
   loading = false;
   errorMsg = '';
 
@@ -170,8 +48,6 @@ export class KonteksDetailComponent implements OnInit {
 
   // toolbar controls
   qSearch = '';
-  fGroup = 'Strategis';
-  groupOptions = ['Strategis', 'Operasional', 'Lainnya'];
 
   // Risk Category
   rawRiskCategories: RiskCategory[] = [];
@@ -230,18 +106,13 @@ export class KonteksDetailComponent implements OnInit {
 
   konteksForm: UpdateKonteksPayload = {
     name: '',
-    code: '',
     description: '',
-    periodStart: 2026,
-    periodEnd: 2027,
-    matrixSize: 5,
     riskAppetiteLevel: 'HIGH',
     riskAppetiteDescription: '',
-    isActive: false,
   };
 
   constructor(
-    private http: HttpClient,
+    private konteksService: KonteksService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -258,7 +129,7 @@ export class KonteksDetailComponent implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['/auth/konteks']);
+    this.router.navigate(['/konteks-management']);
   }
 
   // ===================== Helpers =====================
@@ -271,7 +142,7 @@ export class KonteksDetailComponent implements OnInit {
       page: Math.max(1, Number(p.page || 1)),
       limit: Math.max(1, Number(p.limit || 10)),
       totalItems: Math.max(0, Number(p.totalItems || 0)),
-      totalPages: Math.max(1, Number(p.totalPages || 0)), // ✅ anti 0
+      totalPages: Math.max(1, Number(p.totalPages || 0)),
       hasNextPage: !!p.hasNextPage,
       hasPrevPage: !!p.hasPrevPage,
     };
@@ -300,100 +171,65 @@ export class KonteksDetailComponent implements OnInit {
     }
   }
 
-  private buildHeaders(): HttpHeaders | undefined {
-    const token =
-      localStorage.getItem('accessToken') ||
-      localStorage.getItem('access_token');
-    if (!token) return undefined;
-
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    });
-  }
-
-  // ===================== KONTEKS: GET LIST lalu ambil by id =====================
+  // ===================== KONTEKS: GET BY ID =====================
   fetchKonteksDetail(): void {
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.errorMsg = 'Token tidak ditemukan. Silakan login ulang.';
-      return;
-    }
-
-    // jangan overwrite loading besar kalau user lagi edit modal, tapi aman
     this.loading = true;
     this.errorMsg = '';
 
-    const params = new HttpParams().set('page', '1').set('limit', '50');
+    this.konteksService.getKonteksById(this.konteksId).subscribe({
+      next: (res) => {
+        const found = res.data ?? null;
 
-    this.http
-      .get<KonteksResponse>(`${this.baseUrl}/konteks`, { headers, params })
-      .subscribe({
-        next: (res) => {
-          const list = res.data ?? [];
-          const found = list.find((x) => x.id === this.konteksId) || null;
+        this.konteksDetail = found;
 
-          this.konteksDetail = found;
+        if (found) {
+          this.konteksName = found.name ?? this.konteksName;
+          this.konteksCode = found.code ?? this.konteksCode;
+          this.periodStart = found.periodStart;
+          this.periodEnd = found.periodEnd;
 
-          if (found) {
-            this.konteksName = found.name ?? this.konteksName;
-            this.konteksCode = found.code ?? this.konteksCode;
-            this.periodStart = found.periodStart;
-            this.periodEnd = found.periodEnd;
+          this.matrixSize = found.matrixSize;
+          this.riskAppetiteLevel = found.riskAppetiteLevel;
+          this.riskAppetiteDesc = found.riskAppetiteDescription;
+        }
 
-            this.matrixSize = found.matrixSize;
-            this.riskAppetiteLevel = found.riskAppetiteLevel;
-            this.riskAppetiteDesc = found.riskAppetiteDescription;
-          }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error fetch konteks detail:', err);
+        this.loading = false;
 
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error fetch konteks list:', err);
-          this.loading = false;
-
-          if (err?.status === 401) {
-            this.errorMsg =
-              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
-            return;
-          }
-          this.errorMsg = `Gagal fetch konteks (HTTP ${
-            err?.status || 'unknown'
-          }).`;
-        },
-      });
+        if (err?.status === 401) {
+          this.errorMsg =
+            'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+          return;
+        }
+        this.errorMsg = `Gagal fetch konteks (HTTP ${
+          err?.status || 'unknown'
+        }).`;
+      },
+    });
   }
 
   // ===================== KONTEKS: EDIT MODAL =====================
   openEditKonteks(): void {
     this.konteksModalError = '';
 
-    // jika belum ada, tetap bisa buka modal dengan fallback header
     const k = this.konteksDetail;
 
     if (k) {
       this.konteksForm = {
         name: k.name ?? '',
-        code: k.code ?? '',
         description: k.description ?? '',
-        periodStart: Number(k.periodStart ?? 2026),
-        periodEnd: Number(k.periodEnd ?? 2027),
-        matrixSize: Number(k.matrixSize ?? 5),
         riskAppetiteLevel: k.riskAppetiteLevel ?? 'HIGH',
         riskAppetiteDescription: k.riskAppetiteDescription ?? '',
-        isActive: !!k.isActive,
       };
     } else {
       this.konteksForm = {
         name: this.konteksName || '',
-        code: this.konteksCode || '',
         description: '',
-        periodStart: Number(this.periodStart ?? 2026),
-        periodEnd: Number(this.periodEnd ?? 2027),
-        matrixSize: Number(this.matrixSize ?? 5),
         riskAppetiteLevel: this.riskAppetiteLevel || 'HIGH',
         riskAppetiteDescription: this.riskAppetiteDesc || '',
-        isActive: false,
       };
     }
 
@@ -416,55 +252,70 @@ export class KonteksDetailComponent implements OnInit {
       this.konteksModalError = 'Nama wajib diisi.';
       return;
     }
-    if (!this.konteksForm.code.trim()) {
-      this.konteksModalError = 'Code wajib diisi.';
-      return;
-    }
-    if (!this.konteksForm.periodStart || !this.konteksForm.periodEnd) {
-      this.konteksModalError = 'Periode wajib diisi.';
-      return;
-    }
-    if (Number(this.konteksForm.periodEnd) < Number(this.konteksForm.periodStart)) {
-      this.konteksModalError = 'Period End tidak boleh lebih kecil dari Period Start.';
-      return;
-    }
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.konteksModalError = 'Token tidak ditemukan. Silakan login ulang.';
-      return;
-    }
 
     const payload: UpdateKonteksPayload = {
       name: this.konteksForm.name.trim(),
-      code: this.konteksForm.code.trim(),
       description: (this.konteksForm.description ?? '').trim(),
-      periodStart: Number(this.konteksForm.periodStart),
-      periodEnd: Number(this.konteksForm.periodEnd),
-      matrixSize: Number(this.konteksForm.matrixSize),
       riskAppetiteLevel: this.konteksForm.riskAppetiteLevel,
       riskAppetiteDescription: (this.konteksForm.riskAppetiteDescription ?? '').trim(),
-      isActive: !!this.konteksForm.isActive,
     };
 
     this.loading = true;
 
-    // ✅ asumsi endpoint update konteks:
-    // PATCH /konteks/:id
-    this.http
-      .patch<any>(`${this.baseUrl}/konteks/${this.konteksId}`, payload, { headers })
-      .subscribe({
-        next: () => {
-          this.loading = false;
-          this.closeKonteksModal();
-          this.fetchKonteksDetail();
-        },
-        error: (e) => {
-          this.loading = false;
-          this.konteksModalError =
-            e?.error?.errors || e?.error?.message || 'Gagal update konteks.';
-          console.error('[PATCH /konteks/:id] error:', e);
-        },
-      });
+    this.konteksService.updateKonteks(this.konteksId, payload).subscribe({
+      next: () => {
+        this.loading = false;
+        this.closeKonteksModal();
+        this.fetchKonteksDetail();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.konteksModalError =
+          e?.error?.errors || e?.error?.message || 'Gagal update konteks.';
+        console.error('[PATCH /konteks/:id] error:', e);
+      },
+    });
+  }
+
+  // ===================== KONTEKS: ACTIVATE/DEACTIVATE =====================
+  activateKonteks(): void {
+    if (!this.konteksId) return;
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    this.konteksService.activateKonteks(this.konteksId).subscribe({
+      next: () => {
+        this.loading = false;
+        this.fetchKonteksDetail();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.errorMsg =
+          e?.error?.errors || e?.error?.message || 'Gagal mengaktifkan konteks.';
+        console.error('[PATCH /konteks/:id/activate] error:', e);
+      },
+    });
+  }
+
+  deactivateKonteks(): void {
+    if (!this.konteksId) return;
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    this.konteksService.deactivateKonteks(this.konteksId).subscribe({
+      next: () => {
+        this.loading = false;
+        this.fetchKonteksDetail();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.errorMsg =
+          e?.error?.errors || e?.error?.message || 'Gagal menonaktifkan konteks.';
+        console.error('[PATCH /konteks/:id/deactivate] error:', e);
+      },
+    });
   }
 
   // ===================== CONFIRM MODAL =====================
@@ -524,26 +375,14 @@ export class KonteksDetailComponent implements OnInit {
   }
 
   // ===================== RISK CATEGORY: GET =====================
-  private rcParams(resetPage: boolean): HttpParams {
+  fetchRiskCategories(resetPage: boolean): void {
     if (resetPage) this.rcPage = 1;
 
-    return new HttpParams()
-      .set('page', String(this.rcPage))
-      .set('limit', String(this.rcLimit));
-  }
-
-  fetchRiskCategories(resetPage: boolean): void {
     this.loading = true;
     this.errorMsg = '';
 
-    const headers = this.buildHeaders();
-    const params = this.rcParams(resetPage);
-
-    this.http
-      .get<RiskCategoryResponse>(
-        `${this.baseUrl}/konteks/${this.konteksId}/risk-categories`,
-        { headers, params }
-      )
+    this.konteksService
+      .getRiskCategories(this.konteksId, { page: this.rcPage, limit: this.rcLimit })
       .subscribe({
         next: (res) => {
           const raw = res.data ?? [];
@@ -668,12 +507,6 @@ export class KonteksDetailComponent implements OnInit {
       return;
     }
 
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.rcError = 'Token tidak ditemukan. Silakan login ulang.';
-      return;
-    }
-
     const payload: CreateRiskCategoryPayload | UpdateRiskCategoryPayload = {
       name: this.rcForm.name.trim(),
       description: (this.rcForm.description ?? '').trim(),
@@ -683,12 +516,8 @@ export class KonteksDetailComponent implements OnInit {
     this.loading = true;
 
     if (this.rcModalMode === 'CREATE') {
-      this.http
-        .post<any>(
-          `${this.baseUrl}/konteks/${this.konteksId}/risk-categories`,
-          payload,
-          { headers }
-        )
+      this.konteksService
+        .createRiskCategory(this.konteksId, payload)
         .subscribe({
           next: () => {
             this.loading = false;
@@ -705,12 +534,8 @@ export class KonteksDetailComponent implements OnInit {
       return;
     }
 
-    this.http
-      .patch<any>(
-        `${this.baseUrl}/konteks/${this.konteksId}/risk-categories/${this.rcForm.id}`,
-        payload,
-        { headers }
-      )
+    this.konteksService
+      .updateRiskCategory(this.konteksId, this.rcForm.id, payload)
       .subscribe({
         next: () => {
           this.loading = false;
@@ -739,52 +564,33 @@ export class KonteksDetailComponent implements OnInit {
   }
 
   private performDeleteRC(c: RiskCategory): void {
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.openInfoModal('Token tidak ditemukan', 'Silakan login ulang.');
-      return;
-    }
-
     this.loading = true;
 
-    this.http
-      .delete<any>(
-        `${this.baseUrl}/konteks/${this.konteksId}/risk-categories/${c.id}`,
-        { headers }
-      )
-      .subscribe({
-        next: () => {
-          this.loading = false;
+    this.konteksService.deleteRiskCategory(this.konteksId, c.id).subscribe({
+      next: () => {
+        this.loading = false;
 
-          if (this.selectedRiskCategoryId === c.id) {
-            this.selectedRiskCategoryId = '';
-            this.likelihoods = [];
-            this.lkPagination = null;
-            this.lkEmptyHint = '';
-          }
+        if (this.selectedRiskCategoryId === c.id) {
+          this.selectedRiskCategoryId = '';
+          this.likelihoods = [];
+          this.lkPagination = null;
+          this.lkEmptyHint = '';
+        }
 
-          this.fetchRiskCategories(true);
-        },
-        error: (e) => {
-          this.loading = false;
-          this.openInfoModal(
-            'Gagal hapus kategori',
-            e?.error?.errors || e?.error?.message || 'Terjadi kesalahan.'
-          );
-          console.error('[DELETE risk-categories/:id] error:', e);
-        },
-      });
+        this.fetchRiskCategories(true);
+      },
+      error: (e) => {
+        this.loading = false;
+        this.openInfoModal(
+          'Gagal hapus kategori',
+          e?.error?.errors || e?.error?.message || 'Terjadi kesalahan.'
+        );
+        console.error('[DELETE risk-categories/:id] error:', e);
+      },
+    });
   }
 
   // ===================== LIKELIHOOD: GET =====================
-  private lkParams(resetPage: boolean): HttpParams {
-    if (resetPage) this.lkPage = 1;
-
-    return new HttpParams()
-      .set('page', String(this.lkPage))
-      .set('limit', String(this.lkLimit));
-  }
-
   onChangeCategoryForLikelihood(): void {
     this.fetchLikelihood(true);
   }
@@ -792,18 +598,17 @@ export class KonteksDetailComponent implements OnInit {
   fetchLikelihood(resetPage: boolean): void {
     if (!this.selectedRiskCategoryId) return;
 
+    if (resetPage) this.lkPage = 1;
+
     this.loading = true;
     this.errorMsg = '';
     this.lkEmptyHint = '';
 
-    const headers = this.buildHeaders();
-    const params = this.lkParams(resetPage);
-
-    this.http
-      .get<LikelihoodResponse>(
-        `${this.baseUrl}/konteks/${this.konteksId}/risk-categories/${this.selectedRiskCategoryId}/likelihood-scales`,
-        { headers, params }
-      )
+    this.konteksService
+      .getLikelihoodScales(this.konteksId, this.selectedRiskCategoryId, {
+        page: this.lkPage,
+        limit: this.lkLimit,
+      })
       .subscribe({
         next: (res) => {
           this.likelihoods = res.data ?? [];
@@ -905,12 +710,6 @@ export class KonteksDetailComponent implements OnInit {
       return;
     }
 
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.lkError = 'Token tidak ditemukan. Silakan login ulang.';
-      return;
-    }
-
     const payload: CreateLikelihoodPayload | UpdateLikelihoodPayload = {
       level,
       label: this.lkForm.label.trim(),
@@ -920,12 +719,8 @@ export class KonteksDetailComponent implements OnInit {
     this.loading = true;
 
     if (this.lkModalMode === 'CREATE') {
-      this.http
-        .post<any>(
-          `${this.baseUrl}/konteks/${this.konteksId}/risk-categories/${this.selectedRiskCategoryId}/likelihood-scales`,
-          payload,
-          { headers }
-        )
+      this.konteksService
+        .createLikelihoodScale(this.konteksId, this.selectedRiskCategoryId, payload)
         .subscribe({
           next: () => {
             this.loading = false;
@@ -942,11 +737,12 @@ export class KonteksDetailComponent implements OnInit {
       return;
     }
 
-    this.http
-      .patch<any>(
-        `${this.baseUrl}/konteks/${this.konteksId}/risk-categories/${this.selectedRiskCategoryId}/likelihood-scales/${this.lkForm.id}`,
-        payload,
-        { headers }
+    this.konteksService
+      .updateLikelihoodScale(
+        this.konteksId,
+        this.selectedRiskCategoryId,
+        this.lkForm.id,
+        payload
       )
       .subscribe({
         next: () => {
@@ -977,19 +773,10 @@ export class KonteksDetailComponent implements OnInit {
   private performDeleteLK(l: LikelihoodScale): void {
     if (!this.selectedRiskCategoryId) return;
 
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.openInfoModal('Token tidak ditemukan', 'Silakan login ulang.');
-      return;
-    }
-
     this.loading = true;
 
-    this.http
-      .delete<any>(
-        `${this.baseUrl}/konteks/${this.konteksId}/risk-categories/${this.selectedRiskCategoryId}/likelihood-scales/${l.id}`,
-        { headers }
-      )
+    this.konteksService
+      .deleteLikelihoodScale(this.konteksId, this.selectedRiskCategoryId, l.id)
       .subscribe({
         next: () => {
           this.loading = false;
@@ -1010,42 +797,40 @@ export class KonteksDetailComponent implements OnInit {
   generateDefaultLK(): void {
     if (!this.selectedRiskCategoryId) return;
 
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.errorMsg = 'Token tidak ditemukan. Silakan login ulang.';
-      return;
-    }
-
-    const defaults: CreateLikelihoodPayload[] = [
-      { level: 1, label: 'Sangat Jarang', description: 'Kemungkinan terjadi < 5% atau hampir tidak pernah terjadi' },
-      { level: 2, label: 'Jarang', description: 'Kemungkinan terjadi 5-25% atau jarang terjadi' },
-      { level: 3, label: 'Mungkin', description: 'Kemungkinan terjadi 25-50% atau mungkin terjadi' },
-      { level: 4, label: 'Sering', description: 'Kemungkinan terjadi 50-75% atau sering terjadi' },
-      { level: 5, label: 'Sangat Sering', description: 'Kemungkinan terjadi > 75% atau hampir pasti terjadi' },
-    ];
-
-    const url =
-      `${this.baseUrl}/konteks/${this.konteksId}` +
-      `/risk-categories/${this.selectedRiskCategoryId}` +
-      `/likelihood-scales`;
-
     this.loading = true;
     this.errorMsg = '';
     this.lkEmptyHint = '';
 
-    const reqs = defaults.map((p) => this.http.post<any>(url, p, { headers }));
+    this.konteksService
+      .generateDefaultLikelihoods(this.konteksId, this.selectedRiskCategoryId)
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          this.fetchLikelihood(true);
+        },
+        error: (e) => {
+          this.loading = false;
+          this.errorMsg =
+            e?.error?.errors || e?.error?.message || 'Gagal generate likelihood 1-5.';
+          console.error('[generateDefaultLK] error:', e);
+        },
+      });
+  }
 
-    forkJoin(reqs).subscribe({
-      next: () => {
-        this.loading = false;
-        this.fetchLikelihood(true);
-      },
-      error: (e) => {
-        this.loading = false;
-        this.errorMsg =
-          e?.error?.errors || e?.error?.message || 'Gagal generate likelihood 1-5.';
-        console.error('[generateDefaultLK] error:', e);
-      },
-    });
+  // ===================== Helper for UI: get risk appetite badge class =====================
+  getRiskAppetiteBadgeClass(): string {
+    const level = this.konteksDetail?.riskAppetiteLevel?.toUpperCase();
+    switch (level) {
+      case 'LOW':
+        return 'badge-low';
+      case 'MEDIUM':
+        return 'badge-moderate';
+      case 'HIGH':
+        return 'badge-high';
+      case 'CRITICAL':
+        return 'badge-critical';
+      default:
+        return '';
+    }
   }
 }
