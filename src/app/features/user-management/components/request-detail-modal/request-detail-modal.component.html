@@ -1,0 +1,288 @@
+<div class="modal-backdrop" *ngIf="isOpen" (click)="onBackdropClick($event)">
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <h2 id="modal-title">Profile Verification Request</h2>
+        <span
+          class="badge"
+          [class]="getStatusClass(request.status || '')"
+          *ngIf="request"
+        >
+          {{ getStatusLabel(request.status) }}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="btn-close"
+        (click)="onClose()"
+        [disabled]="loading"
+        aria-label="Close modal"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path
+            d="M15 5L5 15M5 5L15 15"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body" *ngIf="request">
+      <!-- User Info Section -->
+      <div class="section">
+        <h3 class="section-title">
+          <i class="fa-solid fa-user"></i>
+          User Information
+        </h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Name</span>
+            <span class="info-value">{{
+              request.profile.user.name || "-"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{
+              request.profile.user.email || "-"
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Request Type</span>
+            <span class="info-value">
+              <span
+                class="badge type"
+                [class.initial]="request.requestType === 'INITIAL_VERIFICATION'"
+              >
+                {{ getRequestTypeLabel(request.requestType) }}
+              </span>
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Requested At</span>
+            <span class="info-value">{{
+              request.requestedAt | date: "d MMM y, HH:mm"
+            }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Comparison Section -->
+      <div class="section">
+        <h3 class="section-title">
+          <i class="fa-solid fa-code-compare"></i>
+          Data Comparison
+        </h3>
+        <div class="comparison-table">
+          <div class="comparison-header">
+            <div class="col-field">Field</div>
+            <div class="col-current">Current Data</div>
+            <div class="col-arrow"></div>
+            <div class="col-requested">Requested Data</div>
+          </div>
+
+          <!-- Jabatan -->
+          <div
+            class="comparison-row"
+            [class.changed]="isDataChanged('jabatan')"
+          >
+            <div class="col-field">Jabatan</div>
+            <div class="col-current">{{ request.profile.jabatan || "-" }}</div>
+            <div class="col-arrow">
+              <i
+                class="fa-solid fa-arrow-right"
+                *ngIf="isDataChanged('jabatan')"
+              ></i>
+            </div>
+            <div
+              class="col-requested"
+              [class.highlight]="isDataChanged('jabatan')"
+            >
+              {{ request.jabatan || "-" }}
+            </div>
+          </div>
+
+          <!-- Unit Kerja -->
+          <div
+            class="comparison-row"
+            [class.changed]="isDataChanged('unitKerja')"
+          >
+            <div class="col-field">Unit Kerja</div>
+            <div class="col-current">
+              {{ request.profile.unitKerja.name || "-" }}
+            </div>
+            <div class="col-arrow">
+              <i
+                class="fa-solid fa-arrow-right"
+                *ngIf="isDataChanged('unitKerja')"
+              ></i>
+            </div>
+            <div
+              class="col-requested"
+              [class.highlight]="isDataChanged('unitKerja')"
+            >
+              {{ request.unitKerja.name || "-" }}
+            </div>
+          </div>
+
+          <!-- Nomor HP -->
+          <div
+            class="comparison-row"
+            [class.changed]="isDataChanged('nomorHP')"
+          >
+            <div class="col-field">Nomor HP</div>
+            <div class="col-current">{{ request.profile.nomorHP || "-" }}</div>
+            <div class="col-arrow">
+              <i
+                class="fa-solid fa-arrow-right"
+                *ngIf="isDataChanged('nomorHP')"
+              ></i>
+            </div>
+            <div
+              class="col-requested"
+              [class.highlight]="isDataChanged('nomorHP')"
+            >
+              {{ request.nomorHP || "-" }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rejection Reason (if rejected) -->
+      <div
+        class="section"
+        *ngIf="request.status === 'REJECTED' && request.rejectionReason"
+      >
+        <h3 class="section-title rejection-title">
+          <i class="fa-solid fa-circle-xmark"></i>
+          Rejection Reason
+        </h3>
+        <div class="rejection-reason-display">
+          {{ request.rejectionReason }}
+        </div>
+        <div class="processed-info" *ngIf="request.processedAt">
+          Processed at {{ request.processedAt | date: "d MMM y, HH:mm" }}
+        </div>
+      </div>
+
+      <!-- Approval Info (if approved) -->
+      <div class="section" *ngIf="request.status === 'APPROVED'">
+        <h3 class="section-title approval-title">
+          <i class="fa-solid fa-circle-check"></i>
+          Approved
+        </h3>
+        <div class="processed-info" *ngIf="request.processedAt">
+          Processed at {{ request.processedAt | date: "d MMM y, HH:mm" }}
+        </div>
+      </div>
+
+      <!-- Rejection Form (for pending requests) -->
+      <div
+        class="section"
+        *ngIf="request.status === 'PENDING' && showRejectForm"
+      >
+        <h3 class="section-title rejection-title">
+          <i class="fa-solid fa-comment-dots"></i>
+          Rejection Reason
+        </h3>
+        <div class="form-field">
+          <textarea
+            [(ngModel)]="rejectionReason"
+            placeholder="Enter rejection reason (minimum 10 characters)..."
+            rows="4"
+            [disabled]="loading"
+            maxlength="500"
+          ></textarea>
+          <div class="char-count">{{ rejectionReason.length }}/500</div>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="displayError">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle
+            cx="8"
+            cy="8"
+            r="7"
+            stroke="currentColor"
+            stroke-width="1.2"
+          />
+          <path
+            d="M8 4.5V8.5M8 11V11.5"
+            stroke="currentColor"
+            stroke-width="1.2"
+            stroke-linecap="round"
+          />
+        </svg>
+        <span>{{ displayError }}</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer" *ngIf="request">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="onClose()"
+        [disabled]="loading"
+      >
+        Close
+      </button>
+
+      <ng-container *ngIf="request.status === 'PENDING'">
+        <button
+          *ngIf="!showRejectForm"
+          type="button"
+          class="btn btn-danger"
+          (click)="toggleRejectForm()"
+          [disabled]="loading"
+        >
+          <i class="fa-solid fa-times"></i>
+          Reject
+        </button>
+
+        <button
+          *ngIf="showRejectForm"
+          type="button"
+          class="btn btn-secondary"
+          (click)="toggleRejectForm()"
+          [disabled]="loading"
+        >
+          Cancel
+        </button>
+
+        <button
+          *ngIf="showRejectForm"
+          type="button"
+          class="btn btn-danger"
+          (click)="onReject()"
+          [disabled]="loading"
+        >
+          <span class="btn-spinner" *ngIf="loading"></span>
+          <span>{{ loading ? "Rejecting..." : "Confirm Reject" }}</span>
+        </button>
+
+        <button
+          *ngIf="!showRejectForm"
+          type="button"
+          class="btn btn-success"
+          (click)="onApprove()"
+          [disabled]="loading"
+        >
+          <span class="btn-spinner" *ngIf="loading"></span>
+          <i class="fa-solid fa-check" *ngIf="!loading"></i>
+          <span>{{ loading ? "Approving..." : "Approve" }}</span>
+        </button>
+      </ng-container>
+    </div>
+  </div>
+</div>

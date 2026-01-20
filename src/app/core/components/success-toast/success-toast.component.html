@@ -1,0 +1,17 @@
+<div class="wrap" *ngIf="ui.success().show">
+  <div class="backdrop"></div>
+
+  <div class="card">
+    <div class="check">
+      <svg viewBox="0 0 52 52">
+        <circle class="circle" cx="26" cy="26" r="25" fill="none"></circle>
+        <path class="tick" fill="none" d="M14 27 L22 35 L38 19"></path>
+      </svg>
+    </div>
+
+    <div class="msg">
+      <div class="title">{{ ui.success().title }}</div>
+      <div class="sub" *ngIf="ui.success().message">{{ ui.success().message }}</div>
+    </div>
+  </div>
+</div>

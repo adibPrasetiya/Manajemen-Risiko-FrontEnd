@@ -1,0 +1,340 @@
+<div class="profile-requests-page">
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card stat-pending">
+      <div class="stat-icon">
+        <i class="fa-solid fa-clock"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalPending }}</div>
+        <div class="stat-label">Pending Requests</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-approved">
+      <div class="stat-icon">
+        <i class="fa-solid fa-check-circle"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalApproved }}</div>
+        <div class="stat-label">Approved</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-rejected">
+      <div class="stat-icon">
+        <i class="fa-solid fa-times-circle"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalRejected }}</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card">
+    <div class="card-body">
+      <!-- Primary Filters Row -->
+      <div class="filters-primary">
+        <div class="search-group">
+          <div class="search-field">
+            <i class="fa-solid fa-filter search-icon"></i>
+            <select [(ngModel)]="fStatus" (ngModelChange)="applyFilters()">
+              <option value="ALL">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button
+            class="btn-advanced"
+            type="button"
+            (click)="toggleAdvancedFilters()"
+            [class.active]="showAdvancedFilters || hasActiveAdvancedFilters()"
+          >
+            <i class="fa-solid fa-sliders"></i>
+            <span>Filters</span>
+            <span class="filter-badge" *ngIf="hasActiveAdvancedFilters()">
+              {{ (fRequestType !== "ALL" ? 1 : 0) + (fUnitKerjaId ? 1 : 0) }}
+            </span>
+            <i
+              class="fa-solid fa-chevron-down chevron"
+              [class.rotate]="showAdvancedFilters"
+            ></i>
+          </button>
+
+          <button
+            class="btn primary"
+            type="button"
+            (click)="applyFilters()"
+            [disabled]="loading"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filters (Collapsible) -->
+      <div class="filters-advanced" *ngIf="showAdvancedFilters">
+        <div class="advanced-divider"></div>
+        <div class="advanced-grid">
+          <div class="field">
+            <label>Request Type</label>
+            <select [(ngModel)]="fRequestType">
+              <option value="ALL">All Types</option>
+              <option value="INITIAL_VERIFICATION">Initial Verification</option>
+              <option value="CHANGE">Profile Change</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Unit Kerja</label>
+            <select [(ngModel)]="fUnitKerjaId">
+              <option value="">All Unit Kerja</option>
+              <option *ngFor="let uk of unitKerjaOptions" [value]="uk.id">
+                {{ uk.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="field field-actions">
+            <button
+              class="btn-reset"
+              type="button"
+              (click)="resetFilters()"
+              [disabled]="loading"
+            >
+              <i class="fa-solid fa-rotate-right"></i>
+              Reset All
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading/Error Messages -->
+      <div *ngIf="loading" class="hint">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        Loading...
+      </div>
+      <div *ngIf="errorMsg" class="hint warn">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ errorMsg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>USER</th>
+            <th>CURRENT DATA</th>
+            <th>REQUESTED DATA</th>
+            <th>TYPE</th>
+            <th>STATUS</th>
+            <th>DATE</th>
+            <th class="th-actions">ACTIONS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr
+            *ngFor="let r of requests; trackBy: trackById"
+            (click)="viewDetail(r)"
+            class="clickable-row"
+          >
+            <!-- USER -->
+            <td>
+              <div class="cell-stack">
+                <div class="primary">
+                  {{ r.profile.user.name || "-" }}
+                </div>
+                <div class="sub muted">{{ r.profile.user.email || "-" }}</div>
+              </div>
+            </td>
+
+            <!-- CURRENT DATA -->
+            <td>
+              <div class="cell-stack">
+                <div class="data-label">Jabatan:</div>
+                <div class="data-value">{{ r.profile.jabatan || "-" }}</div>
+                <div class="data-label mt-1">Unit Kerja:</div>
+                <div class="data-value">
+                  {{ r.profile.unitKerja.name || "-" }}
+                </div>
+              </div>
+            </td>
+
+            <!-- REQUESTED DATA -->
+            <td>
+              <div class="cell-stack">
+                <div class="data-label">Jabatan:</div>
+                <div
+                  class="data-value"
+                  [class.changed]="r.jabatan !== r.profile.jabatan"
+                >
+                  {{ r.jabatan || "-" }}
+                  <i
+                    class="fa-solid fa-arrow-right change-arrow"
+                    *ngIf="r.jabatan !== r.profile.jabatan"
+                  ></i>
+                </div>
+                <div class="data-label mt-1">Unit Kerja:</div>
+                <div
+                  class="data-value"
+                  [class.changed]="r.unitKerjaId !== r.profile.unitKerja.id"
+                >
+                  {{ r.unitKerja.name || "-" }}
+                  <i
+                    class="fa-solid fa-arrow-right change-arrow"
+                    *ngIf="r.unitKerjaId !== r.profile.unitKerja.id"
+                  ></i>
+                </div>
+              </div>
+            </td>
+
+            <!-- TYPE -->
+            <td>
+              <span
+                class="badge type"
+                [class.initial]="r.requestType === 'INITIAL_VERIFICATION'"
+              >
+                {{ getRequestTypeLabel(r.requestType) }}
+              </span>
+            </td>
+
+            <!-- STATUS -->
+            <td>
+              <span class="badge" [class]="getStatusClass(r.status)">
+                {{ getStatusLabel(r.status) }}
+              </span>
+            </td>
+
+            <!-- DATE -->
+            <td class="muted">{{ r.requestedAt | date: "d MMM y, HH:mm" }}</td>
+
+            <!-- ACTIONS -->
+            <td class="td-actions" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="icon-btn"
+                (click)="viewDetail(r)"
+                title="View Detail"
+              >
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              <button
+                *ngIf="r.status === 'PENDING'"
+                type="button"
+                class="icon-btn approve"
+                (click)="quickApprove(r, $event)"
+                title="Approve"
+                [disabled]="loading"
+              >
+                <i class="fa-solid fa-check"></i>
+              </button>
+              <button
+                *ngIf="r.status === 'PENDING'"
+                type="button"
+                class="icon-btn reject"
+                (click)="quickReject(r, $event)"
+                title="Reject"
+                [disabled]="loading"
+              >
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && requests.length === 0">
+            <td colspan="7" class="empty">
+              <div class="empty-state">
+                <i class="fa-solid fa-inbox"></i>
+                <span>No profile requests found</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="pagination && pagination.totalPages > 0">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> -
+          <strong>{{ getShowingEnd() }}</strong> of
+          <strong>{{ pagination.totalItems }}</strong> requests
+        </span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">
+              {{ opt }}
+            </option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || pagination.page <= 1"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || pagination.page >= pagination.totalPages"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<app-request-detail-modal
+  [isOpen]="showDetailModal"
+  [request]="selectedRequest"
+  [loading]="modalLoading"
+  [error]="modalError"
+  (close)="closeDetailModal()"
+  (approve)="onApprove($event)"
+  (reject)="onReject($event)"
+>
+</app-request-detail-modal>

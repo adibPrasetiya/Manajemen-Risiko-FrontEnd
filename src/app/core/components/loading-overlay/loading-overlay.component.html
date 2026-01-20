@@ -1,0 +1,13 @@
+<div class="overlay" *ngIf="(ui.loading$ | async)">
+  <div class="panel">
+    <div class="spinner"></div>
+
+    <!-- toast di bawah spinner (success/error/info) -->
+    <ng-container *ngIf="(ui.toast$ | async) as t">
+      <div class="toast" [class.success]="t.mode==='success'" [class.error]="t.mode==='error'">
+        <span class="check" *ngIf="t.mode==='success'">✓</span>
+        <span class="msg">{{ t.message }}</span>
+      </div>
+    </ng-container>
+  </div>
+</div>

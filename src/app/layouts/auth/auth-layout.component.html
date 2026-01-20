@@ -1,0 +1,31 @@
+<div class="h-screen overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+  <!-- LEFT -->
+  <div class="bg-white flex items-center justify-center px-4 lg:px-12 py-6">
+    <div class="auth-card w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200/70 p-7">
+      <h1 class="auth-title text-3xl font-poppins font-bold text-gray-900">{{ title }}</h1>
+      <p class="auth-subtitle text-gray-600 mt-2">{{ subtitle }}</p>
+
+      <div class="auth-content mt-6">
+        <ng-content></ng-content>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="hidden lg:block relative bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700">
+    <div
+      class="absolute inset-0 pointer-events-none opacity-60"
+      style="
+        background:
+          radial-gradient(circle at 25% 20%, rgba(255,255,255,0.16) 0 140px, transparent 141px),
+          radial-gradient(circle at 70% 60%, rgba(255,255,255,0.12) 0 180px, transparent 181px);
+      "
+    ></div>
+
+    <ng-container *ngIf="showIllustration && illustrationSrc">
+      <div class="absolute inset-0 flex items-center justify-center p-10">
+        <img class="w-[420px] max-w-full" [src]="illustrationSrc" [alt]="illustrationAlt" />
+      </div>
+    </ng-container>
+  </div>
+</div>

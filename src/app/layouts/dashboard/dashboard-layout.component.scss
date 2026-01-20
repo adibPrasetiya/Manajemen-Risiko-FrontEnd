@@ -1,0 +1,48 @@
+// ==============================================
+// PRISMA Dashboard Layout
+// ==============================================
+
+// ==============================================
+// PAGE CONTAINER
+// ==============================================
+.page {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+// ==============================================
+// LAYOUT
+// ==============================================
+.layout {
+  display: flex;
+  padding-top: var(--topbar-height, 64px);
+  min-height: 100vh;
+}
+
+// ==============================================
+// MAIN CONTENT
+// ==============================================
+.content {
+  flex: 1;
+  padding: 24px;
+  min-width: 0;
+  margin-left: var(--sidebar-width, 260px);
+  min-height: calc(100vh - var(--topbar-height, 64px));
+  transition: margin-left var(--transition-normal, 200ms ease);
+}
+
+// Sidebar collapsed state
+:host-context(.sidebar-collapsed) .content,
+.content.sidebar-collapsed {
+  margin-left: var(--sidebar-collapsed-width, 72px);
+}
+
+// ==============================================
+// RESPONSIVE - Tablet & Mobile
+// ==============================================
+@media (max-width: 1024px) {
+  .content {
+    margin-left: 0;
+    padding: 16px;
+  }
+}

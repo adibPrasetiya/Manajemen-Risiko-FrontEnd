@@ -1,0 +1,136 @@
+<div class="page">
+
+  <main class="container">
+    <!-- CARD: Data Diri -->
+    <section class="card">
+      <h3>Data Diri</h3>
+
+      <div class="data-grid">
+        <div class="row">
+          <div class="label">Username</div>
+          <div class="value">{{ username }}</div>
+        </div>
+        <div class="row">
+          <div class="label">Jabatan</div>
+          <div class="value">{{ profile.jabatan || '-' }}</div>
+        </div>
+        <div class="row">
+          <div class="label">Unit Kerja</div>
+          <div class="value">{{ profile.unitKerja || '-' }}</div>
+        </div>
+        <div class="row">
+          <div class="label">Nomor HP</div>
+          <div class="value">{{ profile.nomorHp || '-' }}</div>
+        </div>
+        <div class="row">
+          <div class="label">Email</div>
+          <div class="value">{{ profile.email || '-' }}</div>
+        </div>
+      </div>
+
+      <div class="actions split">
+        <button type="button" class="secondary" (click)="openEditProfile()">Ubah Data Diri</button>
+        <button type="button" (click)="openChangePassword()">Ubah Password</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======================= MODAL: Edit Profile ======================= -->
+  <div class="modal-backdrop" *ngIf="showEditProfileModal">
+  <div class="modal">
+      <div class="modal-head">
+        <h3>Ubah Data Diri</h3>
+        <button type="button" class="icon-btn" (click)="closeEditProfile()">✕</button>
+      </div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="modal-body">
+        <div class="field">
+          <label>Jabatan</label>
+          <input formControlName="jabatan" />
+          <small class="error" *ngIf="profileForm.controls.jabatan.touched && profileForm.controls.jabatan.invalid">
+            Jabatan wajib diisi (min. 3 karakter).
+          </small>
+        </div>
+
+        <div class="field unit-wrapper">
+          <label>Unit Kerja</label>
+          <input
+            #unitInput
+            formControlName="unitKerja"
+            (focus)="onUnitFocus()"
+            (input)="onUnitInput()"
+            autocomplete="off"
+          />
+          <small class="error" *ngIf="profileForm.controls.unitKerja.touched && profileForm.controls.unitKerja.errors?.['required']">
+  Unit kerja wajib diisi.
+</small>
+
+<small class="error" *ngIf="profileForm.controls.unitKerja.touched && profileForm.controls.unitKerja.errors?.['notInList']">
+  Unit kerja harus dipilih dari daftar.
+</small>
+
+
+          <div class="unit-dropdown" *ngIf="showUnitDropdown">
+            <button
+              type="button"
+              class="unit-item"
+              *ngFor="let u of filteredUnitKerja"
+              (click)="pickUnit(u)"
+            >
+              {{ u }}
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Nomor HP</label>
+          <input formControlName="nomorHp" />
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <input formControlName="email" />
+        </div>
+
+        <div class="actions">
+          <button type="button" class="secondary" (click)="closeEditProfile()">Batal</button>
+          <button type="submit">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================= MODAL: Change Password ======================= -->
+  <div class="modal-backdrop" *ngIf="showChangePasswordModal">
+  <div class="modal">
+      <div class="modal-head">
+        <h3>Ubah Password</h3>
+        <button type="button" class="icon-btn" (click)="closeChangePassword()">✕</button>
+      </div>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="modal-body">
+        <div class="field">
+          <label>Password Saat Ini</label>
+          <input type="password" formControlName="currentPassword" />
+        </div>
+
+        <div class="field">
+          <label>Password Baru</label>
+          <input type="password" formControlName="newPassword" />
+          <small class="hint">Minimal 8 karakter.</small>
+        </div>
+
+        <div class="field">
+          <label>Konfirmasi Password Baru</label>
+          <input type="password" formControlName="confirmPassword" />
+          <small class="error" *ngIf="passError">{{ passError }}</small>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="secondary" (click)="closeChangePassword()">Batal</button>
+          <button type="submit">Ubah Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

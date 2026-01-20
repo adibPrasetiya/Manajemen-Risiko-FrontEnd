@@ -1,0 +1,14 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <label>Kode TOTP</label>
+  <input type="text" formControlName="code" maxlength="6" placeholder="6 digit" />
+
+  <small *ngIf="form.controls.code.touched && form.controls.code.invalid">
+    Kode harus 6 digit angka.
+  </small>
+
+  <p *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <button type="submit" [disabled]="loading">
+    {{ loading ? 'Memproses...' : 'Verifikasi' }}
+  </button>
+</form>

@@ -1,0 +1,59 @@
+:host {
+  display: block;
+}
+
+/* =========================
+   COMPACT MODE (no scroll)
+   ========================= */
+@media (max-height: 820px) {
+  /* wrapper min-h-screen */
+  :host ::ng-deep .min-h-screen {
+    min-height: 100dvh !important;
+    padding-left: 10px !important;  /* px-4 => 1rem */
+    padding-right: 10px !important;
+    overflow: hidden !important;
+  }
+
+  /* grid gap-8 (2rem) */
+  :host ::ng-deep .gap-8 {
+    gap: 14px !important;
+  }
+
+  /* card kiri p-8 (2rem) */
+  :host ::ng-deep .p-8 {
+    padding: 14px !important;
+  }
+
+  /* title text-3xl */
+  :host ::ng-deep .text-3xl {
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* subtitle mt-2 */
+  :host ::ng-deep .mt-2 {
+    margin-top: 6px !important;
+  }
+
+  :host ::ng-deep .text-gray-600 {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* ng-content wrapper mt-8 */
+  :host ::ng-deep .mt-8 {
+    margin-top: 10px !important;
+  }
+
+  /* ilustrasi: w-[420px] */
+  :host ::ng-deep img.w-\[420px\] {
+    width: 320px !important;
+  }
+}
+
+/* layar lebih pendek: kecilkan lagi */
+@media (max-height: 740px) {
+  :host ::ng-deep img.w-\[420px\] {
+    width: 280px !important;
+  }
+}

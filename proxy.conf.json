@@ -1,0 +1,10 @@
+{
+  "/api": {
+    "target": "http://api.dev.simulasibimtekd31.com",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api": ""
+    }
+  }
+}

@@ -1,0 +1,204 @@
+<div class="unverified-profiles-page">
+  <!-- Header Card -->
+  <div class="header-card">
+    <div class="header-content">
+      <div class="header-icon">
+        <i class="fa-solid fa-user-clock"></i>
+      </div>
+      <div class="header-text">
+        <h1>Unverified Profiles</h1>
+        <p>Users who have not been verified yet</p>
+      </div>
+    </div>
+    <div class="header-stat" *ngIf="pagination">
+      <div class="stat-value">{{ pagination.totalItems }}</div>
+      <div class="stat-label">Total Unverified</div>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card">
+    <div class="card-body">
+      <div class="filters-row">
+        <div class="filter-field">
+          <label>Unit Kerja</label>
+          <select [(ngModel)]="fUnitKerjaId" (ngModelChange)="applyFilters()">
+            <option value="">All Unit Kerja</option>
+            <option *ngFor="let uk of unitKerjaOptions" [value]="uk.id">
+              {{ uk.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button
+            class="btn secondary"
+            type="button"
+            (click)="resetFilters()"
+            [disabled]="loading || !fUnitKerjaId"
+          >
+            <i class="fa-solid fa-rotate-right"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading/Error Messages -->
+      <div *ngIf="loading" class="hint">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        Loading...
+      </div>
+      <div *ngIf="errorMsg" class="hint warn">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ errorMsg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Profiles List -->
+  <div class="profiles-grid">
+    <div
+      class="profile-card"
+      *ngFor="let p of profiles; trackBy: trackById"
+      [class.has-request]="hasPendingRequest(p)"
+      (click)="viewRequest(p)"
+    >
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name">{{ p.user.name || "-" }}</div>
+          <div class="profile-email">{{ p.user.email || "-" }}</div>
+        </div>
+        <div class="profile-status">
+          <span class="badge yellow" *ngIf="!p.isVerified">Unverified</span>
+        </div>
+      </div>
+
+      <div class="profile-details">
+        <div class="detail-item">
+          <i class="fa-solid fa-briefcase"></i>
+          <span>{{ p.jabatan || "No position set" }}</span>
+        </div>
+        <div class="detail-item">
+          <i class="fa-solid fa-building"></i>
+          <span>{{ p.unitKerja.name || "No unit kerja" }}</span>
+        </div>
+        <div class="detail-item">
+          <i class="fa-solid fa-phone"></i>
+          <span>{{ p.nomorHP || "No phone number" }}</span>
+        </div>
+        <div class="detail-item">
+          <i class="fa-solid fa-calendar"></i>
+          <span>Registered {{ p.createdAt | date: "d MMM y" }}</span>
+        </div>
+      </div>
+
+      <!-- Pending Request Info -->
+      <div class="pending-request" *ngIf="p.latestPendingRequest">
+        <div class="request-header">
+          <i class="fa-solid fa-clock"></i>
+          <span>Pending Request</span>
+        </div>
+        <div class="request-info">
+          <span
+            class="badge type"
+            [class.initial]="
+              p.latestPendingRequest.requestType === 'INITIAL_VERIFICATION'
+            "
+          >
+            {{ getRequestTypeLabel(p.latestPendingRequest.requestType) }}
+          </span>
+          <span class="request-date">
+            {{ p.latestPendingRequest.requestedAt | date: "d MMM y, HH:mm" }}
+          </span>
+        </div>
+        <div class="request-action">
+          <button class="btn-view" type="button">
+            <i class="fa-solid fa-arrow-right"></i>
+            View Request
+          </button>
+        </div>
+      </div>
+
+      <!-- No Pending Request -->
+      <div class="no-request" *ngIf="!p.latestPendingRequest">
+        <i class="fa-solid fa-inbox"></i>
+        <span>No pending request</span>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading && profiles.length === 0">
+      <i class="fa-solid fa-check-circle"></i>
+      <span>All profiles are verified</span>
+      <p>There are no unverified profiles at this time.</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div
+    class="card pagination-card"
+    *ngIf="pagination && pagination.totalPages > 0"
+  >
+    <div class="pagination">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> -
+          <strong>{{ getShowingEnd() }}</strong> of
+          <strong>{{ pagination.totalItems }}</strong> profiles
+        </span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">
+              {{ opt }}
+            </option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || pagination.page <= 1"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || pagination.page >= pagination.totalPages"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

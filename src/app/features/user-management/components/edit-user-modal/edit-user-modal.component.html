@@ -1,0 +1,144 @@
+<div class="modal-backdrop" *ngIf="isOpen" (click)="onBackdropClick($event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <!-- Header -->
+    <div class="modal-header">
+      <h2 id="modal-title">Edit User</h2>
+      <button
+        type="button"
+        class="btn-close"
+        (click)="onClose()"
+        [disabled]="loading"
+        aria-label="Close modal"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <!-- Form Fields -->
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="edit-name">Name</label>
+          <input
+            id="edit-name"
+            type="text"
+            [(ngModel)]="formData.name"
+            placeholder="Enter user name"
+            [disabled]="loading"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="edit-email">Email</label>
+          <input
+            id="edit-email"
+            type="email"
+            [(ngModel)]="formData.email"
+            placeholder="user@example.com"
+            [disabled]="loading"
+          />
+        </div>
+      </div>
+
+      <!-- Status Toggles -->
+      <div class="section">
+        <span class="section-label">Status</span>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              [(ngModel)]="formData.isActive"
+              [disabled]="loading"
+            />
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">
+              <span class="toggle-title">Active</span>
+              <span class="toggle-desc">User can login and access the system</span>
+            </span>
+          </label>
+
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              [(ngModel)]="formData.isVerified"
+              [disabled]="loading"
+            />
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">
+              <span class="toggle-title">Verified</span>
+              <span class="toggle-desc">Account has been verified</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Role Selection -->
+      <div class="section">
+        <span class="section-label">Roles</span>
+        <div class="role-chips">
+          <label class="role-chip" [class.selected]="formData.roles.USER">
+            <input
+              type="checkbox"
+              [(ngModel)]="formData.roles.USER"
+              [disabled]="loading"
+            />
+            <span class="chip-content">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 8C9.65685 8 11 6.65685 11 5C11 3.34315 9.65685 2 8 2C6.34315 2 5 3.34315 5 5C5 6.65685 6.34315 8 8 8Z" stroke="currentColor" stroke-width="1.2"/>
+                <path d="M13 14C13 11.2386 10.7614 9 8 9C5.23858 9 3 11.2386 3 14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+              <span>User</span>
+            </span>
+          </label>
+
+          <label class="role-chip" [class.selected]="formData.roles.ADMIN">
+            <input
+              type="checkbox"
+              [(ngModel)]="formData.roles.ADMIN"
+              [disabled]="loading"
+            />
+            <span class="chip-content">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1L10 5H14L11 8L12 13L8 10L4 13L5 8L2 5H6L8 1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+              </svg>
+              <span>Admin</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="displayError">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M8 4.5V8.5M8 11V11.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        <span>{{ displayError }}</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="onClose()"
+        [disabled]="loading"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="onSave()"
+        [disabled]="loading"
+      >
+        <span class="btn-spinner" *ngIf="loading"></span>
+        <span>{{ loading ? 'Saving...' : 'Save Changes' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

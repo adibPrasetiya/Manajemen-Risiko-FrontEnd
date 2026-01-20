@@ -1,0 +1,273 @@
+<div class="users-page">
+  <!-- Stats Cards - Outside filter container -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalUsers }}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-active">
+      <div class="stat-icon">
+        <i class="fa-solid fa-user-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalActive }}</div>
+        <div class="stat-label">Active Users</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-inactive">
+      <div class="stat-icon">
+        <i class="fa-solid fa-user-xmark"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalInactive }}</div>
+        <div class="stat-label">Inactive Users</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card">
+    <div class="card-body">
+      <!-- Primary Filters Row -->
+      <div class="filters-primary">
+        <div class="search-group">
+          <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              [(ngModel)]="fName"
+              placeholder="Search by name..."
+              (keyup.enter)="applyFilters()"
+            />
+          </div>
+          <div class="search-field">
+            <i class="fa-solid fa-at search-icon"></i>
+            <input
+              [(ngModel)]="fUsername"
+              placeholder="Search by username..."
+              (keyup.enter)="applyFilters()"
+            />
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button
+            class="btn-advanced"
+            type="button"
+            (click)="toggleAdvancedFilters()"
+            [class.active]="showAdvancedFilters || hasActiveAdvancedFilters()"
+          >
+            <i class="fa-solid fa-sliders"></i>
+            <span>Filters</span>
+            <span class="filter-badge" *ngIf="hasActiveAdvancedFilters()">
+              {{ (fRole !== 'ALL' ? 1 : 0) + (fActive !== 'ALL' ? 1 : 0) + (fVerified !== 'ALL' ? 1 : 0) }}
+            </span>
+            <i class="fa-solid fa-chevron-down chevron" [class.rotate]="showAdvancedFilters"></i>
+          </button>
+
+          <button
+            class="btn primary"
+            type="button"
+            (click)="applyFilters()"
+            [disabled]="loading"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Filters (Collapsible) -->
+      <div class="filters-advanced" *ngIf="showAdvancedFilters">
+        <div class="advanced-divider"></div>
+        <div class="advanced-grid">
+          <div class="field">
+            <label>Role</label>
+            <select [(ngModel)]="fRole">
+              <option *ngFor="let r of roleOptions" [value]="r">
+                {{ r === 'ALL' ? 'All Roles' : r }}
+              </option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Status</label>
+            <select [(ngModel)]="fActive">
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Verification</label>
+            <select [(ngModel)]="fVerified">
+              <option value="ALL">All</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="UNVERIFIED">Unverified</option>
+            </select>
+          </div>
+
+          <div class="field field-actions">
+            <button class="btn-reset" type="button" (click)="resetFilters()" [disabled]="loading">
+              <i class="fa-solid fa-rotate-right"></i>
+              Reset All
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading/Error Messages -->
+      <div *ngIf="loading" class="hint">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        Loading...
+      </div>
+      <div *ngIf="errorMsg" class="hint warn">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ errorMsg }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>USERNAME</th>
+            <th>NAME</th>
+            <th>ROLES</th>
+            <th>CREATED AT</th>
+            <th class="th-actions">ACTIONS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let u of users; trackBy: trackById">
+            <!-- USERNAME + (status & verified) -->
+            <td>
+              <div class="cell-stack">
+                <div class="primary mono">{{ u.username }}</div>
+                <div class="sub">
+                  <span class="badge" [class.green]="u.isActive" [class.gray]="!u.isActive">
+                    {{ u.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+
+                  <span class="badge" [class.blue]="u.isVerified" [class.gray]="!u.isVerified">
+                    {{ u.isVerified ? 'Verified' : 'Unverified' }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- NAME + email -->
+            <td>
+              <div class="cell-stack">
+                <div class="primary">{{ u.name }}</div>
+                <div class="sub muted">{{ u.email }}</div>
+              </div>
+            </td>
+
+            <!-- ROLES -->
+            <td>
+              <span class="badge role" *ngFor="let r of u.roles">{{ r }}</span>
+            </td>
+
+            <!-- CREATED AT -->
+            <td class="muted">{{ u.createdAt | date: 'd MMM y, HH.mm' }}</td>
+
+            <!-- ACTIONS -->
+            <td class="td-actions">
+              <button type="button" class="icon-btn" (click)="editUser(u)" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && users.length === 0">
+            <td colspan="5" class="empty">
+              <div class="empty-state">
+                <i class="fa-solid fa-users-slash"></i>
+                <span>No users found</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Professional Pagination -->
+    <div class="pagination" *ngIf="pagination && pagination.totalPages > 0">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> - <strong>{{ getShowingEnd() }}</strong>
+          of <strong>{{ pagination.totalItems }}</strong> users
+        </span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || !pagination.hasPrevPage"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || !pagination.hasNextPage"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<app-edit-user-modal
+  [isOpen]="showEditModal"
+  [user]="selectedUser"
+  [loading]="loading"
+  [error]="editError"
+  (close)="closeEditModal()"
+  (save)="onSaveUser($event)">
+</app-edit-user-modal>

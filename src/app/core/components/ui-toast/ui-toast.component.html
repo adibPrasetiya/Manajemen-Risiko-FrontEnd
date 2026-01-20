@@ -1,0 +1,22 @@
+<div class="wrap" *ngIf="(ui.toast$ | async) as t">
+  <div class="card" [class.success]="t.mode==='success'" [class.error]="t.mode==='error'" [class.info]="t.mode==='info'">
+    <div class="icon">
+      <!-- ✅ centang animasi untuk success -->
+      <div *ngIf="t.mode==='success'" class="check">
+        <svg viewBox="0 0 52 52" class="check-svg" aria-hidden="true">
+          <circle class="check-circle" cx="26" cy="26" r="25" fill="none"></circle>
+          <path class="check-path" fill="none" d="M14 27 L22 35 L38 19"></path>
+        </svg>
+      </div>
+
+      <!-- ❌ icon error -->
+      <div *ngIf="t.mode==='error'" class="badge">!</div>
+
+      <!-- ℹ️ icon info -->
+      <div *ngIf="t.mode==='info'" class="badge info">i</div>
+    </div>
+
+    <div class="content">
+      <div class="title">{{ t.title || (t.mode | uppercase) }}</div>
+      <div class="msg">{{ t.message }}</div>
+</div>

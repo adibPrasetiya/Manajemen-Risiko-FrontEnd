@@ -1,0 +1,54 @@
+<app-auth-layout
+  title="Login"
+  subtitle="Welcome back! Please sign in to continue."
+  illustrationSrc="assets/illustrations/login.svg"
+  illustrationAlt="Login Illustration"
+  [showIllustration]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
+    <div>
+      <label class="text-sm font-semibold text-gray-700">Username</label>
+      <div class="mt-2 relative">
+        <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <input
+          class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
+          placeholder="Enter your username"
+          formControlName="username"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="text-sm font-semibold text-gray-700">Password</label>
+      <div class="mt-2 relative">
+        <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <input
+          type="password"
+          class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
+          placeholder="Enter your password"
+          formControlName="password"
+        />
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <label class="flex items-center gap-2 text-sm text-gray-700">
+        <input type="checkbox" class="rounded border-gray-300" formControlName="remember" />
+        Remember me
+      </label>
+
+      <a class="text-sm font-semibold text-primary hover:underline" href="#">
+        Forgot password?
+      </a>
+    </div>
+
+    <button type="submit" class="w-full py-3 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition">
+      Login
+    </button>
+
+    <p class="text-center text-sm text-gray-600">
+      Don’t have an account?
+      <a routerLink="/auth/register" class="font-semibold text-primary hover:underline">Register</a>
+    </p>
+  </form>
+</app-auth-layout>

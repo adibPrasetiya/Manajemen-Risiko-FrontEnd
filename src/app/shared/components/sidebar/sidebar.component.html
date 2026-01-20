@@ -1,0 +1,58 @@
+<aside class="sidebar" [class.collapsed]="collapsed">
+  <div class="sidebar-logo">
+    <div class="logo-placeholder">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <span class="logo-text">PRISMA</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="section-label">Dashboard</div>
+      <a class="nav-item" routerLink="/auth/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+        <span class="nav-text">Dashboard</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="section-label">Konteks Management</div>
+      <a class="nav-item" routerLink="/auth/konteks" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="nav-icon"><i class="fa-solid fa-puzzle-piece"></i></span>
+        <span class="nav-text">Konteks</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="section-label">User Management</div>
+      <a class="nav-item" routerLink="/user-management/users" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+        <span class="nav-text">Users</span>
+      </a>
+      <a class="nav-item" routerLink="/user-management/unit-kerja" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-building"></i></span>
+        <span class="nav-text">Unit Kerja</span>
+      </a>
+      <a class="nav-item" routerLink="/user-management/session" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-clock"></i></span>
+        <span class="nav-text">Session</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="section-label">Profile Verification</div>
+      <a class="nav-item" routerLink="/user-management/profile-requests" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-clipboard-check"></i></span>
+        <span class="nav-text">Verification Requests</span>
+      </a>
+      <a class="nav-item" routerLink="/user-management/unverified-profiles" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-user-clock"></i></span>
+        <span class="nav-text">Unverified Profiles</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <span class="version-text">v1.0.0</span>
+  </div>
+</aside>
