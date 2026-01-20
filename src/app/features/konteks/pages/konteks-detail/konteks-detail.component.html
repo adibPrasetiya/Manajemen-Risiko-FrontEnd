@@ -1,0 +1,396 @@
+<div class="konteks-detail-page">
+  <!-- HEADER -->
+  <div class="card">
+    <div class="card-head">
+      <div class="head-left">
+        <span class="head-ico">📄</span>
+        <div class="head-stack">
+          <div class="head-title">
+            {{ konteksName || 'Detail Konteks' }}
+            <span class="code" *ngIf="konteksCode"> {{ konteksCode }}</span>
+          </div>
+          <div class="head-sub muted">Pengelolaan detail konteks risiko.</div>
+        </div>
+      </div>
+
+      <div class="head-actions">
+        <button class="btn" type="button" (click)="openEditKonteks()" [disabled]="loading">
+           Edit Konteks
+        </button>
+        <button class="btn" type="button" (click)="back()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab" [class.active]="activeTab==='RISK_CATEGORY'" (click)="setTab('RISK_CATEGORY')">
+        Risk Kategori
+      </button>
+      <button class="tab" [class.active]="activeTab==='RISK_IMPACT'" (click)="setTab('RISK_IMPACT')">
+        Risk Impact
+      </button>
+      <button class="tab" [class.active]="activeTab==='LIKELIHOOD'" (click)="setTab('LIKELIHOOD')">
+        Likelihood
+      </button>
+      <button class="tab" [class.active]="activeTab==='RISK_MATRIX'" (click)="setTab('RISK_MATRIX')">
+        Risk Matrix
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="loading" class="hint">Loading...</div>
+      <div *ngIf="errorMsg" class="hint warn">{{ errorMsg }}</div>
+
+      <!-- ===================== TAB: RISK CATEGORY ===================== -->
+      <ng-container *ngIf="activeTab==='RISK_CATEGORY'">
+        <div class="toolbar-like">
+          <div class="toolbar-left">
+            <div class="search-pill">
+              <span class="ico">🔎</span>
+              <input [(ngModel)]="qSearch" (keyup)="onSearchKeyup()" placeholder="Cari Kategori" />
+            </div>
+
+            <div class="select-pill">
+              <select [(ngModel)]="fGroup">
+                <option *ngFor="let g of groupOptions" [value]="g">{{ g }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <button class="btn primary" type="button" (click)="openCreateRC()">
+              + Tambah Kategori
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ORDER</th>
+                <th>NAMA</th>
+                <th>DESKRIPSI</th>
+                <th class="th-actions">AKSI</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let c of riskCategories">
+                <td class="muted mono">{{ c.order }}</td>
+
+                <td>
+                  <div class="cell-stack">
+                    <div class="primary">{{ c.name }}</div>
+                    <div class="sub muted">ID: {{ c.id }}</div>
+                  </div>
+                </td>
+
+                <td class="muted">{{ c.description || '-' }}</td>
+
+                <td class="td-actions">
+                  <button type="button" class="icon-btn" (click)="openEditRC(c)" title="Edit">✎</button>
+                  <button type="button" class="icon-btn danger" (click)="deleteRC(c)" title="Delete">🗑</button>
+                </td>
+              </tr>
+
+              <tr *ngIf="!loading && riskCategories.length===0">
+                <td colspan="4" class="empty">No risk categories found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pager" *ngIf="rcPagination">
+          <div class="pager-left">
+            Page {{ rcPagination.page }} / {{ rcPagination.totalPages }}
+          </div>
+
+          <div class="pager-right">
+            <button class="pager-btn" type="button" (click)="rcPrev()" [disabled]="loading || !rcPagination.hasPrevPage">
+              Prev
+            </button>
+            <button class="pager-btn" type="button" (click)="rcNext()" [disabled]="loading || !rcPagination.hasNextPage">
+              Next
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================== TAB: LIKELIHOOD ===================== -->
+      <ng-container *ngIf="activeTab==='LIKELIHOOD'">
+        <div class="toolbar-like">
+          <div class="toolbar-left">
+            <div class="select-pill wide">
+              <select [(ngModel)]="selectedRiskCategoryId" (change)="onChangeCategoryForLikelihood()">
+                <option *ngFor="let c of rawRiskCategories" [value]="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <button class="btn" type="button" (click)="generateDefaultLK()" [disabled]="!selectedRiskCategoryId || loading">
+              + Generate 1-5
+            </button>
+
+            <button class="btn primary" type="button" (click)="openCreateLK()" [disabled]="!selectedRiskCategoryId">
+              + Tambah Likelihood
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>LEVEL</th>
+                <th>LABEL</th>
+                <th>DESKRIPSI</th>
+                <th class="th-actions">AKSI</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let l of likelihoods">
+                <td class="muted mono">{{ l.level }}</td>
+
+                <td>
+                  <div class="cell-stack">
+                    <div class="primary">{{ l.label }}</div>
+                    <div class="sub muted">ID: {{ l.id }}</div>
+                  </div>
+                </td>
+
+                <td class="muted">{{ l.description || '-' }}</td>
+
+                <td class="td-actions">
+                  <button type="button" class="icon-btn" (click)="openEditLK(l)" title="Edit">✎</button>
+                  <button type="button" class="icon-btn danger" (click)="deleteLK(l)" title="Delete">🗑</button>
+                </td>
+              </tr>
+
+              <tr *ngIf="!loading && likelihoods.length===0">
+                <td colspan="4" class="empty">
+                  {{ lkEmptyHint || 'No likelihood scales found.' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pager" *ngIf="lkPagination && (likelihoods.length > 0 || (lkPagination.totalPages || 0) > 1)">
+          <div class="pager-left">
+            Page {{ lkPagination.page || 1 }} /
+            {{ (lkPagination.totalPages && lkPagination.totalPages > 0) ? lkPagination.totalPages : 1 }}
+          </div>
+
+          <div class="pager-right">
+            <button class="pager-btn" type="button" (click)="lkPrev()" [disabled]="loading || !lkPagination.hasPrevPage">
+              Prev
+            </button>
+            <button class="pager-btn" type="button" (click)="lkNext()" [disabled]="loading || !lkPagination.hasNextPage">
+              Next
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- placeholders -->
+      <ng-container *ngIf="activeTab==='RISK_IMPACT'">
+        <div class="hint muted">Endpoint Risk Impact belum kamu kirim.</div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab==='RISK_MATRIX'">
+        <div class="hint muted">Endpoint Risk Matrix belum kamu kirim.</div>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<app-confirm-modal
+  [isOpen]="confirmOpen"
+  [title]="confirmTitle"
+  [message]="confirmMessage"
+  [details]="confirmDetails"
+  [confirmText]="confirmConfirmText"
+  [cancelText]="'Batal'"
+  [showCancel]="confirmShowCancel"
+  [tone]="confirmTone"
+  (confirm)="confirmActionProceed()"
+  (cancel)="closeConfirmModal()"
+></app-confirm-modal>
+
+<!-- ===================== MODAL: RISK CATEGORY ===================== -->
+<div class="modal-backdrop" *ngIf="showRCModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>{{ rcModalMode === 'CREATE' ? 'Tambah Kategori Risiko' : 'Ubah Kategori Risiko' }}</h3>
+      <button type="button" class="icon-close" (click)="closeRCModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama</label>
+          <input [(ngModel)]="rcForm.name" placeholder="Nama kategori" />
+        </div>
+
+        <div class="field">
+          <label>Order</label>
+          <input type="number" [(ngModel)]="rcForm.order" placeholder="1" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <input [(ngModel)]="rcForm.description" placeholder="Deskripsi kategori" />
+      </div>
+
+      <small class="error" *ngIf="rcError">{{ rcError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeRCModal()" [disabled]="loading">Batal</button>
+        <button type="button" class="btn primary" (click)="saveRC()" [disabled]="loading">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: LIKELIHOOD ===================== -->
+<div class="modal-backdrop" *ngIf="showLKModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>{{ lkModalMode === 'CREATE' ? 'Tambah Likelihood' : 'Ubah Likelihood' }}</h3>
+      <button type="button" class="icon-close" (click)="closeLKModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>Level</label>
+          <input type="number" [(ngModel)]="lkForm.level" placeholder="1" />
+        </div>
+
+        <div class="field">
+          <label>Label</label>
+          <input [(ngModel)]="lkForm.label" placeholder="Sangat Jarang" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <input [(ngModel)]="lkForm.description" placeholder="Deskripsi probabilitas" />
+      </div>
+
+      <small class="error" *ngIf="lkError">{{ lkError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeLKModal()" [disabled]="loading">Batal</button>
+        <button type="button" class="btn primary" (click)="saveLK()" [disabled]="loading">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: EDIT KONTEKS (UI seperti USERS) ===================== -->
+<div class="modal-backdrop" *ngIf="showKonteksModal">
+  <div class="modal modal-lg">
+    <div class="modal-head modal-head-lg">
+      <h3 class="modal-title">Ubah Data Konteks</h3>
+
+      <button type="button" class="icon-close icon-close-lg" (click)="closeKonteksModal()">✕</button>
+    </div>
+
+    <div class="modal-body modal-body-lg">
+      <!-- FORM GRID -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama</label>
+          <input [(ngModel)]="konteksForm.name" placeholder="Konteks Risiko 2026" />
+        </div>
+
+        <div class="field">
+          <label>Code</label>
+          <input [(ngModel)]="konteksForm.code" placeholder="RISK_2026" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <input [(ngModel)]="konteksForm.description" placeholder="Deskripsi konteks" />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Periode & Matrix</div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Period Start</label>
+          <input type="number" [(ngModel)]="konteksForm.periodStart" placeholder="2026" />
+        </div>
+
+        <div class="field">
+          <label>Period End</label>
+          <input type="number" [(ngModel)]="konteksForm.periodEnd" placeholder="2027" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Matrix Size</label>
+          <input type="number" [(ngModel)]="konteksForm.matrixSize" placeholder="5" />
+        </div>
+
+        <div class="field">
+          <label>Risk Appetite Level</label>
+          <select [(ngModel)]="konteksForm.riskAppetiteLevel">
+            <option *ngFor="let a of appetiteOptions" [value]="a">{{ a }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Risk Appetite Description</label>
+        <input [(ngModel)]="konteksForm.riskAppetiteDescription" placeholder="Tingkat selera risiko..." />
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- STATUS SECTION (card seperti USERS) -->
+      <div class="section-title">Status</div>
+
+      <div class="pick-grid">
+        <label class="pick-card" [class.active]="konteksForm.isActive">
+          <input type="checkbox" [(ngModel)]="konteksForm.isActive" />
+          <div class="pick-content">
+            <div class="pick-title">Active</div>
+            <div class="pick-desc">Konteks aktif untuk digunakan</div>
+          </div>
+        </label>
+
+        <!-- optional: kalau suatu saat ada field lain, siap ditambah card kedua -->
+        <div class="pick-card ghost">
+          <div class="pick-content">
+            <div class="pick-title">Info</div>
+            <div class="pick-desc">Perubahan akan tersimpan ke server</div>
+          </div>
+        </div>
+      </div>
+
+      <small class="error" *ngIf="konteksModalError">{{ konteksModalError }}</small>
+    </div>
+
+    <!-- FOOTER BUTTONS seperti USERS -->
+    <div class="modal-footer modal-footer-lg">
+      <button type="button" class="btn secondary" (click)="closeKonteksModal()" [disabled]="loading">
+        Batal
+      </button>
+      <button type="button" class="btn primary" (click)="saveKonteks()" [disabled]="loading">
+        Simpan
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,74 +1,131 @@
 <div class="session-page">
-  <!-- Filters -->
-  <div class="card">
-    <div class="card-head">
-      <div class="head-left">
-        <span class="head-ico"><i class="fa-solid fa-filter"></i></span>
-        <span class="head-title">Filters</span>
+  <!-- Stats Cards - Outside filter container -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalSessions }}</div>
+        <div class="stat-label">Total Sessions</div>
       </div>
     </div>
 
+    <div class="stat-card stat-active">
+      <div class="stat-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalActive }}</div>
+        <div class="stat-label">Active Sessions</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-inactive">
+      <div class="stat-icon">
+        <i class="fa-solid fa-clock"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalExpired }}</div>
+        <div class="stat-label">Expired Sessions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card">
     <div class="card-body">
-      <div class="filters-grid">
-        <div class="field">
-          <label>Username</label>
-          <input [(ngModel)]="fUsername" placeholder="Cari username..." />
+      <div class="filters-primary">
+        <div class="search-group">
+          <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              [(ngModel)]="fUsername"
+              placeholder="Search by username..."
+              (keyup.enter)="applyFilters()"
+            />
+          </div>
+          <div class="search-field">
+            <i class="fa-solid fa-layer-group search-icon"></i>
+            <select [(ngModel)]="fStatus">
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="EXPIRED">Expired</option>
+            </select>
+          </div>
         </div>
 
-        <div class="field">
-          <label>Email</label>
-          <input [(ngModel)]="fEmail" placeholder="Cari email..." />
-        </div>
+        <div class="filter-actions">
+          <button
+            class="btn-advanced"
+            type="button"
+            (click)="toggleAdvancedFilters()"
+            [class.active]="showAdvancedFilters"
+          >
+            <i class="fa-solid fa-sliders"></i>
+            <span>Filters</span>
+            <i class="fa-solid fa-chevron-down chevron" [class.rotate]="showAdvancedFilters"></i>
+          </button>
 
-        <div class="field">
-          <label>Status</label>
-          <select [(ngModel)]="fStatus">
-            <option value="ALL">Semua</option>
-            <option value="ACTIVE">Active</option>
-            <option value="EXPIRED">Expired</option>
-          </select>
-        </div>
+          <button
+            class="btn primary"
+            type="button"
+            (click)="applyFilters()"
+            [disabled]="loading"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search
+          </button>
 
-        <div class="field">
-          <label>Created Dari</label>
-          <input type="date" [(ngModel)]="fFrom" />
-        </div>
+          <button
+            class="btn"
+            type="button"
+            (click)="resetFilters()"
+            [disabled]="loading"
+          >
+            <i class="fa-solid fa-rotate-right"></i>
+            Reset
+          </button>
 
-        <div class="field">
-          <label>Created Hingga</label>
-          <input type="date" [(ngModel)]="fTo" />
+          <button
+            class="btn danger"
+            type="button"
+            (click)="revokeAllExpired()"
+            [disabled]="loading || revokeExpiredLoading"
+            title="Hapus semua session expired"
+          >
+            <i class="fa-solid fa-trash-can"></i>
+            {{ revokeExpiredLoading ? 'Revoking...' : 'Revoke all' }}
+          </button>
         </div>
       </div>
 
-      <div class="actions">
-  <button class="btn primary" type="button" (click)="applyFilters()" [disabled]="loading">
+      <div class="filters-advanced" *ngIf="showAdvancedFilters">
+        <div class="advanced-divider"></div>
+        <div class="advanced-grid">
+          <div class="field">
+            <label>Email</label>
+            <input [(ngModel)]="fEmail" placeholder="Cari email..." />
+          </div>
 
-    Apply Filter
-  </button>
+          <div class="field">
+            <label>Created Dari</label>
+            <input type="date" [(ngModel)]="fFrom" />
+          </div>
 
-  <button class="btn" type="button" (click)="resetFilters()" [disabled]="loading">
-    <i class="fa-solid fa-rotate-right"></i>
-    Reset
-  </button>
+          <div class="field">
+            <label>Created Hingga</label>
+            <input type="date" [(ngModel)]="fTo" />
+          </div>
+        </div>
+      </div>
 
-  <!-- Revoke all expired -->
-  <button
-    class="btn danger"
-    type="button"
-    (click)="revokeAllExpired()"
-    [disabled]="loading || revokeExpiredLoading"
-    title="Hapus semua session expired"
-  >
-    <i class="fa-solid fa-trash-can"></i>
-    {{ revokeExpiredLoading ? 'Revoking...' : 'Revoke all' }}
-  </button>
-</div>
-
-
-      <div *ngIf="loading" class="hint">Loading...</div>
+      <div *ngIf="loading" class="hint">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        Loading...
+      </div>
       <div *ngIf="errorMsg" class="hint warn">{{ errorMsg }}</div>
       <div *ngIf="successMsg" class="hint ok">{{ successMsg }}</div>
-
     </div>
   </div>
 
@@ -158,21 +215,73 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pager" *ngIf="pagination">
-      <div class="pager-left">
-        Page {{ pagination.page }} / {{ pagination.totalPages }}
-        <span class="dot">•</span>
-        Total {{ pagination.total }} sessions
+    <div class="pagination" *ngIf="pagination && pagination.totalPages > 0">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> - <strong>{{ getShowingEnd() }}</strong>
+          of <strong>{{ pagination.totalItems || pagination.total }}</strong> sessions
+        </span>
       </div>
 
-      <div class="pager-right">
-        <button class="pager-btn" type="button" (click)="prevPage()" [disabled]="loading || !pagination.hasPrevPage">
-          Prev
-        </button>
-        <button class="pager-btn" type="button" (click)="nextPage()" [disabled]="loading || !pagination.hasNextPage">
-          Next
-        </button>
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || !pagination.hasPrevPage"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || !pagination.hasNextPage"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<app-confirm-modal
+  [isOpen]="confirmOpen"
+  [title]="confirmTitle"
+  [message]="confirmMessage"
+  [details]="confirmDetails"
+  [confirmText]="confirmConfirmText"
+  [cancelText]="'Batal'"
+  [showCancel]="true"
+  [tone]="'danger'"
+  (confirm)="confirmActionProceed()"
+  (cancel)="closeConfirm()"
+></app-confirm-modal>

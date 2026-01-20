@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { ConfirmModalComponent } from '../../../../shared/components/confirm-modal/confirm-modal.component';
 
 type SessionUser = {
   id: string;
@@ -28,7 +29,8 @@ type SessionItem = {
 type Pagination = {
   page: number;
   limit: number;
-  total: number;
+  total?: number;
+  totalItems?: number;
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
@@ -43,7 +45,7 @@ type SessionsResponse = {
 @Component({
   selector: 'app-session',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './session.component.html',
   styleUrl: './session.component.scss',
 })
@@ -58,9 +60,22 @@ export class SessionComponent implements OnInit {
   actionLoadingId: string | null = null;
   revokeExpiredLoading = false;
 
+  confirmOpen = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  confirmDetails: string[] = [];
+  confirmConfirmText = 'OK';
+  confirmAction: 'revoke-one' | 'revoke-all' | 'info' | null = null;
+  pendingSession: SessionItem | null = null;
+
   sessions: SessionItem[] = [];
   filtered: SessionItem[] = [];
   pagination: Pagination | null = null;
+
+  // ===== Summary Counts (Session Stats) =====
+  totalSessions = 0;
+  totalActive = 0;
+  totalExpired = 0;
 
   // ===== Filter model (UI) =====
   fUsername = '';
@@ -72,6 +87,10 @@ export class SessionComponent implements OnInit {
   // pagination (API)
   page = 1;
   limit = 10;
+  limitOptions = [10, 25, 50, 100];
+
+  // advanced filter toggle
+  showAdvancedFilters = false;
 
   constructor(private http: HttpClient) {}
 
@@ -94,13 +113,15 @@ export class SessionComponent implements OnInit {
 
     let params = new HttpParams().set('page', String(this.page)).set('limit', String(this.limit));
 
-    // Kalau backend kamu support filter param, bisa aktifkan ini:
-    // if (this.fUsername.trim()) params = params.set('username', this.fUsername.trim());
-    // if (this.fEmail.trim()) params = params.set('email', this.fEmail.trim());
-    // if (this.fFrom) params = params.set('from', this.fFrom);
-    // if (this.fTo) params = params.set('to', this.fTo);
-    // if (this.fStatus === 'ACTIVE') params = params.set('isActive', 'true');
-    // if (this.fStatus === 'EXPIRED') params = params.set('isActive', 'false');
+    // Kolom utama (username & status) tetap dikirim jika tersedia
+    if (this.fUsername.trim()) params = params.set('username', this.fUsername.trim());
+    if (this.fStatus === 'ACTIVE') params = params.set('isActive', 'true');
+    if (this.fStatus === 'EXPIRED') params = params.set('isActive', 'false');
+
+    // Sisanya disimpan di advanced filters
+    if (this.fEmail.trim()) params = params.set('email', this.fEmail.trim());
+    if (this.fFrom) params = params.set('from', this.fFrom);
+    if (this.fTo) params = params.set('to', this.fTo);
 
     return params;
   }
@@ -116,7 +137,13 @@ export class SessionComponent implements OnInit {
     this.http.get<SessionsResponse>(`${this.baseUrl}${this.endpoint}`, { headers, params }).subscribe({
       next: (res) => {
         this.sessions = res.data ?? [];
-        this.pagination = res.pagination ?? null;
+        // normalisasi total / totalItems agar konsisten dengan komponen users
+        this.pagination = res.pagination
+          ? {
+              ...res.pagination,
+              totalItems: res.pagination.totalItems ?? (res.pagination as any).total ?? 0,
+            }
+          : null;
         this.loading = false;
 
         // filter frontend
@@ -128,6 +155,9 @@ export class SessionComponent implements OnInit {
         this.sessions = [];
         this.filtered = [];
         this.pagination = null;
+        this.totalSessions = 0;
+        this.totalActive = 0;
+        this.totalExpired = 0;
 
         if (err?.status === 401) {
           this.errorMsg = 'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
@@ -141,6 +171,10 @@ export class SessionComponent implements OnInit {
   // ===== Filters =====
   applyFilters(): void {
     this.fetchSessions(true);
+  }
+
+  toggleAdvancedFilters(): void {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
   }
 
   resetFilters(): void {
@@ -176,6 +210,14 @@ export class SessionComponent implements OnInit {
 
       return true;
     });
+
+    this.refreshSessionStats(this.filtered);
+  }
+
+  private refreshSessionStats(list: SessionItem[]): void {
+    this.totalSessions = list.length;
+    this.totalActive = list.filter((s) => !this.isExpired(s.expiresAt) && s.isActive).length;
+    this.totalExpired = list.filter((s) => this.isExpired(s.expiresAt)).length;
   }
 
   // ===== pagination controls =====
@@ -189,6 +231,48 @@ export class SessionComponent implements OnInit {
     if (!this.pagination?.hasNextPage) return;
     this.page = this.page + 1;
     this.fetchSessions(false);
+  }
+
+  goToPage(pageNum: number): void {
+    if (pageNum < 1 || pageNum > (this.pagination?.totalPages ?? 1)) return;
+    this.page = pageNum;
+    this.fetchSessions(false);
+  }
+
+  onLimitChange(): void {
+    this.page = 1;
+    this.fetchSessions(true);
+  }
+
+  getPageNumbers(): number[] {
+    if (!this.pagination) return [];
+
+    const total = this.pagination.totalPages;
+    const current = this.pagination.page;
+    const pages: number[] = [];
+
+    pages.push(1);
+
+    let start = Math.max(2, current - 1);
+    let end = Math.min(total - 1, current + 1);
+
+    if (start > 2) pages.push(-1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push(-1);
+    if (total > 1) pages.push(total);
+
+    return pages;
+  }
+
+  getShowingStart(): number {
+    if (!this.pagination) return 0;
+    return (this.pagination.page - 1) * this.limit + 1;
+  }
+
+  getShowingEnd(): number {
+    if (!this.pagination) return 0;
+    const total = this.pagination.totalItems ?? this.pagination.total ?? 0;
+    return Math.min(this.pagination.page * this.limit, total);
   }
 
   // ===== UI helpers =====
@@ -215,9 +299,52 @@ export class SessionComponent implements OnInit {
   revokeSession(s: SessionItem): void {
     if (!s?.id) return;
 
-    const ok = confirm(`Revoke session ini?\n\nDevice: ${s.deviceName}\nUser: ${s.user?.username || '-'}`);
-    if (!ok) return;
+    this.confirmTitle = 'Revoke Session';
+    this.confirmMessage = 'Revoke session ini?';
+    this.confirmDetails = [
+      `Device: ${s.deviceName}`,
+      `User: ${s.user?.username || '-'}`,
+    ];
+    this.confirmConfirmText = 'Revoke';
+    this.confirmAction = 'revoke-one';
+    this.pendingSession = s;
+    this.confirmOpen = true;
+  }
 
+  revokeAllExpired(): void {
+    this.confirmTitle = 'Revoke Expired Sessions';
+    this.confirmMessage = 'Revoke semua session yang expired?';
+    this.confirmDetails = [];
+    this.confirmConfirmText = 'Revoke All';
+    this.confirmAction = 'revoke-all';
+    this.pendingSession = null;
+    this.confirmOpen = true;
+  }
+
+  closeConfirm(): void {
+    this.confirmOpen = false;
+    this.confirmAction = null;
+    this.pendingSession = null;
+  }
+
+  confirmActionProceed(): void {
+    if (this.confirmAction === 'revoke-one' && this.pendingSession) {
+      const target = this.pendingSession;
+      this.closeConfirm();
+      this.performRevokeSession(target);
+      return;
+    }
+
+    if (this.confirmAction === 'revoke-all') {
+      this.closeConfirm();
+      this.performRevokeAllExpired();
+      return;
+    }
+
+    this.closeConfirm();
+  }
+
+  private performRevokeSession(s: SessionItem): void {
     this.actionLoadingId = s.id;
     this.successMsg = '';
     this.errorMsg = '';
@@ -238,10 +365,7 @@ export class SessionComponent implements OnInit {
     });
   }
 
-  revokeAllExpired(): void {
-    const ok = confirm('Revoke semua session yang Expired?');
-    if (!ok) return;
-
+  private performRevokeAllExpired(): void {
     this.revokeExpiredLoading = true;
     this.successMsg = '';
     this.errorMsg = '';

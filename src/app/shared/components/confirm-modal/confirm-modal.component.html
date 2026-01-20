@@ -1,0 +1,43 @@
+<div class="modal-backdrop" *ngIf="isOpen" (click)="onBackdropClick()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title">
+        <span class="icon" [class.danger]="tone === 'danger'">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </span>
+        <h3>{{ title }}</h3>
+      </div>
+      <button
+        *ngIf="showCancel"
+        type="button"
+        class="icon-close"
+        (click)="cancel.emit()"
+        aria-label="Close"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="message">{{ message }}</p>
+
+      <div class="details" *ngIf="details.length">
+        <div class="detail" *ngFor="let d of details">{{ d }}</div>
+      </div>
+
+      <div class="actions">
+        <button
+          *ngIf="showCancel"
+          type="button"
+          class="btn secondary"
+          (click)="cancel.emit()"
+        >
+          {{ cancelText }}
+        </button>
+        <button type="button" class="btn" [ngClass]="tone" (click)="confirm.emit()">
+          {{ confirmText }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

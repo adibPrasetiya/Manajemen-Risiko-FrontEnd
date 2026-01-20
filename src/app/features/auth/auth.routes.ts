@@ -17,6 +17,13 @@ export const AUTH_ROUTES: Routes = [
     component: DashboardLayoutComponent,
     children: [
       { path: 'dashboard', component: DashboardComponent },
+      {
+        path: 'konteks',
+        loadChildren: () =>
+          import('../konteks/konteks-management.routes').then(
+            (m) => m.KONTEKS_MANAGEMENT_ROUTES
+          ),
+      },
       { path: 'profile', component: ProfileComponent },
       { path: 'edit-profile', component: EditProfileComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

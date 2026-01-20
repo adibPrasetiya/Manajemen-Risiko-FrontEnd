@@ -1,0 +1,606 @@
+<div class="konteks-page">
+  <!-- Action Button -->
+  <div class="action-row top">
+    <button class="btn primary" type="button" (click)="openCreateModal()">
+      <i class="fa-solid fa-plus"></i>
+      Tambah Konteks
+    </button>
+  </div>
+  <!-- Stats Cards - Outside filter container -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalKonteks }}</div>
+        <div class="stat-label">Total Konteks</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-active">
+      <div class="stat-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalAktif }}</div>
+        <div class="stat-label">Active</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-inactive">
+      <div class="stat-icon">
+        <i class="fa-solid fa-circle-xmark"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalNonAktif }}</div>
+        <div class="stat-label">Inactive</div>
+      </div>
+    </div>
+  </div>
+  <!-- Filters -->
+  <div class="card filters-card">
+    <div class="card-body">
+      <div class="filters-primary">
+        <div class="search-group">
+          <div class="search-field">
+            <i class="fa-solid fa-font search-icon"></i>
+            <input
+              [(ngModel)]="fName"
+              placeholder="Search by name..."
+              (keyup.enter)="applyFilters()"
+            />
+          </div>
+          <div class="search-field">
+            <i class="fa-solid fa-circle-dot search-icon"></i>
+            <select [(ngModel)]="fActive">
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button
+            class="btn-advanced"
+            type="button"
+            (click)="toggleAdvancedFilters()"
+            [class.active]="showAdvancedFilters || hasActiveAdvancedFilters()"
+          >
+            <i class="fa-solid fa-sliders"></i>
+            <span>Filters</span>
+            <span class="filter-badge" *ngIf="hasActiveAdvancedFilters()">
+              {{ getActiveAdvancedFiltersCount() }}
+            </span>
+            <i class="fa-solid fa-chevron-down chevron" [class.rotate]="showAdvancedFilters"></i>
+          </button>
+
+          <button
+            class="btn primary"
+            type="button"
+            (click)="applyFilters()"
+            [disabled]="loading"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <div class="filters-advanced" *ngIf="showAdvancedFilters">
+        <div class="advanced-divider"></div>
+        <div class="advanced-grid">
+          <div class="field">
+            <label>Deskripsi</label>
+            <input [(ngModel)]="fDescription" placeholder="Search by description..." />
+          </div>
+
+          <div class="field">
+            <label>Kategori (Min)</label>
+            <input type="number" min="0" [(ngModel)]="fCategoryMin" placeholder="0" />
+          </div>
+
+          <div class="field">
+            <label>Kode</label>
+            <input [(ngModel)]="fCode" placeholder="Search by code..." />
+          </div>
+
+          <div class="field">
+            <label>Periode</label>
+            <div class="dropdown up" [class.open]="isDropdownOpen('filter-periode')">
+              <button
+                type="button"
+                class="dropdown-toggle"
+                (click)="toggleDropdown('filter-periode')"
+              >
+                <span>{{ formatPeriodeLabel(fPeriode) }}</span>
+                <i class="fa-solid fa-chevron-down"></i>
+              </button>
+              <div class="dropdown-menu">
+                <button
+                  type="button"
+                  class="dropdown-item"
+                  [class.active]="isPeriodeSelected('ALL')"
+                  (click)="selectPeriodeFilter('ALL')"
+                >
+                  All Periode
+                </button>
+                <button
+                  *ngFor="let y of yearOptions"
+                  type="button"
+                  class="dropdown-item"
+                  [class.active]="isPeriodeSelected(y)"
+                  (click)="selectPeriodeFilter(y)"
+                >
+                  {{ y }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Risk Appetite</label>
+            <select [(ngModel)]="fRiskAppetite">
+              <option *ngFor="let a of appetiteOptions" [value]="a">
+                {{ a === 'ALL' ? 'All Levels' : a }}
+              </option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Ukuran Matriks</label>
+            <select [(ngModel)]="fMatrixSize">
+              <option *ngFor="let m of matrixOptions" [value]="m">
+                {{ m === 'ALL' ? 'All Sizes' : (m + 'x' + m) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="field field-actions">
+            <button class="btn-reset" type="button" (click)="resetFilters()" [disabled]="loading">
+              <i class="fa-solid fa-rotate-right"></i>
+              Reset All
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="hint">Loading...</div>
+      <div *ngIf="errorMsg" class="hint warn">{{ errorMsg }}</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>NAMA / KODE</th>
+            <th>PERIODE</th>
+            <th>MATRIX SIZE</th>
+            <th>RISK APPETITE</th>
+            <th>STATUS</th>
+            <th class="th-actions">ACTIONS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let k of items; trackBy: trackById">
+            <!-- NAMA / KODE -->
+            <td>
+              <div class="cell-stack">
+                <div class="primary">{{ k.name }}</div>
+                <div class="sub muted">{{ k.code }}</div>
+              </div>
+            </td>
+
+            <!-- PERIODE -->
+            <td>
+              <span class="cell-text">{{ k.periodStart }} - {{ k.periodEnd }}</span>
+            </td>
+
+            <!-- MATRIX SIZE -->
+            <td>
+              <span class="cell-text">{{ k.matrixSize }}x{{ k.matrixSize }}</span>
+            </td>
+
+            <!-- RISK APPETITE -->
+            <td>
+              <span class="badge" [ngClass]="appetiteBadgeClass(k.riskAppetiteLevel)">
+                {{ k.riskAppetiteLevel }}
+              </span>
+            </td>
+
+            <!-- STATUS -->
+            <td>
+              <span class="badge" [class.green]="k.isActive" [class.red]="!k.isActive">
+                {{ k.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+
+            <!-- ACTIONS (SAMA KAYAK USERS) -->
+            <td class="td-actions">
+              <button type="button" class="icon-btn" (click)="openKonteksDetail(k)" title="Detail">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="6" class="empty">
+              <div class="empty-state">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>No konteks found</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Professional Pagination -->
+    <div class="pagination" *ngIf="pagination">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> - <strong>{{ getShowingEnd() }}</strong>
+          of <strong>{{ pagination.totalItems }}</strong> konteks
+        </span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || !pagination.hasPrevPage"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || !pagination.hasNextPage"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CREATE KONTEKS ===================== -->
+<div class="modal-backdrop" *ngIf="showCreateModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Tambah Konteks</h3>
+      <button type="button" class="icon-close" (click)="closeCreateModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama</label>
+          <input [(ngModel)]="createModel.name" name="createName" placeholder="Konteks Risiko 2026" />
+        </div>
+
+          <div class="field">
+            <label>Kode</label>
+            <input
+              class="input-clip"
+              [(ngModel)]="createModel.code"
+              name="createCode"
+              placeholder="RISK_2026"
+            />
+          </div>
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <input
+          [(ngModel)]="createModel.description"
+          name="createDesc"
+          placeholder="Konteks manajemen risiko tahun 2026"
+        />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Periode</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Periode Mulai</label>
+          <div class="dropdown" [class.open]="isDropdownOpen('create-start')">
+            <button
+              type="button"
+              class="dropdown-toggle"
+              (click)="toggleDropdown('create-start')"
+            >
+              <span>{{ formatYearLabel(createModel.periodStart) }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <button
+                *ngFor="let y of yearOptions"
+                type="button"
+                class="dropdown-item"
+                [class.active]="createModel.periodStart === y"
+                (click)="selectCreatePeriodStart(y)"
+              >
+                {{ y }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Periode Akhir</label>
+          <div class="dropdown" [class.open]="isDropdownOpen('create-end')">
+            <button
+              type="button"
+              class="dropdown-toggle"
+              (click)="toggleDropdown('create-end')"
+            >
+              <span>{{ formatYearLabel(createModel.periodEnd) }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <button
+                *ngFor="let y of yearOptions"
+                type="button"
+                class="dropdown-item"
+                [class.active]="createModel.periodEnd === y"
+                (click)="selectCreatePeriodEnd(y)"
+              >
+                {{ y }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Risk Settings</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Ukuran Matriks</label>
+          <select [(ngModel)]="createModel.matrixSize" name="createMatrix">
+            <option [ngValue]="3">3x3</option>
+            <option [ngValue]="4">4x4</option>
+            <option [ngValue]="5">5x5</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Risk Appetite Level</label>
+          <div class="dropdown" [class.open]="isDropdownOpen('create-appetite')">
+            <button
+              type="button"
+              class="dropdown-toggle"
+              (click)="toggleDropdown('create-appetite')"
+            >
+              <span>{{ formatRiskAppetiteLabel(createModel.riskAppetiteLevel) }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <button
+                *ngFor="let a of getRiskAppetiteCreateOptions()"
+                type="button"
+                class="dropdown-item"
+                [class.active]="createModel.riskAppetiteLevel === a"
+                (click)="selectCreateRiskAppetite(a)"
+              >
+                {{ a }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Risk Appetite Description</label>
+        <textarea
+          class="textarea-large"
+          [(ngModel)]="createModel.riskAppetiteDescription"
+          name="createAppetiteDesc"
+          placeholder="Organisasi menerima risiko dengan dampak menengah"
+        ></textarea>
+      </div>
+
+      <small class="error" *ngIf="createError">{{ createError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeCreateModal()" [disabled]="createLoading">
+          Batal
+        </button>
+        <button type="button" class="btn primary" (click)="createKonteks()" [disabled]="createLoading">
+          {{ createLoading ? 'Menyimpan...' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===================== MODAL: EDIT KONTEKS (SAMA STYLE USERS) ===================== -->
+<div class="modal-backdrop" *ngIf="showEditModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Ubah Data Konteks</h3>
+      <button type="button" class="icon-close" (click)="closeEditModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama</label>
+          <input [(ngModel)]="editModel.name" name="editName" placeholder="Nama konteks" />
+        </div>
+
+          <div class="field">
+            <label>Kode</label>
+            <input
+              class="input-clip"
+              [(ngModel)]="editModel.code"
+              name="editCode"
+              placeholder="RISK_2026"
+            />
+          </div>
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <input
+          [(ngModel)]="editModel.description"
+          name="editDesc"
+          placeholder="Deskripsi konteks"
+        />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Periode</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Periode Mulai</label>
+          <div class="dropdown" [class.open]="isDropdownOpen('edit-start')">
+            <button
+              type="button"
+              class="dropdown-toggle"
+              (click)="toggleDropdown('edit-start')"
+            >
+              <span>{{ formatYearLabel(editModel.periodStart) }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <button
+                *ngFor="let y of yearOptions"
+                type="button"
+                class="dropdown-item"
+                [class.active]="editModel.periodStart === y"
+                (click)="selectEditPeriodStart(y)"
+              >
+                {{ y }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Periode Akhir</label>
+          <div class="dropdown" [class.open]="isDropdownOpen('edit-end')">
+            <button
+              type="button"
+              class="dropdown-toggle"
+              (click)="toggleDropdown('edit-end')"
+            >
+              <span>{{ formatYearLabel(editModel.periodEnd) }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <button
+                *ngFor="let y of yearOptions"
+                type="button"
+                class="dropdown-item"
+                [class.active]="editModel.periodEnd === y"
+                (click)="selectEditPeriodEnd(y)"
+              >
+                {{ y }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Risk Settings</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Ukuran Matriks</label>
+          <select [(ngModel)]="editModel.matrixSize" name="editMatrix">
+            <option [ngValue]="3">3x3</option>
+            <option [ngValue]="4">4x4</option>
+            <option [ngValue]="5">5x5</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Risk Appetite Level</label>
+          <select [(ngModel)]="editModel.riskAppetiteLevel" name="editAppetite">
+            <option value="LOW">LOW</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="HIGH">HIGH</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Risk Appetite Description</label>
+        <textarea
+          class="textarea-large"
+          [(ngModel)]="editModel.riskAppetiteDescription"
+          name="editAppetiteDesc"
+          placeholder="Keterangan risk appetite"
+        ></textarea>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Status</div>
+      <div class="toggle-grid">
+        <label class="toggle-card">
+          <input type="checkbox" [(ngModel)]="editModel.isActive" name="editActive" />
+          <span class="toggle-text">
+            <span class="toggle-label">Active</span>
+            <span class="toggle-desc">Konteks aktif digunakan</span>
+          </span>
+        </label>
+      </div>
+
+      <small class="error" *ngIf="editError">{{ editError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeEditModal()" [disabled]="loading">
+          Batal
+        </button>
+        <button type="button" class="btn primary" (click)="saveEditKonteks()" [disabled]="loading">
+          Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

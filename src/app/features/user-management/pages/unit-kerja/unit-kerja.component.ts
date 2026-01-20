@@ -59,6 +59,7 @@ export class UnitKerjaComponent implements OnInit {
 
   page = 1;
   limit = 10;
+  limitOptions = [10, 25, 50, 100];
 
   showEditModal = false;
   editError = '';
@@ -72,6 +73,14 @@ export class UnitKerjaComponent implements OnInit {
   showDeleteModal = false;
   deleteError = '';
   deleteTarget: UnitKerjaItem | null = null;
+
+  showCreateModal = false;
+  createError = '';
+  createModel: { name: string; code: string; email: string } = {
+    name: '',
+    code: '',
+    email: '',
+  };
 
   constructor(private http: HttpClient) {}
 
@@ -172,6 +181,47 @@ export class UnitKerjaComponent implements OnInit {
     if (!this.pagination?.hasNextPage) return;
     this.page = this.page + 1;
     this.fetch(false);
+  }
+
+  goToPage(pageNum: number): void {
+    if (pageNum < 1 || pageNum > (this.pagination?.totalPages ?? 1)) return;
+    this.page = pageNum;
+    this.fetch(false);
+  }
+
+  onLimitChange(): void {
+    this.page = 1;
+    this.fetch(true);
+  }
+
+  getPageNumbers(): number[] {
+    if (!this.pagination) return [];
+
+    const total = this.pagination.totalPages;
+    const current = this.pagination.page;
+    const pages: number[] = [];
+
+    pages.push(1);
+
+    let start = Math.max(2, current - 1);
+    let end = Math.min(total - 1, current + 1);
+
+    if (start > 2) pages.push(-1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push(-1);
+    if (total > 1) pages.push(total);
+
+    return pages;
+  }
+
+  getShowingStart(): number {
+    if (!this.pagination) return 0;
+    return (this.pagination.page - 1) * this.limit + 1;
+  }
+
+  getShowingEnd(): number {
+    if (!this.pagination) return 0;
+    return Math.min(this.pagination.page * this.limit, this.pagination.totalItems);
   }
 
   // ===================== EDIT =====================
@@ -280,6 +330,74 @@ export class UnitKerjaComponent implements OnInit {
           console.error('[DELETE /unit-kerja/:id] error:', e);
         },
       });
+  }
+
+  // ===================== CREATE =====================
+  openCreate(): void {
+    this.resetCreateModel();
+    this.showCreateModal = true;
+  }
+
+  closeCreate(): void {
+    this.showCreateModal = false;
+    this.createError = '';
+  }
+
+  private resetCreateModel(): void {
+    this.createError = '';
+    this.createModel = {
+      name: '',
+      code: '',
+      email: '',
+    };
+  }
+
+  createUnitKerja(): void {
+    this.createError = '';
+
+    if (!this.createModel.name.trim()) {
+      this.createError = 'Nama wajib diisi.';
+      return;
+    }
+    if (!this.createModel.code.trim()) {
+      this.createError = 'Kode wajib diisi.';
+      return;
+    }
+
+    const headers = this.buildHeaders();
+    if (!headers) {
+      this.createError = 'Token tidak ditemukan. Silakan login ulang.';
+      return;
+    }
+
+    const payload = {
+      name: this.createModel.name.trim(),
+      code: this.createModel.code.trim(),
+      email: this.createModel.email.trim() || undefined,
+    };
+
+    this.loading = true;
+
+    // POST /unit-kerja
+    this.http.post<{ data?: UnitKerjaItem }>(`${this.baseUrl}${this.endpoint}`, payload, { headers }).subscribe({
+      next: (res) => {
+        const created = res?.data;
+        if (created?.id) {
+          this.allItems = [created, ...this.allItems];
+          this.renderList();
+        } else {
+          this.fetch(true);
+        }
+        this.loading = false;
+        this.closeCreate();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.createError =
+          e?.error?.errors || e?.error?.message || 'Gagal membuat unit kerja.';
+        console.error('[POST /unit-kerja] error:', e);
+      },
+    });
   }
 
   trackById(_: number, item: UnitKerjaItem) {
