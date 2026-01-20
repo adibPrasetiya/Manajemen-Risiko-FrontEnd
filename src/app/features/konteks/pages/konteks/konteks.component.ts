@@ -4,100 +4,25 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { KonteksService } from '../../../../core/services/konteks.service';
 import {
-  HttpClient,
-  HttpClientModule,
-  HttpHeaders,
-  HttpParams,
-} from '@angular/common/http';
-type KonteksItem = {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  periodStart: number;
-  periodEnd: number;
-  matrixSize: number;
-  riskAppetiteLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
-  riskAppetiteDescription: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-  updatedBy: string;
-  _count?: {
-    riskCategories: number;
-    riskMatrices: number;
-  };
-};
-type Pagination = {
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-};
-type KonteksResponse = {
-  message: string;
-  data: KonteksItem[];
-  pagination: Pagination;
-};
-type EditKonteksModel = {
-  id: string;
-  name: string;
-  code: string;
-  description: string;
-  periodStart: number | null;
-  periodEnd: number | null;
-  matrixSize: number; // 4/5
-  riskAppetiteLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
-  riskAppetiteDescription: string;
-  isActive: boolean;
-};
-
-type CreateKonteksModel = {
-  name: string;
-  code: string;
-  description: string;
-  periodStart: number | null;
-  periodEnd: number | null;
-  matrixSize: number;
-  riskAppetiteLevel: string;
-  riskAppetiteDescription: string;
-};
-type PatchKonteksPayload = {
-  name: string;
-  code: string;
-  description: string;
-  periodStart: number;
-  periodEnd: number;
-  matrixSize: number;
-  riskAppetiteLevel: string;
-  riskAppetiteDescription: string;
-  isActive: boolean;
-};
-
-type CreateKonteksPayload = {
-  name: string;
-  code: string;
-  description: string;
-  periodStart: number;
-  periodEnd: number;
-  matrixSize: number;
-  riskAppetiteLevel: string;
-  riskAppetiteDescription: string;
-};
+  CreateKonteksModel,
+  CreateKonteksPayload,
+  EditKonteksModel,
+  KonteksItem,
+  Pagination,
+  UpdateKonteksPayload,
+} from '../../../../core/models/konteks.model';
+import { extractErrorMessage, extractFieldErrors } from '../../../../core/utils/error-utils';
+import { UiService } from '../../../../core/services/ui.service';
 @Component({
   selector: 'app-konteks',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './konteks.component.html',
   styleUrl: './konteks.component.scss',
 })
 export class KonteksComponent implements OnInit {
-  private baseUrl = 'http://api.dev.simulasibimtekd31.com';
-  private endpoint = '/konteks';
   loading = false;
   errorMsg = '';
   // list utama (yang ditampilkan)
@@ -128,7 +53,17 @@ export class KonteksComponent implements OnInit {
   limitOptions = [10, 25, 50, 100];
   // ===== Edit Modal =====
   showEditModal = false;
-  editError = '';
+  editErrors: {
+    name?: string;
+    code?: string;
+    description?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    matrixSize?: string;
+    riskAppetiteLevel?: string;
+    riskAppetiteDescription?: string;
+    general?: string;
+  } = {};
   editModel: EditKonteksModel = {
     id: '',
     name: '',
@@ -144,7 +79,17 @@ export class KonteksComponent implements OnInit {
 
   // ===== Create Modal =====
   showCreateModal = false;
-  createError = '';
+  createErrors: {
+    name?: string;
+    code?: string;
+    description?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    matrixSize?: string;
+    riskAppetiteLevel?: string;
+    riskAppetiteDescription?: string;
+    general?: string;
+  } = {};
   createLoading = false;
   createModel: CreateKonteksModel = {
     name: '',
@@ -156,7 +101,11 @@ export class KonteksComponent implements OnInit {
     riskAppetiteLevel: '',
     riskAppetiteDescription: '',
   };
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private konteksService: KonteksService,
+    private router: Router,
+    private ui: UiService
+  ) {}
   openDropdown: string | null = null;
   openKonteksDetail(k: any): void {
   this.router.navigate(['/konteks-management', k.id]);
@@ -173,42 +122,24 @@ export class KonteksComponent implements OnInit {
       this.openDropdown = null;
     }
   }
-  private buildHeaders(): HttpHeaders | undefined {
-    const token =
-      localStorage.getItem('accessToken') || localStorage.getItem('access_token');
-    if (!token) return undefined;
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    });
-  }
   // Build params (kalau backend support filters via query params, tinggal aktifkan yang perlu)
-  private buildParams(resetPage: boolean): HttpParams {
+  private buildListParams(resetPage: boolean): { page: number; limit: number } {
     if (resetPage) this.page = 1;
-    let params = new HttpParams()
-      .set('page', String(this.page))
-      .set('limit', String(this.limit));
-    // OPTIONAL (kalau backend kamu sudah support filter query):
-    // if (this.fName.trim()) params = params.set('name', this.fName.trim());
-    // if (this.fCode.trim()) params = params.set('code', this.fCode.trim());
-    // if (this.fRiskAppetite !== 'ALL') params = params.set('riskAppetiteLevel', this.fRiskAppetite);
-    // if (this.fMatrixSize !== 'ALL') params = params.set('matrixSize', String(this.fMatrixSize));
-    // if (this.fActive === 'ACTIVE') params = params.set('isActive', 'true');
-    // if (this.fActive === 'INACTIVE') params = params.set('isActive', 'false');
-    // if (this.fPeriode !== 'ALL') params = params.set('period', String(this.fPeriode));
-    return params;
+    return { page: this.page, limit: this.limit };
   }
   // Stats params: ngikut filters, tapi page/limit kecil
-  private buildStatsParams(activeOverride: 'true' | 'false' | null): HttpParams {
-    let params = new HttpParams().set('page', '1').set('limit', '1');
-    // OPTIONAL (kalau backend support):
-    // if (this.fName.trim()) params = params.set('name', this.fName.trim());
-    // if (this.fCode.trim()) params = params.set('code', this.fCode.trim());
-    // if (this.fRiskAppetite !== 'ALL') params = params.set('riskAppetiteLevel', this.fRiskAppetite);
-    // if (this.fMatrixSize !== 'ALL') params = params.set('matrixSize', String(this.fMatrixSize));
-    // if (this.fPeriode !== 'ALL') params = params.set('period', String(this.fPeriode));
-    // kalau backend sudah support filter aktif:
-    if (activeOverride) params = params.set('isActive', activeOverride);
+  private buildStatsParams(activeOverride: boolean | null): {
+    page: number;
+    limit: number;
+    isActive?: boolean;
+  } {
+    const params: { page: number; limit: number; isActive?: boolean } = {
+      page: 1,
+      limit: 1,
+    };
+    if (typeof activeOverride === 'boolean') {
+      params.isActive = activeOverride;
+    }
     return params;
   }
   private buildPeriodeOptions(): void {
@@ -308,24 +239,14 @@ export class KonteksComponent implements OnInit {
   }
   // OPTIONAL: kalau backend sudah support isActive filter (true/false), stats lebih akurat cross-page
   private refreshKonteksStatsFromBackend(): void {
-    const headers = this.buildHeaders();
-    const total$ = this.http
-      .get<KonteksResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams(null),
-      })
+    const total$ = this.konteksService
+      .getKonteksList(this.buildStatsParams(null))
       .pipe(map((r) => r?.pagination?.totalItems ?? 0), catchError(() => of(0)));
-    const active$ = this.http
-      .get<KonteksResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams('true'),
-      })
+    const active$ = this.konteksService
+      .getKonteksList(this.buildStatsParams(true))
       .pipe(map((r) => r?.pagination?.totalItems ?? 0), catchError(() => of(0)));
-    const inactive$ = this.http
-      .get<KonteksResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams('false'),
-      })
+    const inactive$ = this.konteksService
+      .getKonteksList(this.buildStatsParams(false))
       .pipe(map((r) => r?.pagination?.totalItems ?? 0), catchError(() => of(0)));
     forkJoin({ total: total$, active: active$, inactive: inactive$ }).subscribe((r) => {
       // hanya update kalau response bukan 0 semua karena error
@@ -337,42 +258,38 @@ export class KonteksComponent implements OnInit {
   fetchKonteks(resetPage: boolean): void {
     this.loading = true;
     this.errorMsg = '';
-    const headers = this.buildHeaders();
-    const params = this.buildParams(resetPage);
-    this.http
-      .get<KonteksResponse>(`${this.baseUrl}${this.endpoint}`, { headers, params })
-      .subscribe({
-        next: (res) => {
-          const raw = res.data ?? [];
-          // periode options dari range fixed
-          this.buildPeriodeOptions();
-          // apply filter client-side biar UX sama kayak users
-          const filtered = this.applyClientFilters(raw);
-          this.items = filtered;
-          // stats client (sesuai filter + page ini)
-          this.refreshStatsClient(filtered);
-          // pagination tetap dari backend
-          this.pagination = res.pagination ?? null;
-          // OPTIONAL: kalau backend support stats lebih akurat, aktifkan:
-          // this.refreshKonteksStatsFromBackend();
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error fetching konteks:', err);
-          this.loading = false;
-          this.items = [];
-          this.pagination = null;
-          this.totalKonteks = 0;
-          this.totalAktif = 0;
-          this.totalNonAktif = 0;
-          if (err?.status === 401) {
-            this.errorMsg =
-              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
-            return;
-          }
-          this.errorMsg = `Gagal fetch konteks dari API (HTTP ${err?.status || 'unknown'}).`;
-        },
-      });
+    this.konteksService.getKonteksList(this.buildListParams(resetPage)).subscribe({
+      next: (res) => {
+        const raw = res.data ?? [];
+        // periode options dari range fixed
+        this.buildPeriodeOptions();
+        // apply filter client-side biar UX sama kayak users
+        const filtered = this.applyClientFilters(raw);
+        this.items = filtered;
+        // stats client (sesuai filter + page ini)
+        this.refreshStatsClient(filtered);
+        // pagination tetap dari backend
+        this.pagination = res.pagination ?? null;
+        // OPTIONAL: kalau backend support stats lebih akurat, aktifkan:
+        // this.refreshKonteksStatsFromBackend();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error fetching konteks:', err);
+        this.loading = false;
+        this.items = [];
+        this.pagination = null;
+        this.totalKonteks = 0;
+        this.totalAktif = 0;
+        this.totalNonAktif = 0;
+        if (err?.status === 401) {
+          this.errorMsg =
+            'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+          return;
+        }
+        this.errorMsg = `Gagal fetch konteks dari API (HTTP ${err?.status || 'unknown'}).`;
+      },
+    });
   }
   applyFilters(): void {
     this.fetchKonteks(true);
@@ -464,12 +381,12 @@ export class KonteksComponent implements OnInit {
 
   closeCreateModal(): void {
     this.showCreateModal = false;
-    this.createError = '';
+    this.createErrors = {};
     this.createLoading = false;
   }
 
   private resetCreateModel(): void {
-    this.createError = '';
+    this.createErrors = {};
     this.createModel = {
       name: '',
       code: '',
@@ -483,20 +400,21 @@ export class KonteksComponent implements OnInit {
   }
 
   createKonteks(): void {
-    this.createError = '';
+    this.createErrors = {};
 
     if (!this.createModel.name.trim()) {
-      this.createError = 'Nama konteks wajib diisi.';
+      this.createErrors.name = 'Nama konteks wajib diisi.';
       return;
     }
 
     if (!this.createModel.code.trim()) {
-      this.createError = 'Kode konteks wajib diisi.';
+      this.createErrors.code = 'Kode konteks wajib diisi.';
       return;
     }
 
     if (!this.isValidCode(this.createModel.code)) {
-      this.createError = 'Kode hanya boleh huruf besar, angka, dan underscore. Contoh: RISK_2026';
+      this.createErrors.code =
+        'Kode hanya boleh huruf besar, angka, dan underscore. Contoh: RISK_2026';
       return;
     }
 
@@ -504,27 +422,22 @@ export class KonteksComponent implements OnInit {
     const pe = Number(this.createModel.periodEnd);
 
     if (!ps || !pe) {
-      this.createError = 'Periode mulai dan akhir wajib diisi.';
+      if (!ps) this.createErrors.periodStart = 'Periode mulai wajib diisi.';
+      if (!pe) this.createErrors.periodEnd = 'Periode akhir wajib diisi.';
       return;
     }
     if (ps > pe) {
-      this.createError = 'Periode mulai tidak boleh lebih besar dari periode akhir.';
+      this.createErrors.periodEnd = 'Periode akhir tidak boleh lebih kecil dari periode mulai.';
       return;
     }
 
     if (![3, 4, 5].includes(Number(this.createModel.matrixSize))) {
-      this.createError = 'Ukuran matriks hanya mendukung 3, 4, atau 5.';
+      this.createErrors.matrixSize = 'Ukuran matriks hanya mendukung 3, 4, atau 5.';
       return;
     }
 
     if (!this.createModel.riskAppetiteLevel) {
-      this.createError = 'Risk appetite level wajib dipilih.';
-      return;
-    }
-
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.createError = 'Token tidak ditemukan. Silakan login ulang.';
+      this.createErrors.riskAppetiteLevel = 'Risk appetite level wajib dipilih.';
       return;
     }
 
@@ -541,26 +454,27 @@ export class KonteksComponent implements OnInit {
 
     this.createLoading = true;
 
-    this.http
-      .post<any>(`${this.baseUrl}${this.endpoint}`, payload, { headers })
-      .subscribe({
-        next: () => {
-          this.createLoading = false;
-          this.closeCreateModal();
-          this.fetchKonteks(true);
-        },
-        error: (e) => {
-          this.createLoading = false;
-          this.createError =
-            e?.error?.errors || e?.error?.message || 'Gagal membuat konteks. Coba lagi.';
-          console.error('[POST /konteks] error:', e);
-        },
-      });
+    this.konteksService.createKonteks(payload).subscribe({
+      next: () => {
+        this.createLoading = false;
+        this.closeCreateModal();
+        this.ui.success('Berhasil menambah konteks.');
+        this.fetchKonteks(true);
+      },
+      error: (e) => {
+        this.createLoading = false;
+        const fieldErrors = extractFieldErrors(e);
+        this.createErrors = Object.keys(fieldErrors).length
+          ? fieldErrors
+          : { general: extractErrorMessage(e) || 'Gagal membuat konteks. Coba lagi.' };
+        console.error('[POST /konteks] error:', e);
+      },
+    });
   }
 
   // ===================== EDIT KONTEKS (MODAL) =====================
   editKonteks(k: KonteksItem): void {
-    this.editError = '';
+    this.editErrors = {};
     this.editModel = {
       id: k.id,
       name: k.name ?? '',
@@ -577,50 +491,47 @@ export class KonteksComponent implements OnInit {
   }
   closeEditModal(): void {
     this.showEditModal = false;
-    this.editError = '';
+    this.editErrors = {};
   }
   private isValidCode(v: string): boolean {
     // sederhana: uppercase + underscore + angka (boleh kamu longgarkan)
     return /^[A-Z0-9_]+$/.test(v.trim());
   }
   saveEditKonteks(): void {
-    this.editError = '';
+    this.editErrors = {};
     if (!this.editModel.name.trim()) {
-      this.editError = 'Nama konteks wajib diisi.';
+      this.editErrors.name = 'Nama konteks wajib diisi.';
       return;
     }
     if (!this.editModel.code.trim()) {
-      this.editError = 'Kode konteks wajib diisi.';
+      this.editErrors.code = 'Kode konteks wajib diisi.';
       return;
     }
     if (!this.isValidCode(this.editModel.code)) {
-      this.editError = 'Kode hanya boleh huruf besar, angka, dan underscore. Contoh: RISK_2026';
+      this.editErrors.code =
+        'Kode hanya boleh huruf besar, angka, dan underscore. Contoh: RISK_2026';
       return;
     }
     const ps = Number(this.editModel.periodStart);
     const pe = Number(this.editModel.periodEnd);
     if (!ps || !pe) {
-      this.editError = 'Periode mulai dan akhir wajib diisi.';
+      if (!ps) this.editErrors.periodStart = 'Periode mulai wajib diisi.';
+      if (!pe) this.editErrors.periodEnd = 'Periode akhir wajib diisi.';
       return;
     }
     if (ps > pe) {
-      this.editError = 'Periode mulai tidak boleh lebih besar dari periode akhir.';
+      this.editErrors.periodEnd = 'Periode akhir tidak boleh lebih kecil dari periode mulai.';
       return;
     }
     if (![3, 4, 5].includes(Number(this.editModel.matrixSize))) {
-      this.editError = 'Ukuran matriks hanya mendukung 3, 4, atau 5.';
+      this.editErrors.matrixSize = 'Ukuran matriks hanya mendukung 3, 4, atau 5.';
       return;
     }
     if (!this.editModel.riskAppetiteLevel) {
-      this.editError = 'Risk appetite level wajib dipilih.';
+      this.editErrors.riskAppetiteLevel = 'Risk appetite level wajib dipilih.';
       return;
     }
-    const headers = this.buildHeaders();
-    if (!headers) {
-      this.editError = 'Token tidak ditemukan. Silakan login ulang.';
-      return;
-    }
-    const payload: PatchKonteksPayload = {
+    const payload: UpdateKonteksPayload = {
       name: this.editModel.name.trim(),
       code: this.editModel.code.trim(),
       description: (this.editModel.description ?? '').trim(),
@@ -632,31 +543,32 @@ export class KonteksComponent implements OnInit {
       isActive: !!this.editModel.isActive,
     };
     this.loading = true;
-    this.http
-      .patch<any>(`${this.baseUrl}${this.endpoint}/${this.editModel.id}`, payload, { headers })
-      .subscribe({
-        next: () => {
-          // update table lokal biar langsung berubah
-          this.items = this.items.map((x) =>
-            x.id === this.editModel.id
-              ? {
-                  ...x,
-                  ...payload,
-                }
-              : x
-          );
-          // refresh stats client
-          this.refreshStatsClient(this.items);
-          this.loading = false;
-          this.closeEditModal();
-        },
-        error: (e) => {
-          this.loading = false;
-          this.editError =
-            e?.error?.errors || e?.error?.message || 'Gagal update konteks. Coba lagi.';
-          console.error('[PATCH /konteks/:id] error:', e);
-        },
-      });
+    this.konteksService.updateKonteks(this.editModel.id, payload).subscribe({
+      next: () => {
+        // update table lokal biar langsung berubah
+        this.items = this.items.map((x) =>
+          x.id === this.editModel.id
+            ? {
+                ...x,
+                ...payload,
+              }
+            : x
+        );
+        // refresh stats client
+        this.refreshStatsClient(this.items);
+        this.loading = false;
+        this.closeEditModal();
+        this.ui.success('Berhasil menyimpan perubahan konteks.');
+      },
+      error: (e) => {
+        this.loading = false;
+        const fieldErrors = extractFieldErrors(e);
+        this.editErrors = Object.keys(fieldErrors).length
+          ? fieldErrors
+          : { general: extractErrorMessage(e) || 'Gagal update konteks. Coba lagi.' };
+        console.error('[PATCH /konteks/:id] error:', e);
+      },
+    });
   }
   trackById(_: number, item: KonteksItem) {
     return item.id;

@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   KonteksDetailResponse,
   KonteksListResponse,
+  CreateKonteksPayload,
   UpdateKonteksPayload,
   RiskCategoryListResponse,
   RiskCategoryDetailResponse,
@@ -14,6 +15,10 @@ import {
   LikelihoodScaleDetailResponse,
   CreateLikelihoodPayload,
   UpdateLikelihoodPayload,
+  ImpactScaleListResponse,
+  ImpactScaleDetailResponse,
+  CreateImpactPayload,
+  UpdateImpactPayload,
 } from '../models/konteks.model';
 
 @Injectable({ providedIn: 'root' })
@@ -30,13 +35,26 @@ export class KonteksService {
     });
   }
 
-  getKonteksList(params?: { page?: number; limit?: number }): Observable<KonteksListResponse> {
+  getKonteksList(params?: {
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+  }): Observable<KonteksListResponse> {
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', String(params.page));
     if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
+    if (typeof params?.isActive === 'boolean') {
+      httpParams = httpParams.set('isActive', String(params.isActive));
+    }
 
     return this.http.get<KonteksListResponse>(`${this.baseUrl}/konteks`, {
       params: httpParams,
+      withCredentials: true,
+    });
+  }
+
+  createKonteks(payload: CreateKonteksPayload): Observable<KonteksDetailResponse> {
+    return this.http.post<KonteksDetailResponse>(`${this.baseUrl}/konteks`, payload, {
       withCredentials: true,
     });
   }
@@ -175,5 +193,58 @@ export class KonteksService {
     );
 
     return forkJoin(requests);
+  }
+
+  // ===================== IMPACT SCALES =====================
+
+  getImpactScales(
+    konteksId: string,
+    categoryId: string,
+    params?: { page?: number; limit?: number }
+  ): Observable<ImpactScaleListResponse> {
+    let httpParams = new HttpParams();
+    if (params?.page) httpParams = httpParams.set('page', String(params.page));
+    if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
+
+    return this.http.get<ImpactScaleListResponse>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-categories/${categoryId}/impact-scales`,
+      { params: httpParams, withCredentials: true }
+    );
+  }
+
+  createImpactScale(
+    konteksId: string,
+    categoryId: string,
+    payload: CreateImpactPayload
+  ): Observable<ImpactScaleDetailResponse> {
+    return this.http.post<ImpactScaleDetailResponse>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-categories/${categoryId}/impact-scales`,
+      payload,
+      { withCredentials: true }
+    );
+  }
+
+  updateImpactScale(
+    konteksId: string,
+    categoryId: string,
+    impactId: string,
+    payload: UpdateImpactPayload
+  ): Observable<ImpactScaleDetailResponse> {
+    return this.http.patch<ImpactScaleDetailResponse>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-categories/${categoryId}/impact-scales/${impactId}`,
+      payload,
+      { withCredentials: true }
+    );
+  }
+
+  deleteImpactScale(
+    konteksId: string,
+    categoryId: string,
+    impactId: string
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-categories/${categoryId}/impact-scales/${impactId}`,
+      { withCredentials: true }
+    );
   }
 }

@@ -30,10 +30,10 @@
           [disabled]="loading">
           <i class="fa-solid fa-toggle-off"></i> Nonaktifkan
         </button>
-        <button class="btn" type="button" (click)="openEditKonteks()" [disabled]="loading">
+        <button class="btn primary" type="button" (click)="openEditKonteks()" [disabled]="loading">
           <i class="fa-solid fa-pen-to-square"></i> Edit Konteks
         </button>
-        <button class="btn" type="button" (click)="back()">
+        <button class="btn secondary" type="button" (click)="back()">
           <i class="fa-solid fa-arrow-left"></i> Back
         </button>
       </div>
@@ -286,11 +286,116 @@
 
       <!-- placeholders -->
       <ng-container *ngIf="activeTab==='RISK_IMPACT'">
-        <div class="hint muted">Endpoint Risk Impact belum kamu kirim.</div>
+        <div class="toolbar-like">
+          <div class="toolbar-left">
+            <div class="select-pill wide">
+              <select [(ngModel)]="selectedRiskCategoryId" (change)="onChangeCategoryForImpact()">
+                <option *ngFor="let c of rawRiskCategories" [value]="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <button class="btn primary" type="button" (click)="openCreateIM()" [disabled]="!selectedRiskCategoryId">
+              + Tambah Impact
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>LEVEL</th>
+                <th>LABEL</th>
+                <th>DESKRIPSI</th>
+                <th class="th-actions">AKSI</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let i of impactScales">
+                <td class="muted mono">{{ i.level }}</td>
+
+                <td>
+                  <div class="cell-stack">
+                    <div class="primary">{{ i.label }}</div>
+                    <div class="sub muted">ID: {{ i.id }}</div>
+                  </div>
+                </td>
+
+                <td class="muted">{{ i.description || '-' }}</td>
+
+                <td class="td-actions">
+                  <button type="button" class="icon-btn" (click)="openEditIM(i)" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button type="button" class="icon-btn danger" (click)="deleteIM(i)" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </td>
+              </tr>
+
+              <tr *ngIf="!loading && impactScales.length===0">
+                <td colspan="4" class="empty">
+                  {{ imEmptyHint || 'No impact scales found.' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pager" *ngIf="imPagination && (impactScales.length > 0 || (imPagination.totalPages || 0) > 1)">
+          <div class="pager-left">
+            Page {{ imPagination.page || 1 }} /
+            {{ (imPagination.totalPages && imPagination.totalPages > 0) ? imPagination.totalPages : 1 }}
+          </div>
+
+          <div class="pager-right">
+            <button class="pager-btn" type="button" (click)="imPrev()" [disabled]="loading || !imPagination.hasPrevPage">
+              Prev
+            </button>
+            <button class="pager-btn" type="button" (click)="imNext()" [disabled]="loading || !imPagination.hasNextPage">
+              Next
+            </button>
+          </div>
+        </div>
       </ng-container>
 
       <ng-container *ngIf="activeTab==='RISK_MATRIX'">
-        <div class="hint muted">Endpoint Risk Matrix belum kamu kirim.</div>
+        <div class="risk-matrix">
+          <div class="matrix-header">
+            <div class="matrix-title">Risk Matrix {{ getMatrixSize() }}x{{ getMatrixSize() }}</div>
+            <div class="matrix-legend">
+              <span class="legend-pill low"><i class="fa-solid fa-shield"></i> LOW</span>
+              <span class="legend-pill medium"><i class="fa-solid fa-triangle-exclamation"></i> MEDIUM</span>
+              <span class="legend-pill high"><i class="fa-solid fa-fire"></i> HIGH</span>
+            </div>
+          </div>
+
+          <div class="matrix-grid">
+            <div class="matrix-axis y-axis">Impact</div>
+
+            <div class="matrix-body">
+              <div class="matrix-row" *ngFor="let impact of getMatrixLevels().slice().reverse()">
+                <div class="matrix-label">{{ impact }}</div>
+                <div class="matrix-cells">
+                  <div
+                    class="matrix-cell"
+                    *ngFor="let likelihood of getMatrixLevels()"
+                    [class.low]="getRiskClass(getRiskScore(impact, likelihood))==='low'"
+                    [class.medium]="getRiskClass(getRiskScore(impact, likelihood))==='medium'"
+                    [class.high]="getRiskClass(getRiskScore(impact, likelihood))==='high'">
+                    {{ getRiskScore(impact, likelihood) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="matrix-axis x-axis">
+              <span>Skor Likelihood</span>
+              <div class="x-labels">
+                <span *ngFor="let likelihood of getMatrixLevels()">{{ likelihood }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </ng-container>
     </div>
   </div>
@@ -322,20 +427,23 @@
         <div class="field">
           <label>Nama</label>
           <input [(ngModel)]="rcForm.name" placeholder="Nama kategori" />
+          <small class="error" *ngIf="rcErrors.name">{{ rcErrors.name }}</small>
         </div>
 
         <div class="field">
           <label>Order</label>
           <input type="number" [(ngModel)]="rcForm.order" placeholder="1" />
+          <small class="error" *ngIf="rcErrors.order">{{ rcErrors.order }}</small>
         </div>
       </div>
 
       <div class="field">
         <label>Deskripsi</label>
         <input [(ngModel)]="rcForm.description" placeholder="Deskripsi kategori" />
+        <small class="error" *ngIf="rcErrors.description">{{ rcErrors.description }}</small>
       </div>
 
-      <small class="error" *ngIf="rcError">{{ rcError }}</small>
+      <small class="error" *ngIf="rcErrors.general">{{ rcErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeRCModal()" [disabled]="loading">Batal</button>
@@ -358,24 +466,66 @@
         <div class="field">
           <label>Level</label>
           <input type="number" [(ngModel)]="lkForm.level" placeholder="1" />
+          <small class="error" *ngIf="lkErrors.level">{{ lkErrors.level }}</small>
         </div>
 
         <div class="field">
           <label>Label</label>
           <input [(ngModel)]="lkForm.label" placeholder="Sangat Jarang" />
+          <small class="error" *ngIf="lkErrors.label">{{ lkErrors.label }}</small>
         </div>
       </div>
 
       <div class="field">
         <label>Deskripsi</label>
         <input [(ngModel)]="lkForm.description" placeholder="Deskripsi probabilitas" />
+        <small class="error" *ngIf="lkErrors.description">{{ lkErrors.description }}</small>
       </div>
 
-      <small class="error" *ngIf="lkError">{{ lkError }}</small>
+      <small class="error" *ngIf="lkErrors.general">{{ lkErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeLKModal()" [disabled]="loading">Batal</button>
         <button type="button" class="btn primary" (click)="saveLK()" [disabled]="loading">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: IMPACT ===================== -->
+<div class="modal-backdrop" *ngIf="showIMModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>{{ imModalMode === 'CREATE' ? 'Tambah Impact' : 'Ubah Impact' }}</h3>
+      <button type="button" class="icon-close" (click)="closeIMModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>Level</label>
+          <input type="number" [(ngModel)]="imForm.level" placeholder="1" />
+          <small class="error" *ngIf="imErrors.level">{{ imErrors.level }}</small>
+        </div>
+
+        <div class="field">
+          <label>Label</label>
+          <input [(ngModel)]="imForm.label" placeholder="Sangat Rendah" />
+          <small class="error" *ngIf="imErrors.label">{{ imErrors.label }}</small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <input [(ngModel)]="imForm.description" placeholder="Deskripsi dampak" />
+        <small class="error" *ngIf="imErrors.description">{{ imErrors.description }}</small>
+      </div>
+
+      <small class="error" *ngIf="imErrors.general">{{ imErrors.general }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeIMModal()" [disabled]="loading">Batal</button>
+        <button type="button" class="btn primary" (click)="saveIM()" [disabled]="loading">Simpan</button>
       </div>
     </div>
   </div>
@@ -393,11 +543,13 @@
       <div class="field">
         <label>Nama</label>
         <input [(ngModel)]="konteksForm.name" placeholder="Konteks Risiko 2026" />
+        <small class="error" *ngIf="konteksModalErrors.name">{{ konteksModalErrors.name }}</small>
       </div>
 
       <div class="field">
         <label>Deskripsi <span class="char-hint">(maks. 500 karakter)</span></label>
         <textarea [(ngModel)]="konteksForm.description" placeholder="Deskripsi konteks" rows="3" maxlength="500"></textarea>
+        <small class="error" *ngIf="konteksModalErrors.description">{{ konteksModalErrors.description }}</small>
       </div>
 
       <div class="divider"></div>
@@ -409,14 +561,16 @@
         <select [(ngModel)]="konteksForm.riskAppetiteLevel">
           <option *ngFor="let a of appetiteOptions" [value]="a">{{ a }}</option>
         </select>
+        <small class="error" *ngIf="konteksModalErrors.riskAppetiteLevel">{{ konteksModalErrors.riskAppetiteLevel }}</small>
       </div>
 
       <div class="field">
         <label>Deskripsi Risk Appetite <span class="char-hint">(maks. 500 karakter)</span></label>
         <textarea [(ngModel)]="konteksForm.riskAppetiteDescription" placeholder="Tingkat selera risiko..." rows="3" maxlength="500"></textarea>
+        <small class="error" *ngIf="konteksModalErrors.riskAppetiteDescription">{{ konteksModalErrors.riskAppetiteDescription }}</small>
       </div>
 
-      <small class="error" *ngIf="konteksModalError">{{ konteksModalError }}</small>
+      <small class="error" *ngIf="konteksModalErrors.general">{{ konteksModalErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeKonteksModal()" [disabled]="loading">Batal</button>

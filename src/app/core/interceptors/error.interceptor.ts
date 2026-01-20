@@ -5,6 +5,7 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { UiService } from '../services/ui.service';
+import { extractErrorMessage } from '../utils/error-utils';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
@@ -19,10 +20,7 @@ export class ErrorInterceptor implements HttpInterceptor {
             return throwError(() => err);
           }
 
-          const msg =
-            (typeof err.error === 'object' && err.error?.errors) ||
-            err.message ||
-            'Terjadi kesalahan';
+          const msg = extractErrorMessage(err);
           this.ui.error(String(msg));
         } else {
           this.ui.error('Terjadi kesalahan tidak terduga');

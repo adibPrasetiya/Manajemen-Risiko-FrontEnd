@@ -40,8 +40,55 @@ export interface KonteksListResponse {
 }
 
 export interface UpdateKonteksPayload {
+  name?: string;
+  code?: string;
+  description?: string;
+  periodStart?: number;
+  periodEnd?: number;
+  matrixSize?: number;
+  riskAppetiteLevel?: string;
+  riskAppetiteDescription?: string;
+  isActive?: boolean;
+}
+
+export interface KonteksFormModel {
   name: string;
   description: string;
+  riskAppetiteLevel: string;
+  riskAppetiteDescription: string;
+}
+
+export interface CreateKonteksPayload {
+  name: string;
+  code: string;
+  description: string;
+  periodStart: number;
+  periodEnd: number;
+  matrixSize: number;
+  riskAppetiteLevel: string;
+  riskAppetiteDescription: string;
+}
+
+export interface EditKonteksModel {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  periodStart: number | null;
+  periodEnd: number | null;
+  matrixSize: number;
+  riskAppetiteLevel: string;
+  riskAppetiteDescription: string;
+  isActive: boolean;
+}
+
+export interface CreateKonteksModel {
+  name: string;
+  code: string;
+  description: string;
+  periodStart: number | null;
+  periodEnd: number | null;
+  matrixSize: number;
   riskAppetiteLevel: string;
   riskAppetiteDescription: string;
 }
@@ -128,6 +175,52 @@ export interface CreateLikelihoodPayload {
 }
 
 export interface UpdateLikelihoodPayload {
+  level: number;
+  label: string;
+  description: string;
+}
+
+export interface ImpactScale {
+  id: string;
+  riskCategoryId: string;
+  level: number;
+  label: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  riskCategory?: {
+    id: string;
+    name: string;
+    order: number;
+    konteks?: {
+      id: string;
+      name: string;
+      code: string;
+      periodStart: number;
+      periodEnd: number;
+      isActive: boolean;
+    };
+  };
+}
+
+export interface ImpactScaleListResponse {
+  message: string;
+  data: ImpactScale[];
+  pagination: Pagination;
+}
+
+export interface ImpactScaleDetailResponse {
+  message: string;
+  data: ImpactScale;
+}
+
+export interface CreateImpactPayload {
+  level: number;
+  label: string;
+  description: string;
+}
+
+export interface UpdateImpactPayload {
   level: number;
   label: string;
   description: string;

@@ -313,6 +313,7 @@
         <div class="field">
           <label>Nama</label>
           <input [(ngModel)]="createModel.name" name="createName" placeholder="Konteks Risiko 2026" />
+          <small class="error" *ngIf="createErrors.name">{{ createErrors.name }}</small>
         </div>
 
           <div class="field">
@@ -323,6 +324,7 @@
               name="createCode"
               placeholder="RISK_2026"
             />
+            <small class="error" *ngIf="createErrors.code">{{ createErrors.code }}</small>
           </div>
       </div>
 
@@ -333,6 +335,7 @@
           name="createDesc"
           placeholder="Konteks manajemen risiko tahun 2026"
         />
+        <small class="error" *ngIf="createErrors.description">{{ createErrors.description }}</small>
       </div>
 
       <div class="divider"></div>
@@ -362,6 +365,7 @@
               </button>
             </div>
           </div>
+          <small class="error" *ngIf="createErrors.periodStart">{{ createErrors.periodStart }}</small>
         </div>
 
         <div class="field">
@@ -387,6 +391,7 @@
               </button>
             </div>
           </div>
+          <small class="error" *ngIf="createErrors.periodEnd">{{ createErrors.periodEnd }}</small>
         </div>
       </div>
 
@@ -401,6 +406,7 @@
             <option [ngValue]="4">4x4</option>
             <option [ngValue]="5">5x5</option>
           </select>
+          <small class="error" *ngIf="createErrors.matrixSize">{{ createErrors.matrixSize }}</small>
         </div>
 
         <div class="field">
@@ -426,6 +432,7 @@
               </button>
             </div>
           </div>
+          <small class="error" *ngIf="createErrors.riskAppetiteLevel">{{ createErrors.riskAppetiteLevel }}</small>
         </div>
       </div>
 
@@ -437,9 +444,10 @@
           name="createAppetiteDesc"
           placeholder="Organisasi menerima risiko dengan dampak menengah"
         ></textarea>
+        <small class="error" *ngIf="createErrors.riskAppetiteDescription">{{ createErrors.riskAppetiteDescription }}</small>
       </div>
 
-      <small class="error" *ngIf="createError">{{ createError }}</small>
+      <small class="error" *ngIf="createErrors.general">{{ createErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeCreateModal()" [disabled]="createLoading">
@@ -467,6 +475,7 @@
         <div class="field">
           <label>Nama</label>
           <input [(ngModel)]="editModel.name" name="editName" placeholder="Nama konteks" />
+          <small class="error" *ngIf="editErrors.name">{{ editErrors.name }}</small>
         </div>
 
           <div class="field">
@@ -477,6 +486,7 @@
               name="editCode"
               placeholder="RISK_2026"
             />
+            <small class="error" *ngIf="editErrors.code">{{ editErrors.code }}</small>
           </div>
       </div>
 
@@ -487,6 +497,7 @@
           name="editDesc"
           placeholder="Deskripsi konteks"
         />
+        <small class="error" *ngIf="editErrors.description">{{ editErrors.description }}</small>
       </div>
 
       <div class="divider"></div>
@@ -516,6 +527,7 @@
               </button>
             </div>
           </div>
+          <small class="error" *ngIf="editErrors.periodStart">{{ editErrors.periodStart }}</small>
         </div>
 
         <div class="field">
@@ -541,6 +553,7 @@
               </button>
             </div>
           </div>
+          <small class="error" *ngIf="editErrors.periodEnd">{{ editErrors.periodEnd }}</small>
         </div>
       </div>
 
@@ -555,6 +568,7 @@
             <option [ngValue]="4">4x4</option>
             <option [ngValue]="5">5x5</option>
           </select>
+          <small class="error" *ngIf="editErrors.matrixSize">{{ editErrors.matrixSize }}</small>
         </div>
 
         <div class="field">
@@ -565,6 +579,7 @@
             <option value="HIGH">HIGH</option>
             <option value="CRITICAL">CRITICAL</option>
           </select>
+          <small class="error" *ngIf="editErrors.riskAppetiteLevel">{{ editErrors.riskAppetiteLevel }}</small>
         </div>
       </div>
 
@@ -576,6 +591,7 @@
           name="editAppetiteDesc"
           placeholder="Keterangan risk appetite"
         ></textarea>
+        <small class="error" *ngIf="editErrors.riskAppetiteDescription">{{ editErrors.riskAppetiteDescription }}</small>
       </div>
 
       <div class="divider"></div>
@@ -591,7 +607,7 @@
         </label>
       </div>
 
-      <small class="error" *ngIf="editError">{{ editError }}</small>
+      <small class="error" *ngIf="editErrors.general">{{ editErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeEditModal()" [disabled]="loading">
