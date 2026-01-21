@@ -16,6 +16,14 @@
     </div>
 
     <div class="nav-section">
+      <div class="section-label">My Profile</div>
+      <a class="nav-item" routerLink="/dashboard/profile" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-user"></i></span>
+        <span class="nav-text">Profile</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
       <div class="section-label">Konteks Management</div>
       <a class="nav-item" routerLink="/konteks-management" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
         <span class="nav-icon"><i class="fa-solid fa-puzzle-piece"></i></span>

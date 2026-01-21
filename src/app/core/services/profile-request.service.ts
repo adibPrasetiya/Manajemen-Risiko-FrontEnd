@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 // Types
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -145,7 +146,7 @@ export interface UnverifiedProfilesQueryParams {
 
 @Injectable({ providedIn: 'root' })
 export class ProfileRequestService {
-  private base = 'http://api.dev.simulasibimtekd31.com';
+  private base = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) {}
 

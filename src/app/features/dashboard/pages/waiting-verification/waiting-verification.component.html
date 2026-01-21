@@ -1,0 +1,144 @@
+<div class="waiting-verification-page">
+  <div class="card">
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Memuat status verifikasi...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" *ngIf="!loading && errorMsg">
+      <div class="error-icon">
+        <i class="fa-solid fa-circle-exclamation"></i>
+      </div>
+      <h3>Terjadi Kesalahan</h3>
+      <p>{{ errorMsg }}</p>
+      <button class="btn primary" (click)="refreshStatus()">Coba Lagi</button>
+    </div>
+
+    <!-- Pending Verification State -->
+    <div
+      class="pending-state"
+      *ngIf="!loading && !errorMsg && latestRequest?.status === 'PENDING'"
+    >
+      <div class="icon-wrapper pending">
+        <i class="fa-solid fa-hourglass-half"></i>
+      </div>
+      <h2>Menunggu Verifikasi Administrator</h2>
+      <p class="description">
+        Profile Anda sedang dalam proses verifikasi. Kami akan memberitahu Anda
+        setelah proses selesai.
+      </p>
+
+      <div class="status-card">
+        <div class="status-row">
+          <span class="label">Status</span>
+          <span class="badge" [ngClass]="getStatusClass(latestRequest!.status)">
+            {{ getStatusLabel(latestRequest!.status) }}
+          </span>
+        </div>
+        <div class="status-row">
+          <span class="label">Diajukan Pada</span>
+          <span class="value">{{
+            formatDate(latestRequest!.requestedAt)
+          }}</span>
+        </div>
+        <div class="status-row" *ngIf="latestRequest!.jabatan">
+          <span class="label">Jabatan</span>
+          <span class="value">{{ latestRequest!.jabatan }}</span>
+        </div>
+        <div class="status-row" *ngIf="latestRequest!.unitKerja">
+          <span class="label">Unit Kerja</span>
+          <span class="value">{{ latestRequest!.unitKerja.name }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn secondary" (click)="viewRequestHistory()">
+          <i class="fa-solid fa-history"></i>
+          Lihat Riwayat
+        </button>
+        <button class="btn outline" (click)="logout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          Logout
+        </button>
+      </div>
+
+      <p class="polling-note">
+        <i class="fa-solid fa-sync"></i>
+        Halaman ini akan otomatis memperbarui status setiap 30 detik.
+      </p>
+    </div>
+
+    <!-- Rejected State -->
+    <div
+      class="rejected-state"
+      *ngIf="!loading && !errorMsg && latestRequest?.status === 'REJECTED'"
+    >
+      <div class="icon-wrapper rejected">
+        <i class="fa-solid fa-circle-xmark"></i>
+      </div>
+      <h2>Verifikasi Ditolak</h2>
+      <p class="description">
+        Permintaan verifikasi profile Anda telah ditolak oleh administrator.
+      </p>
+
+      <div class="status-card">
+        <div class="status-row">
+          <span class="label">Status</span>
+          <span class="badge status-rejected">Ditolak</span>
+        </div>
+        <div class="status-row">
+          <span class="label">Diproses Pada</span>
+          <span class="value">{{
+            formatDate(latestRequest!.processedAt)
+          }}</span>
+        </div>
+        <div
+          class="status-row rejection-reason"
+          *ngIf="latestRequest!.rejectionReason"
+        >
+          <span class="label">Alasan Penolakan</span>
+          <span class="value reason">{{ latestRequest!.rejectionReason }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" (click)="submitNewRequest()">
+          <i class="fa-solid fa-paper-plane"></i>
+          Ajukan Verifikasi Ulang
+        </button>
+        <button class="btn secondary" (click)="viewRequestHistory()">
+          <i class="fa-solid fa-history"></i>
+          Lihat Riwayat
+        </button>
+        <button class="btn outline" (click)="logout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Approved State (redirect soon) -->
+    <div
+      class="approved-state"
+      *ngIf="!loading && !errorMsg && latestRequest?.status === 'APPROVED'"
+    >
+      <div class="icon-wrapper approved">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h2>Profile Terverifikasi!</h2>
+      <p class="description">
+        Selamat! Profile Anda telah diverifikasi oleh administrator. Anda akan
+        dialihkan ke dashboard...
+      </p>
+
+      <div class="actions">
+        <button class="btn primary" routerLink="/dashboard">
+          <i class="fa-solid fa-arrow-right"></i>
+          Lanjutkan ke Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,79 +1,539 @@
 <div class="profile-page">
-  <div class="header">
-    <h2>Lengkapi Profil</h2>
-    <p class="sub">Isi data diri dulu sebelum masuk dashboard.</p>
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loadingProfile">
+    <div class="spinner"></div>
+    <p>Memuat data profile...</p>
   </div>
 
-  <form class="form" [formGroup]="form" (ngSubmit)="save()">
-    <div class="field">
-      <label>Jabatan <span class="req">*</span></label>
-      <input type="text" formControlName="jabatan" placeholder="Contoh: Manager Operasi" />
-      <small class="error" *ngIf="form.controls.jabatan.touched && form.controls.jabatan.invalid">
-        Jabatan wajib diisi (min. 3 karakter).
-      </small>
-    </div>
+  <!-- Error State -->
+  <div class="error-state" *ngIf="!loadingProfile && profileError">
+    <i class="fa-solid fa-circle-exclamation"></i>
+    <p>{{ profileError }}</p>
+    <button class="btn secondary" (click)="loadProfile()">Coba Lagi</button>
+  </div>
 
-    <div class="field unit-wrapper">
-      <label>Unit Kerja <span class="req">*</span></label>
-      <input
-        #unitInput
-        type="text"
-        formControlName="unitKerja"
-        placeholder="Ketik nama unit kerja..."
-        (focus)="onUnitFocus()"
-        (input)="onUnitInput()"
-        autocomplete="off"
-      />
-
-      <small
-        class="error"
-        *ngIf="form.controls.unitKerja.touched && form.controls.unitKerja.errors?.['required']"
-      >
-        Unit kerja wajib diisi.
-      </small>
-
-      <small
-        class="error"
-        *ngIf="form.controls.unitKerja.touched && form.controls.unitKerja.errors?.['notInList']"
-      >
-        Unit kerja harus dipilih dari daftar.
-      </small>
-
-      <div class="dropdown" *ngIf="showDropdown">
-        <button
-          type="button"
-          class="option"
-          *ngFor="let u of filteredUnitKerja"
-          (click)="pickUnit(u)"
-        >
-          {{ u.name }} ({{ u.code }})
-        </button>
-
-        <div class="empty" *ngIf="filteredUnitKerja.length === 0">
-          Tidak ada yang cocok.
+  <!-- Main Content -->
+  <ng-container *ngIf="!loadingProfile && !profileError && profile">
+    <!-- Profile Card Header -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar">
+          {{ getInitials(profile.name) }}
+        </div>
+        <div class="profile-info">
+          <h1 class="name">{{ profile.name }}</h1>
+          <p class="email">{{ profile.email }}</p>
+          <p class="position">
+            {{ profile.jabatan }}
+            <span class="separator">•</span>
+            {{ profile.unitKerja.name }}
+          </p>
+        </div>
+        <div class="verification-badge" [class.verified]="profile.isVerified">
+          <i class="fa-solid" [ngClass]="profile.isVerified ? 'fa-check-circle' : 'fa-clock'"></i>
+          {{ profile.isVerified ? 'Terverifikasi' : 'Menunggu Verifikasi' }}
         </div>
       </div>
     </div>
 
-    <div class="field">
-      <label>Nomor HP <span class="req">*</span></label>
-      <input
-        type="text"
-        formControlName="nomorHP"
-        placeholder="Contoh: 0821123456789"
-        inputmode="numeric"
-      />
-      <small class="error" *ngIf="form.controls.nomorHP.touched && form.controls.nomorHP.invalid">
-        Nomor HP wajib diisi (min. 9 digit).
-      </small>
-    </div>
-
-    <div class="actions">
-      <button class="btn primary" type="submit" [disabled]="loading">
-        {{ loading ? 'Menyimpan...' : 'Simpan Profil' }}
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'info'"
+        (click)="switchTab('info')"
+      >
+        <i class="fa-solid fa-user"></i>
+        Informasi Profile
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'edit'"
+        (click)="switchTab('edit')"
+      >
+        <i class="fa-solid fa-pen-to-square"></i>
+        Perubahan Data
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'history'"
+        (click)="switchTab('history')"
+      >
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        Riwayat Request
       </button>
     </div>
 
-    <p class="server-error" *ngIf="errorMsg">{{ errorMsg }}</p>
-  </form>
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- TAB 1: Informasi Profile -->
+      <div class="tab-panel" *ngIf="activeTab === 'info'">
+        <div class="info-card">
+          <h3 class="section-title">Data Diri</h3>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">Username</span>
+              <span class="info-value">{{ profile.username }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Nama Lengkap</span>
+              <span class="info-value">{{ profile.name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email</span>
+              <span class="info-value">{{ profile.email }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Jabatan</span>
+              <span class="info-value">{{ profile.jabatan }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Unit Kerja</span>
+              <span class="info-value">{{ profile.unitKerja.name }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Nomor HP</span>
+              <span class="info-value">{{ profile.nomorHP || '-' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3 class="section-title">Roles</h3>
+          <div class="roles-list">
+            <span
+              class="role-badge"
+              *ngFor="let role of profile.roles"
+              [ngClass]="getRoleBadgeClass(role)"
+            >
+              {{ getRoleLabel(role) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3 class="section-title">Keamanan</h3>
+          <div class="security-section">
+            <p class="security-desc">Ubah password akun Anda untuk keamanan.</p>
+            <button class="btn secondary" (click)="openPasswordModal()">
+              <i class="fa-solid fa-key"></i>
+              Ubah Password
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Perubahan Data -->
+      <div class="tab-panel" *ngIf="activeTab === 'edit'">
+        <!-- Section 1: Edit Nomor HP -->
+        <div class="edit-card">
+          <h3 class="section-title">Edit Nomor HP</h3>
+          <p class="section-desc">Perubahan nomor HP dapat dilakukan langsung tanpa persetujuan administrator.</p>
+
+          <form [formGroup]="phoneForm" (ngSubmit)="savePhone()" class="inline-form">
+            <div class="field">
+              <label>Nomor HP</label>
+              <input
+                type="text"
+                formControlName="nomorHP"
+                placeholder="Contoh: 08123456789"
+                inputmode="numeric"
+              />
+              <small class="hint">Format: 08xxx atau 62xxx (10-15 digit)</small>
+              <small
+                class="error"
+                *ngIf="phoneForm.controls.nomorHP.touched && phoneForm.controls.nomorHP.invalid"
+              >
+                Format nomor HP tidak valid.
+              </small>
+            </div>
+            <button
+              type="submit"
+              class="btn primary"
+              [disabled]="savingPhone || phoneForm.invalid"
+            >
+              {{ savingPhone ? 'Menyimpan...' : 'Simpan Nomor HP' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Section 2: Request Perubahan Jabatan/Unit Kerja -->
+        <div class="edit-card">
+          <h3 class="section-title">Ajukan Perubahan Data</h3>
+          <p class="section-desc">
+            Perubahan jabatan atau unit kerja memerlukan persetujuan administrator.
+          </p>
+
+          <!-- Pending Request Warning -->
+          <div class="pending-warning" *ngIf="pendingRequest">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <div class="warning-content">
+              <strong>Permintaan Sedang Diproses</strong>
+              <p>Anda memiliki permintaan yang sedang menunggu persetujuan. Batalkan terlebih dahulu jika ingin mengajukan permintaan baru.</p>
+              <div class="pending-details">
+                <span *ngIf="pendingRequest.jabatan">Jabatan: {{ pendingRequest.jabatan }}</span>
+                <span *ngIf="pendingRequest.unitKerja">Unit Kerja: {{ pendingRequest.unitKerja.name }}</span>
+                <span *ngIf="pendingRequest.nomorHP">Nomor HP: {{ pendingRequest.nomorHP }}</span>
+              </div>
+              <button class="btn danger small" (click)="confirmCancel(pendingRequest.id)">
+                <i class="fa-solid fa-times"></i>
+                Batalkan Permintaan
+              </button>
+            </div>
+          </div>
+
+          <!-- Change Request Form -->
+          <form
+            [formGroup]="changeRequestForm"
+            (ngSubmit)="submitChangeRequest()"
+            class="change-form"
+            *ngIf="!pendingRequest"
+          >
+            <div class="form-info">
+              <i class="fa-solid fa-info-circle"></i>
+              Isi minimal satu field yang ingin diubah.
+            </div>
+
+            <div class="field">
+              <label>Jabatan Baru</label>
+              <input
+                type="text"
+                formControlName="jabatan"
+                placeholder="Masukkan jabatan baru (opsional)"
+              />
+              <small class="hint">3-255 karakter</small>
+            </div>
+
+            <div class="field unit-wrapper">
+              <label>Unit Kerja Baru</label>
+              <input
+                #unitInput
+                type="text"
+                formControlName="unitKerja"
+                placeholder="Ketik untuk mencari unit kerja..."
+                (focus)="onUnitFocus()"
+                (input)="onUnitInput()"
+                autocomplete="off"
+              />
+              <div class="dropdown" *ngIf="showUnitDropdown">
+                <button
+                  type="button"
+                  class="option"
+                  *ngFor="let u of filteredUnitKerja"
+                  (click)="pickUnit(u)"
+                >
+                  {{ u.name }} ({{ u.code }})
+                </button>
+                <div class="empty" *ngIf="filteredUnitKerja.length === 0">
+                  Tidak ada yang cocok.
+                </div>
+              </div>
+              <small class="hint">Pilih dari daftar (opsional)</small>
+            </div>
+
+            <div class="field">
+              <label>Nomor HP Baru</label>
+              <input
+                type="text"
+                formControlName="nomorHP"
+                placeholder="Contoh: 08123456789"
+                inputmode="numeric"
+              />
+              <small class="hint">Format: 08xxx atau 62xxx (10-15 digit)</small>
+            </div>
+
+            <div class="error-msg" *ngIf="requestError">
+              <i class="fa-solid fa-exclamation-circle"></i>
+              {{ requestError }}
+            </div>
+
+            <button
+              type="submit"
+              class="btn primary"
+              [disabled]="submittingRequest"
+            >
+              <i class="fa-solid fa-paper-plane" *ngIf="!submittingRequest"></i>
+              {{ submittingRequest ? 'Mengirim...' : 'Ajukan Perubahan' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 3: Riwayat Request -->
+      <div class="tab-panel" *ngIf="activeTab === 'history'">
+        <!-- Filters -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label>Status</label>
+            <select [(ngModel)]="fStatus" (change)="applyFilters()">
+              <option value="ALL">Semua</option>
+              <option value="PENDING">Menunggu</option>
+              <option value="APPROVED">Disetujui</option>
+              <option value="REJECTED">Ditolak</option>
+            </select>
+          </div>
+          <button class="btn-reset" (click)="resetFilters()" *ngIf="fStatus !== 'ALL'">
+            <i class="fa-solid fa-times"></i>
+            Reset Filter
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-state small" *ngIf="loadingRequests">
+          <div class="spinner"></div>
+          <p>Memuat data...</p>
+        </div>
+
+        <!-- Error -->
+        <div class="error-state small" *ngIf="!loadingRequests && requestsError">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <p>{{ requestsError }}</p>
+          <button class="btn secondary" (click)="fetchRequests(true)">Coba Lagi</button>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!loadingRequests && !requestsError && requests.length === 0">
+          <div class="empty-icon">
+            <i class="fa-solid fa-inbox"></i>
+          </div>
+          <h3>Belum Ada Riwayat</h3>
+          <p>Anda belum pernah mengajukan permintaan perubahan profile.</p>
+        </div>
+
+        <!-- Request List -->
+        <div class="requests-list" *ngIf="!loadingRequests && !requestsError && requests.length > 0">
+          <div
+            class="request-card"
+            *ngFor="let req of requests; trackBy: trackById"
+            (click)="viewDetail(req)"
+          >
+            <div class="card-header">
+              <span class="request-type">{{ getRequestTypeLabel(req.requestType) }}</span>
+              <span class="badge" [ngClass]="getStatusClass(req.status)">
+                {{ getStatusLabel(req.status) }}
+              </span>
+            </div>
+
+            <div class="card-body">
+              <div class="change-summary">
+                <div class="change-item" *ngIf="req.jabatan">
+                  <span class="field-label">Jabatan</span>
+                  <span class="field-value">{{ req.jabatan }}</span>
+                </div>
+                <div class="change-item" *ngIf="req.unitKerja">
+                  <span class="field-label">Unit Kerja</span>
+                  <span class="field-value">{{ req.unitKerja.name }}</span>
+                </div>
+                <div class="change-item" *ngIf="req.nomorHP">
+                  <span class="field-label">Nomor HP</span>
+                  <span class="field-value">{{ req.nomorHP }}</span>
+                </div>
+              </div>
+
+              <div class="rejection-reason" *ngIf="req.status === 'REJECTED' && req.rejectionReason">
+                <i class="fa-solid fa-exclamation-circle"></i>
+                <span>{{ req.rejectionReason }}</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="date">
+                <i class="fa-regular fa-clock"></i>
+                {{ formatDate(req.requestedAt) }}
+              </span>
+              <div class="actions" (click)="$event.stopPropagation()">
+                <button
+                  class="btn-action cancel"
+                  *ngIf="req.status === 'PENDING'"
+                  (click)="confirmCancel(req.id)"
+                  title="Batalkan permintaan"
+                >
+                  <i class="fa-solid fa-times"></i>
+                  Batalkan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="pagination && pagination.totalPages > 1">
+          <button class="btn-page" [disabled]="page <= 1" (click)="prevPage()">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <ng-container *ngFor="let p of getPageNumbers()">
+            <span class="ellipsis" *ngIf="p === -1">...</span>
+            <button
+              class="btn-page"
+              *ngIf="p !== -1"
+              [class.active]="p === page"
+              (click)="goToPage(p)"
+            >
+              {{ p }}
+            </button>
+          </ng-container>
+
+          <button
+            class="btn-page"
+            [disabled]="page >= pagination.totalPages"
+            (click)="nextPage()"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-backdrop" *ngIf="showDetailModal" (click)="closeDetailModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Detail Permintaan</h3>
+      <button class="btn-close" (click)="closeDetailModal()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedRequest">
+      <div class="detail-section">
+        <div class="detail-row">
+          <span class="label">Status</span>
+          <span class="badge" [ngClass]="getStatusClass(selectedRequest.status)">
+            {{ getStatusLabel(selectedRequest.status) }}
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Tipe</span>
+          <span class="value">{{ getRequestTypeLabel(selectedRequest.requestType) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Diajukan</span>
+          <span class="value">{{ formatDateLong(selectedRequest.requestedAt) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedRequest.processedAt">
+          <span class="label">Diproses</span>
+          <span class="value">{{ formatDateLong(selectedRequest.processedAt) }}</span>
+        </div>
+      </div>
+
+      <div class="detail-section" *ngIf="selectedRequest.jabatan || selectedRequest.unitKerja || selectedRequest.nomorHP">
+        <h4>Perubahan yang Diminta</h4>
+        <div class="detail-row" *ngIf="selectedRequest.jabatan">
+          <span class="label">Jabatan</span>
+          <span class="value">{{ selectedRequest.jabatan }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedRequest.unitKerja">
+          <span class="label">Unit Kerja</span>
+          <span class="value">{{ selectedRequest.unitKerja.name }} ({{ selectedRequest.unitKerja.code }})</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedRequest.nomorHP">
+          <span class="label">Nomor HP</span>
+          <span class="value">{{ selectedRequest.nomorHP }}</span>
+        </div>
+      </div>
+
+      <div class="detail-section rejection" *ngIf="selectedRequest.status === 'REJECTED' && selectedRequest.rejectionReason">
+        <h4>Alasan Penolakan</h4>
+        <p class="rejection-text">{{ selectedRequest.rejectionReason }}</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn secondary" (click)="closeDetailModal()">Tutup</button>
+      <button
+        class="btn danger"
+        *ngIf="selectedRequest?.status === 'PENDING'"
+        (click)="confirmCancel(selectedRequest!.id)"
+      >
+        <i class="fa-solid fa-times"></i>
+        Batalkan Permintaan
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div class="modal-backdrop" *ngIf="showPasswordModal" (click)="closePasswordModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Ubah Password</h3>
+      <button class="btn-close" (click)="closePasswordModal()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="modal-body">
+      <div class="field">
+        <label>Password Saat Ini</label>
+        <input type="password" formControlName="currentPassword" />
+        <small
+          class="error"
+          *ngIf="passwordForm.controls.currentPassword.touched && passwordForm.controls.currentPassword.invalid"
+        >
+          Password saat ini wajib diisi.
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Password Baru</label>
+        <input type="password" formControlName="newPassword" />
+        <small class="hint">Minimal 8 karakter.</small>
+        <small
+          class="error"
+          *ngIf="passwordForm.controls.newPassword.touched && passwordForm.controls.newPassword.invalid"
+        >
+          Password baru minimal 8 karakter.
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Konfirmasi Password Baru</label>
+        <input type="password" formControlName="confirmPassword" />
+        <small
+          class="error"
+          *ngIf="passwordForm.controls.confirmPassword.touched && passwordForm.controls.confirmPassword.invalid"
+        >
+          Konfirmasi password wajib diisi.
+        </small>
+      </div>
+
+      <div class="error-msg" *ngIf="passError">
+        <i class="fa-solid fa-exclamation-circle"></i>
+        {{ passError }}
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn secondary" (click)="closePasswordModal()">Batal</button>
+        <button type="submit" class="btn primary" [disabled]="savingPassword">
+          {{ savingPassword ? 'Menyimpan...' : 'Ubah Password' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Cancel Confirmation Modal -->
+<div class="modal-backdrop" *ngIf="showCancelConfirm" (click)="closeCancelConfirm()">
+  <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Batalkan Permintaan?</h3>
+      <button class="btn-close" (click)="closeCancelConfirm()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p>Apakah Anda yakin ingin membatalkan permintaan ini? Tindakan ini tidak dapat dibatalkan.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn secondary" (click)="closeCancelConfirm()">Tidak</button>
+      <button class="btn danger" [disabled]="cancelLoading" (click)="executeCancel()">
+        {{ cancelLoading ? 'Memproses...' : 'Ya, Batalkan' }}
+      </button>
+    </div>
+  </div>
 </div>

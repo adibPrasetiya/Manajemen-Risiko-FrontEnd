@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { DashboardLayoutComponent } from '../../layouts/dashboard/dashboard-layout.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { ProfileComponent } from './pages/profile/profile.component';
-import { EditProfileComponent } from './pages/edit-profile/edit-profile.component';
+import { WaitingVerificationComponent } from './pages/waiting-verification/waiting-verification.component';
 
 export const DASHBOARD_ROUTES: Routes = [
   {
@@ -11,7 +11,10 @@ export const DASHBOARD_ROUTES: Routes = [
     children: [
       { path: '', component: DashboardComponent },
       { path: 'profile', component: ProfileComponent },
-      { path: 'edit-profile', component: EditProfileComponent },
+      { path: 'waiting-verification', component: WaitingVerificationComponent },
+      // Redirects for backward compatibility
+      { path: 'edit-profile', redirectTo: 'profile', pathMatch: 'full' },
+      { path: 'my-profile-requests', redirectTo: 'profile', pathMatch: 'full' },
     ],
   },
 ];
