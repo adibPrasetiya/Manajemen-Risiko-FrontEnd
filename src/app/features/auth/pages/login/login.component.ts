@@ -41,19 +41,19 @@ export class LoginComponent {
 
     this.auth.login({ identifier, password }).subscribe({
       next: (res) => {
-  localStorage.setItem('auth_username', res.data.user.username);
+        localStorage.setItem('auth_username', res.data.user.username);
 
-  const hasProfile = res.data.user.hasProfile === true;
-  localStorage.setItem('hasProfile', String(hasProfile));
+        const hasProfile = res.data.user.hasProfile === true;
+        localStorage.setItem('hasProfile', String(hasProfile));
 
+        if (!hasProfile) {
+          // User belum punya profile, redirect ke halaman create profile
+          this.router.navigate(['/dashboard/create-profile']);
+          return;
+        }
 
-  if (!hasProfile) {
-    this.router.navigate(['/dashboard/profile']);
-    return;
-  }
-
-  this.router.navigate(['/dashboard']);
-},
+        this.router.navigate(['/dashboard']);
+      },
 
       error: (e) => {
         this.errorMsg = e?.error?.errors ?? e?.error?.message ?? 'Login gagal';

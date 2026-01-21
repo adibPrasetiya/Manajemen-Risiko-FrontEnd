@@ -66,7 +66,7 @@ export class WaitingVerificationComponent implements OnInit, OnDestroy {
 
           // If 403 with mustCreateProfile, redirect to create profile
           if (err?.status === 403 && err?.error?.mustCreateProfile) {
-            this.router.navigate(['/dashboard/profile']);
+            this.router.navigate(['/dashboard/create-profile']);
             return;
           }
 
@@ -95,7 +95,7 @@ export class WaitingVerificationComponent implements OnInit, OnDestroy {
             }
           } else {
             // No requests at all, redirect to create profile
-            this.router.navigate(['/dashboard/profile']);
+            this.router.navigate(['/dashboard/create-profile']);
           }
         },
         error: () => {
@@ -148,13 +148,11 @@ export class WaitingVerificationComponent implements OnInit, OnDestroy {
   }
 
   viewRequestHistory(): void {
-    this.router.navigate(['/dashboard/my-profile-requests']);
+    this.router.navigate(['/dashboard/profile']);
   }
 
   submitNewRequest(): void {
-    this.router.navigate(['/dashboard/my-profile-requests'], {
-      queryParams: { action: 'new' },
-    });
+    this.router.navigate(['/dashboard/profile']);
   }
 
   logout(): void {

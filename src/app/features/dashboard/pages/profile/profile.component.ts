@@ -133,7 +133,6 @@ export class ProfileComponent implements OnInit {
 
     this.profileService.getMyProfile().subscribe({
       next: (res) => {
-        console.log(res);
         this.profile = res.data;
         this.loadingProfile = false;
 
@@ -145,10 +144,9 @@ export class ProfileComponent implements OnInit {
       error: (err) => {
         this.loadingProfile = false;
 
-        // If 403 with mustCreateProfile, this is create mode
+        // If 403 with mustCreateProfile, redirect to create profile page
         if (err?.status === 403 && err?.error?.mustCreateProfile) {
-          // Redirect to create profile flow (waiting-verification handles this)
-          this.router.navigate(['/dashboard/waiting-verification']);
+          this.router.navigate(['/dashboard/create-profile']);
           return;
         }
 
