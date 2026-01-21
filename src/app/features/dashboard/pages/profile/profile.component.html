@@ -169,16 +169,11 @@
             <i class="fa-solid fa-hourglass-half"></i>
             <div class="warning-content">
               <strong>Permintaan Sedang Diproses</strong>
-              <p>Anda memiliki permintaan yang sedang menunggu persetujuan. Batalkan terlebih dahulu jika ingin mengajukan permintaan baru.</p>
+              <p>Anda memiliki permintaan yang sedang menunggu persetujuan. Silakan tunggu hingga diproses.</p>
               <div class="pending-details">
                 <span *ngIf="pendingRequest.jabatan">Jabatan: {{ pendingRequest.jabatan }}</span>
                 <span *ngIf="pendingRequest.unitKerja">Unit Kerja: {{ pendingRequest.unitKerja.name }}</span>
-                <span *ngIf="pendingRequest.nomorHP">Nomor HP: {{ pendingRequest.nomorHP }}</span>
               </div>
-              <button class="btn danger small" (click)="confirmCancel(pendingRequest.id)">
-                <i class="fa-solid fa-times"></i>
-                Batalkan Permintaan
-              </button>
             </div>
           </div>
 
@@ -229,17 +224,6 @@
                 </div>
               </div>
               <small class="hint">Pilih dari daftar (opsional)</small>
-            </div>
-
-            <div class="field">
-              <label>Nomor HP Baru</label>
-              <input
-                type="text"
-                formControlName="nomorHP"
-                placeholder="Contoh: 08123456789"
-                inputmode="numeric"
-              />
-              <small class="hint">Format: 08xxx atau 62xxx (10-15 digit)</small>
             </div>
 
             <div class="error-msg" *ngIf="requestError">
@@ -324,10 +308,6 @@
                   <span class="field-label">Unit Kerja</span>
                   <span class="field-value">{{ req.unitKerja.name }}</span>
                 </div>
-                <div class="change-item" *ngIf="req.nomorHP">
-                  <span class="field-label">Nomor HP</span>
-                  <span class="field-value">{{ req.nomorHP }}</span>
-                </div>
               </div>
 
               <div class="rejection-reason" *ngIf="req.status === 'REJECTED' && req.rejectionReason">
@@ -341,17 +321,6 @@
                 <i class="fa-regular fa-clock"></i>
                 {{ formatDate(req.requestedAt) }}
               </span>
-              <div class="actions" (click)="$event.stopPropagation()">
-                <button
-                  class="btn-action cancel"
-                  *ngIf="req.status === 'PENDING'"
-                  (click)="confirmCancel(req.id)"
-                  title="Batalkan permintaan"
-                >
-                  <i class="fa-solid fa-times"></i>
-                  Batalkan
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -419,7 +388,7 @@
         </div>
       </div>
 
-      <div class="detail-section" *ngIf="selectedRequest.jabatan || selectedRequest.unitKerja || selectedRequest.nomorHP">
+      <div class="detail-section" *ngIf="selectedRequest.jabatan || selectedRequest.unitKerja">
         <h4>Perubahan yang Diminta</h4>
         <div class="detail-row" *ngIf="selectedRequest.jabatan">
           <span class="label">Jabatan</span>
@@ -428,10 +397,6 @@
         <div class="detail-row" *ngIf="selectedRequest.unitKerja">
           <span class="label">Unit Kerja</span>
           <span class="value">{{ selectedRequest.unitKerja.name }} ({{ selectedRequest.unitKerja.code }})</span>
-        </div>
-        <div class="detail-row" *ngIf="selectedRequest.nomorHP">
-          <span class="label">Nomor HP</span>
-          <span class="value">{{ selectedRequest.nomorHP }}</span>
         </div>
       </div>
 
@@ -443,14 +408,6 @@
 
     <div class="modal-footer">
       <button class="btn secondary" (click)="closeDetailModal()">Tutup</button>
-      <button
-        class="btn danger"
-        *ngIf="selectedRequest?.status === 'PENDING'"
-        (click)="confirmCancel(selectedRequest!.id)"
-      >
-        <i class="fa-solid fa-times"></i>
-        Batalkan Permintaan
-      </button>
     </div>
   </div>
 </div>
@@ -515,25 +472,3 @@
   </div>
 </div>
 
-<!-- Cancel Confirmation Modal -->
-<div class="modal-backdrop" *ngIf="showCancelConfirm" (click)="closeCancelConfirm()">
-  <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Batalkan Permintaan?</h3>
-      <button class="btn-close" (click)="closeCancelConfirm()">
-        <i class="fa-solid fa-times"></i>
-      </button>
-    </div>
-
-    <div class="modal-body">
-      <p>Apakah Anda yakin ingin membatalkan permintaan ini? Tindakan ini tidak dapat dibatalkan.</p>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn secondary" (click)="closeCancelConfirm()">Tidak</button>
-      <button class="btn danger" [disabled]="cancelLoading" (click)="executeCancel()">
-        {{ cancelLoading ? 'Memproses...' : 'Ya, Batalkan' }}
-      </button>
-    </div>
-  </div>
-</div>

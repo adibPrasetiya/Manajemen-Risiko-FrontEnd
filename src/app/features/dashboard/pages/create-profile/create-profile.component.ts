@@ -23,7 +23,6 @@ export class CreateProfileComponent {
   @ViewChild('unitInput') unitInput!: ElementRef<HTMLInputElement>;
 
   loading = false;
-  errorMsg = '';
 
   filteredUnitKerja: UnitKerja[] = [];
   showDropdown = false;
@@ -91,8 +90,6 @@ export class CreateProfileComponent {
   }
 
   save() {
-    this.errorMsg = '';
-
     // validasi unit kerja wajib dipilih dari dropdown
     if (!this.selectedUnitKerjaId) {
       this.form.controls.unitKerja.setErrors({ notInList: true });
@@ -128,12 +125,10 @@ export class CreateProfileComponent {
             'Profile berhasil dibuat. Silakan tunggu verifikasi dari administrator.',
           'Berhasil'
         );
-        this.router.navigate(['/dashboard/waiting-verification']);
+        this.router.navigate(['/auth/waiting-verification']);
       },
       error: (e) => {
         this.loading = false;
-        this.errorMsg =
-          e?.error?.errors || e?.error?.message || 'Gagal membuat profile';
       },
     });
   }

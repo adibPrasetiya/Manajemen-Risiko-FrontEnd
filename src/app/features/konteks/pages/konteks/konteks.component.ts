@@ -62,7 +62,6 @@ export class KonteksComponent implements OnInit {
     matrixSize?: string;
     riskAppetiteLevel?: string;
     riskAppetiteDescription?: string;
-    general?: string;
   } = {};
   editModel: EditKonteksModel = {
     id: '',
@@ -88,7 +87,6 @@ export class KonteksComponent implements OnInit {
     matrixSize?: string;
     riskAppetiteLevel?: string;
     riskAppetiteDescription?: string;
-    general?: string;
   } = {};
   createLoading = false;
   createModel: CreateKonteksModel = {
@@ -464,9 +462,9 @@ export class KonteksComponent implements OnInit {
       error: (e) => {
         this.createLoading = false;
         const fieldErrors = extractFieldErrors(e);
-        this.createErrors = Object.keys(fieldErrors).length
-          ? fieldErrors
-          : { general: extractErrorMessage(e) || 'Gagal membuat konteks. Coba lagi.' };
+        if (Object.keys(fieldErrors).length) {
+          this.createErrors = fieldErrors;
+        }
         console.error('[POST /konteks] error:', e);
       },
     });
@@ -563,9 +561,9 @@ export class KonteksComponent implements OnInit {
       error: (e) => {
         this.loading = false;
         const fieldErrors = extractFieldErrors(e);
-        this.editErrors = Object.keys(fieldErrors).length
-          ? fieldErrors
-          : { general: extractErrorMessage(e) || 'Gagal update konteks. Coba lagi.' };
+        if (Object.keys(fieldErrors).length) {
+          this.editErrors = fieldErrors;
+        }
         console.error('[PATCH /konteks/:id] error:', e);
       },
     });

@@ -66,7 +66,16 @@ export class WaitingVerificationComponent implements OnInit, OnDestroy {
 
           // If 403 with mustCreateProfile, redirect to create profile
           if (err?.status === 403 && err?.error?.mustCreateProfile) {
-            this.router.navigate(['/dashboard/create-profile']);
+            this.router.navigate(['/auth/create-profile']);
+            return;
+          }
+
+          if (
+            err?.status === 404 ||
+            String(err?.error?.message || '').toLowerCase().includes('profile tidak ditemukan')
+          ) {
+            this.ui.infoPersistent('Pembuatan profil anda ditolak');
+            this.router.navigate(['/auth/create-profile']);
             return;
           }
 
@@ -92,13 +101,31 @@ export class WaitingVerificationComponent implements OnInit, OnDestroy {
               // Profile is verified, redirect to dashboard
               this.ui.success('Profile Anda telah diverifikasi!', 'Berhasil');
               this.router.navigate(['/dashboard']);
+              return;
+            }
+
+            if (
+              latest.status === 'REJECTED' &&
+              latest.requestType === 'INITIAL_VERIFICATION'
+            ) {
+              this.ui.infoPersistent('Pembuatan profil anda ditolak');
+              this.router.navigate(['/auth/create-profile']);
             }
           } else {
             // No requests at all, redirect to create profile
-            this.router.navigate(['/dashboard/create-profile']);
+            this.router.navigate(['/auth/create-profile']);
           }
         },
-        error: () => {
+        error: (err) => {
+          if (
+            err?.status === 404 ||
+            String(err?.error?.message || '').toLowerCase().includes('profile tidak ditemukan')
+          ) {
+            this.ui.infoPersistent('Pembuatan profil anda ditolak');
+            this.router.navigate(['/auth/create-profile']);
+            return;
+          }
+
           this.errorMsg = 'Gagal memuat status verifikasi.';
         },
       });
@@ -134,25 +161,33 @@ export class WaitingVerificationComponent implements OnInit, OnDestroy {
             localStorage.setItem('hasProfile', 'true');
             localStorage.setItem('profileVerified', 'true');
             this.router.navigate(['/dashboard']);
+            return;
+          }
+
+          if (
+            updatedRequest.status === 'REJECTED' &&
+            updatedRequest.requestType === 'INITIAL_VERIFICATION'
+          ) {
+            this.ui.info('Profil kamu ditolak');
+            this.router.navigate(['/auth/create-profile']);
           }
         }
       },
-      error: () => {
-        // Silent error on polling
+      error: (err) => {
+          if (
+            err?.status === 404 ||
+            String(err?.error?.message || '').toLowerCase().includes('profile tidak ditemukan')
+          ) {
+            this.stopPolling();
+            this.ui.infoPersistent('Pembuatan profil anda ditolak');
+            this.router.navigate(['/auth/create-profile']);
+          }
       },
     });
   }
 
   refreshStatus(): void {
     this.fetchLatestRequest();
-  }
-
-  viewRequestHistory(): void {
-    this.router.navigate(['/dashboard/profile']);
-  }
-
-  submitNewRequest(): void {
-    this.router.navigate(['/dashboard/profile']);
   }
 
   logout(): void {

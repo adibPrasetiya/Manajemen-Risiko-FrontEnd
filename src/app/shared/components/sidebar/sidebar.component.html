@@ -33,10 +33,28 @@
 
     <div class="nav-section">
       <div class="section-label">User Management</div>
-      <a class="nav-item" routerLink="/user-management/users" routerLinkActive="active">
+      <button class="nav-item nav-parent" type="button" (click)="toggleUsersMenu()">
         <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
         <span class="nav-text">Users</span>
-      </a>
+        <span class="nav-caret">
+          <i class="fa-solid fa-chevron-down" [class.rotate]="usersMenuOpen"></i>
+        </span>
+      </button>
+
+      <div class="nav-submenu" [class.open]="usersMenuOpen">
+        <a class="nav-subitem" routerLink="/user-management/users" routerLinkActive="active">
+          <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
+          <span class="nav-text">Users Settings</span>
+        </a>
+        <a class="nav-subitem" routerLink="/user-management/profile-requests" routerLinkActive="active">
+          <span class="nav-icon"><i class="fa-solid fa-clipboard-check"></i></span>
+          <span class="nav-text">Profile Verification</span>
+        </a>
+        <a class="nav-subitem" routerLink="/user-management/unverified-profiles" routerLinkActive="active">
+          <span class="nav-icon"><i class="fa-solid fa-user-clock"></i></span>
+          <span class="nav-text">Unverified Profiles</span>
+        </a>
+      </div>
       <a class="nav-item" routerLink="/user-management/unit-kerja" routerLinkActive="active">
         <span class="nav-icon"><i class="fa-solid fa-building"></i></span>
         <span class="nav-text">Unit Kerja</span>
@@ -44,18 +62,6 @@
       <a class="nav-item" routerLink="/user-management/session" routerLinkActive="active">
         <span class="nav-icon"><i class="fa-solid fa-clock"></i></span>
         <span class="nav-text">Session</span>
-      </a>
-    </div>
-
-    <div class="nav-section">
-      <div class="section-label">Profile Verification</div>
-      <a class="nav-item" routerLink="/user-management/profile-requests" routerLinkActive="active">
-        <span class="nav-icon"><i class="fa-solid fa-clipboard-check"></i></span>
-        <span class="nav-text">Verification Requests</span>
-      </a>
-      <a class="nav-item" routerLink="/user-management/unverified-profiles" routerLinkActive="active">
-        <span class="nav-icon"><i class="fa-solid fa-user-clock"></i></span>
-        <span class="nav-text">Unverified Profiles</span>
       </a>
     </div>
   </nav>

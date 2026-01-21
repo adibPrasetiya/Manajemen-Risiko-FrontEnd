@@ -81,7 +81,6 @@ export class KonteksDetailComponent implements OnInit {
     name?: string;
     description?: string;
     order?: string;
-    general?: string;
   } = {};
   rcForm = {
     id: '',
@@ -94,10 +93,10 @@ export class KonteksDetailComponent implements OnInit {
   showLKModal = false;
   lkModalMode: 'CREATE' | 'EDIT' = 'CREATE';
   lkErrors: {
+    category?: string;
     level?: string;
     label?: string;
     description?: string;
-    general?: string;
   } = {};
   lkForm = {
     id: '',
@@ -110,10 +109,10 @@ export class KonteksDetailComponent implements OnInit {
   showIMModal = false;
   imModalMode: 'CREATE' | 'EDIT' = 'CREATE';
   imErrors: {
+    category?: string;
     level?: string;
     label?: string;
     description?: string;
-    general?: string;
   } = {};
   imForm = {
     id: '',
@@ -131,7 +130,6 @@ export class KonteksDetailComponent implements OnInit {
     description?: string;
     riskAppetiteLevel?: string;
     riskAppetiteDescription?: string;
-    general?: string;
   } = {};
 
   confirmOpen = false;
@@ -295,7 +293,7 @@ export class KonteksDetailComponent implements OnInit {
     this.konteksModalErrors = {};
 
     if (!this.konteksId) {
-      this.konteksModalErrors.general = 'Konteks ID tidak ditemukan.';
+      this.ui.error('Konteks ID tidak ditemukan.');
       return;
     }
     if (!this.konteksForm.name.trim()) {
@@ -322,9 +320,9 @@ export class KonteksDetailComponent implements OnInit {
       error: (e) => {
         this.loading = false;
         const fieldErrors = extractFieldErrors(e);
-        this.konteksModalErrors = Object.keys(fieldErrors).length
-          ? fieldErrors
-          : { general: extractErrorMessage(e) || 'Gagal update konteks.' };
+        if (Object.keys(fieldErrors).length) {
+          this.konteksModalErrors = fieldErrors;
+        }
         console.error('[PATCH /konteks/:id] error:', e);
       },
     });
@@ -345,7 +343,6 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.errorMsg = extractErrorMessage(e) || 'Gagal mengaktifkan konteks.';
         console.error('[PATCH /konteks/:id/activate] error:', e);
       },
     });
@@ -365,7 +362,6 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.errorMsg = extractErrorMessage(e) || 'Gagal menonaktifkan konteks.';
         console.error('[PATCH /konteks/:id/deactivate] error:', e);
       },
     });
@@ -593,9 +589,9 @@ export class KonteksDetailComponent implements OnInit {
           error: (e) => {
             this.loading = false;
             const fieldErrors = extractFieldErrors(e);
-            this.rcErrors = Object.keys(fieldErrors).length
-              ? fieldErrors
-              : { general: extractErrorMessage(e) || 'Gagal membuat kategori.' };
+            if (Object.keys(fieldErrors).length) {
+              this.rcErrors = fieldErrors;
+            }
             console.error('[POST risk-categories] error:', e);
           },
         });
@@ -614,9 +610,9 @@ export class KonteksDetailComponent implements OnInit {
       error: (e) => {
         this.loading = false;
         const fieldErrors = extractFieldErrors(e);
-        this.rcErrors = Object.keys(fieldErrors).length
-          ? fieldErrors
-          : { general: extractErrorMessage(e) || 'Gagal update kategori.' };
+        if (Object.keys(fieldErrors).length) {
+          this.rcErrors = fieldErrors;
+        }
         console.error('[PATCH risk-categories/:id] error:', e);
       },
     });
@@ -656,10 +652,6 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.openInfoModal(
-          'Gagal hapus kategori',
-          extractErrorMessage(e) || 'Terjadi kesalahan.'
-        );
         console.error('[DELETE risk-categories/:id] error:', e);
       },
     });
@@ -703,7 +695,7 @@ export class KonteksDetailComponent implements OnInit {
               (x) => x.id === this.selectedRiskCategoryId
             );
             const name = selected?.name ? `"${selected.name}"` : 'kategori ini';
-            this.lkEmptyHint = `Likelihood untuk ${name} belum dibuat. Klik "+ Tambah Likelihood" atau "Generate 1-5".`;
+            this.lkEmptyHint = `Likelihood untuk ${name} belum dibuat. Klik "+ Tambah Likelihood".`;
           }
 
           this.loading = false;
@@ -769,7 +761,7 @@ export class KonteksDetailComponent implements OnInit {
     this.lkErrors = {};
 
     if (!this.selectedRiskCategoryId) {
-      this.lkErrors.general = 'Pilih kategori terlebih dahulu.';
+      this.lkErrors.category = 'Pilih kategori terlebih dahulu.';
       return;
     }
 
@@ -805,9 +797,9 @@ export class KonteksDetailComponent implements OnInit {
           error: (e) => {
             this.loading = false;
             const fieldErrors = extractFieldErrors(e);
-            this.lkErrors = Object.keys(fieldErrors).length
-              ? fieldErrors
-              : { general: extractErrorMessage(e) || 'Gagal membuat likelihood.' };
+            if (Object.keys(fieldErrors).length) {
+              this.lkErrors = fieldErrors;
+            }
             console.error('[POST likelihood-scales] error:', e);
           },
         });
@@ -831,9 +823,9 @@ export class KonteksDetailComponent implements OnInit {
       error: (e) => {
         this.loading = false;
         const fieldErrors = extractFieldErrors(e);
-        this.lkErrors = Object.keys(fieldErrors).length
-          ? fieldErrors
-          : { general: extractErrorMessage(e) || 'Gagal update likelihood.' };
+        if (Object.keys(fieldErrors).length) {
+          this.lkErrors = fieldErrors;
+        }
         console.error('[PATCH likelihood-scales/:id] error:', e);
       },
     });
@@ -865,38 +857,11 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.openInfoModal(
-          'Gagal hapus likelihood',
-          extractErrorMessage(e) || 'Terjadi kesalahan.'
-        );
         console.error('[DELETE likelihood-scales/:id] error:', e);
       },
     });
   }
 
-  // ===================== BONUS: Generate default Likelihood 1-5 =====================
-  generateDefaultLK(): void {
-    if (!this.selectedRiskCategoryId) return;
-
-    this.loading = true;
-    this.errorMsg = '';
-    this.lkEmptyHint = '';
-
-    this.konteksService
-      .generateDefaultLikelihoods(this.konteksId, this.selectedRiskCategoryId)
-      .subscribe({
-      next: () => {
-        this.loading = false;
-        this.fetchLikelihood(true);
-        this.ui.success('Likelihood default berhasil dibuat.');
-      },
-      error: (e) => {
-        this.loading = false;
-        this.errorMsg = extractErrorMessage(e) || 'Gagal generate likelihood 1-5.';
-        console.error('[generateDefaultLK] error:', e);
-      },
-    });
-  }
 
   // ===================== IMPACT: GET =====================
   onChangeCategoryForImpact(): void {
@@ -1001,7 +966,7 @@ export class KonteksDetailComponent implements OnInit {
     this.imErrors = {};
 
     if (!this.selectedRiskCategoryId) {
-      this.imErrors.general = 'Pilih kategori terlebih dahulu.';
+      this.imErrors.category = 'Pilih kategori terlebih dahulu.';
       return;
     }
 
@@ -1037,9 +1002,9 @@ export class KonteksDetailComponent implements OnInit {
           error: (e) => {
             this.loading = false;
             const fieldErrors = extractFieldErrors(e);
-            this.imErrors = Object.keys(fieldErrors).length
-              ? fieldErrors
-              : { general: extractErrorMessage(e) || 'Gagal membuat impact.' };
+            if (Object.keys(fieldErrors).length) {
+              this.imErrors = fieldErrors;
+            }
             console.error('[POST impact-scales] error:', e);
           },
         });
@@ -1063,9 +1028,9 @@ export class KonteksDetailComponent implements OnInit {
       error: (e) => {
         this.loading = false;
         const fieldErrors = extractFieldErrors(e);
-        this.imErrors = Object.keys(fieldErrors).length
-          ? fieldErrors
-          : { general: extractErrorMessage(e) || 'Gagal update impact.' };
+        if (Object.keys(fieldErrors).length) {
+          this.imErrors = fieldErrors;
+        }
         console.error('[PATCH impact-scales/:id] error:', e);
       },
     });
@@ -1097,13 +1062,9 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.openInfoModal(
-            'Gagal hapus impact',
-            extractErrorMessage(e) || 'Terjadi kesalahan.'
-          );
-          console.error('[DELETE impact-scales/:id] error:', e);
-        },
-      });
+        console.error('[DELETE impact-scales/:id] error:', e);
+      },
+    });
   }
 
   // ===================== Helper for UI: get risk appetite badge class =====================

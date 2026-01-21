@@ -447,8 +447,6 @@
         <small class="error" *ngIf="createErrors.riskAppetiteDescription">{{ createErrors.riskAppetiteDescription }}</small>
       </div>
 
-      <small class="error" *ngIf="createErrors.general">{{ createErrors.general }}</small>
-
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeCreateModal()" [disabled]="createLoading">
           Batal
@@ -606,8 +604,6 @@
           </span>
         </label>
       </div>
-
-      <small class="error" *ngIf="editErrors.general">{{ editErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeEditModal()" [disabled]="loading">

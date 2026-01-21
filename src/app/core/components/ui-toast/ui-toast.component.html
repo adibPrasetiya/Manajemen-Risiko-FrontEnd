@@ -1,7 +1,6 @@
 <div class="wrap" *ngIf="(ui.toast$ | async) as t">
   <div class="card" [class.success]="t.mode==='success'" [class.error]="t.mode==='error'" [class.info]="t.mode==='info'">
     <div class="icon">
-      <!-- ✅ centang animasi untuk success -->
       <div *ngIf="t.mode==='success'" class="check">
         <svg viewBox="0 0 52 52" class="check-svg" aria-hidden="true">
           <circle class="check-circle" cx="26" cy="26" r="25" fill="none"></circle>
@@ -9,14 +8,17 @@
         </svg>
       </div>
 
-      <!-- ❌ icon error -->
       <div *ngIf="t.mode==='error'" class="badge">!</div>
-
-      <!-- ℹ️ icon info -->
       <div *ngIf="t.mode==='info'" class="badge info">i</div>
     </div>
 
     <div class="content">
       <div class="title">{{ t.title || (t.mode | uppercase) }}</div>
       <div class="msg">{{ t.message }}</div>
+    </div>
+
+    <button class="x" type="button" (click)="ui.clearToast()" aria-label="Close">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
 </div>

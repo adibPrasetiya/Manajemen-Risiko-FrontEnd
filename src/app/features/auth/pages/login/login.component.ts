@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthLayoutComponent } from '../../../../layouts/auth/auth-layout.component';
 import { AuthService } from '../../../../core/services/auth.service';
+import { UiService } from '../../../../core/services/ui.service';
 
 @Component({
   selector: 'app-login',
@@ -13,12 +14,11 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class LoginComponent {
   loading = false;
-  errorMsg = '';
-
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private auth: AuthService
+    private auth: AuthService,
+    private ui: UiService
   ) {}
 
   form = this.fb.group({
@@ -34,7 +34,6 @@ export class LoginComponent {
     }
 
     this.loading = true;
-    this.errorMsg = '';
 
     const identifier = (this.form.value.username ?? '').trim();
     const password = this.form.value.password ?? '';
@@ -48,7 +47,7 @@ export class LoginComponent {
 
         if (!hasProfile) {
           // User belum punya profile, redirect ke halaman create profile
-          this.router.navigate(['/dashboard/create-profile']);
+          this.router.navigate(['/auth/create-profile']);
           return;
         }
 
@@ -56,7 +55,11 @@ export class LoginComponent {
       },
 
       error: (e) => {
-        this.errorMsg = e?.error?.errors ?? e?.error?.message ?? 'Login gagal';
+        if (e?.error?.mustVerifyProfile || e?.error?.mustCreateProfile) {
+          return;
+        }
+        const msg = e?.error?.errors ?? e?.error?.message ?? 'Login gagal';
+        this.ui.error(msg);
         this.loading = false;
       },
       complete: () => {

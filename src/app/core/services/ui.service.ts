@@ -9,6 +9,7 @@ export type UiToast = {
   title?: string;
   time: number;
   durationMs: number;
+  persist?: boolean;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -40,22 +41,31 @@ export class UiService {
    * - kalau sedang loading: ditunda sampai loading selesai (halus, no stutter)
    * - auto hide setelah durationMs
    */
-  toast(mode: UiToastMode, message: string, title?: string, durationMs = 1400) {
+  toast(
+    mode: UiToastMode,
+    message: string,
+    title?: string,
+    durationMs = 1400,
+    persist = false
+  ) {
     const payload: UiToast = {
       mode,
       message,
       title,
       time: Date.now(),
       durationMs,
+      persist,
     };
 
     const emit = () => {
       this._toast.next(payload);
 
-      window.setTimeout(() => {
-        const current = this._toast.value;
-        if (current?.time === payload.time) this._toast.next(null);
-      }, durationMs);
+      if (!persist) {
+        window.setTimeout(() => {
+          const current = this._toast.value;
+          if (current?.time === payload.time) this._toast.next(null);
+        }, durationMs);
+      }
     };
 
     // ✅ kalau masih loading, tunggu selesai dulu biar gak "stutter"
@@ -79,7 +89,10 @@ export class UiService {
   error(message: string, title = 'Error', durationMs = 2200) {
     this.toast('error', message, title, durationMs);
   }
-  info(message: string, title = 'Info', durationMs = 1400) {
-    this.toast('info', message, title, durationMs);
+  info(message: string, title = 'Info', durationMs = 1400, persist = false) {
+    this.toast('info', message, title, durationMs, persist);
+  }
+  infoPersistent(message: string, title = 'Info') {
+    this.toast('info', message, title, 0, true);
   }
 }

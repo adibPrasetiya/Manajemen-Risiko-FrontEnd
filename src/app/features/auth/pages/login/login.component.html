@@ -7,7 +7,7 @@
 >
   <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
     <div>
-      <label class="text-sm font-semibold text-gray-700">Username</label>
+      <label class="text-sm font-semibold text-gray-700">Username / Email</label>
       <div class="mt-2 relative">
         <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
         <input
@@ -41,12 +41,6 @@
         Forgot password?
       </a>
     </div>
-
-    @if (errorMsg) {
-      <div class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
-        {{ errorMsg }}
-      </div>
-    }
 
     <button type="submit" class="w-full py-3 rounded-xl bg-primary text-white font-bold hover:opacity-90 transition">
       Login

@@ -48,24 +48,52 @@ export class ErrorInterceptor implements HttpInterceptor {
                   'Silakan lengkapi profile Anda terlebih dahulu.',
                   'Profile Diperlukan'
                 );
-                this.router.navigate(['/dashboard/profile']);
+                this.router.navigate(['/auth/create-profile']);
                 return throwError(() => err);
               }
 
               // Handle mustVerifyProfile flag - redirect to waiting verification page
               if (errorBody?.mustVerifyProfile === true) {
-                this.ui.info(
-                  'Profile Anda belum diverifikasi. Silakan tunggu persetujuan administrator.',
+                this.ui.infoPersistent(
+                  'Profile Anda sedang dalam proses verifikasi. Kami akan memberitahu Anda setelah proses selesai.',
                   'Menunggu Verifikasi'
                 );
-                this.router.navigate(['/dashboard/waiting-verification']);
+                this.router.navigate(['/auth/waiting-verification']);
                 return throwError(() => err);
               }
+            }
+
+            if (Array.isArray(errorBody?.details) && errorBody.details.length > 0) {
+              return throwError(() => err);
+            }
+
+            const profileNotFound = String(errorBody?.message || '').toLowerCase();
+            const isProfileRequestMissing =
+              req.url.includes('/users/me/profile-requests') &&
+              (profileNotFound.includes('profile tidak ditemukan') ||
+                profileNotFound.includes('profil tidak ditemukan'));
+
+            if (isProfileRequestMissing) {
+              return throwError(() => err);
             }
 
             // For other 403 errors, show the error message
             const msg = extractErrorMessage(err);
             this.ui.error(String(msg));
+            return throwError(() => err);
+          }
+
+          if (Array.isArray(err.error?.details) && err.error.details.length > 0) {
+            return throwError(() => err);
+          }
+
+          const profileNotFound = String(err.error?.message || '').toLowerCase();
+          const isProfileRequestMissing =
+            req.url.includes('/users/me/profile-requests') &&
+            (profileNotFound.includes('profile tidak ditemukan') ||
+              profileNotFound.includes('profil tidak ditemukan'));
+
+          if (isProfileRequestMissing) {
             return throwError(() => err);
           }
 

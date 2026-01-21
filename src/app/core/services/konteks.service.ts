@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   KonteksDetailResponse,
@@ -176,24 +176,6 @@ export class KonteksService {
     );
   }
 
-  generateDefaultLikelihoods(
-    konteksId: string,
-    categoryId: string
-  ): Observable<LikelihoodScaleDetailResponse[]> {
-    const defaults: CreateLikelihoodPayload[] = [
-      { level: 1, label: 'Sangat Jarang', description: 'Kemungkinan terjadi < 5% atau hampir tidak pernah terjadi' },
-      { level: 2, label: 'Jarang', description: 'Kemungkinan terjadi 5-25% atau jarang terjadi' },
-      { level: 3, label: 'Mungkin', description: 'Kemungkinan terjadi 25-50% atau mungkin terjadi' },
-      { level: 4, label: 'Sering', description: 'Kemungkinan terjadi 50-75% atau sering terjadi' },
-      { level: 5, label: 'Sangat Sering', description: 'Kemungkinan terjadi > 75% atau hampir pasti terjadi' },
-    ];
-
-    const requests = defaults.map((payload) =>
-      this.createLikelihoodScale(konteksId, categoryId, payload)
-    );
-
-    return forkJoin(requests);
-  }
 
   // ===================== IMPACT SCALES =====================
 
@@ -247,4 +229,5 @@ export class KonteksService {
       { withCredentials: true }
     );
   }
+
 }

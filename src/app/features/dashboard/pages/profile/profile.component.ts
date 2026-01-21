@@ -84,7 +84,6 @@ export class ProfileComponent implements OnInit {
   changeRequestForm = this.fb.group({
     jabatan: ['', [Validators.minLength(3), Validators.maxLength(255)]],
     unitKerja: [''],
-    nomorHP: ['', [Validators.pattern(/^(08|62)[0-9]{8,13}$/)]],
   });
   submittingRequest = false;
   requestError = '';
@@ -98,9 +97,6 @@ export class ProfileComponent implements OnInit {
   showPasswordModal = false;
   showDetailModal = false;
   selectedRequest: MyProfileRequest | null = null;
-  showCancelConfirm = false;
-  cancelTargetId = '';
-  cancelLoading = false;
 
   // Password form
   passwordForm = this.fb.group({
@@ -146,13 +142,13 @@ export class ProfileComponent implements OnInit {
 
         // If 403 with mustCreateProfile, redirect to create profile page
         if (err?.status === 403 && err?.error?.mustCreateProfile) {
-          this.router.navigate(['/dashboard/create-profile']);
+          this.router.navigate(['/auth/create-profile']);
           return;
         }
 
         // If 403 with mustVerifyProfile, redirect to waiting verification
         if (err?.status === 403 && err?.error?.mustVerifyProfile) {
-          this.router.navigate(['/dashboard/waiting-verification']);
+          this.router.navigate(['/auth/waiting-verification']);
           return;
         }
 
@@ -263,11 +259,10 @@ export class ProfileComponent implements OnInit {
     this.requestError = '';
 
     const jabatan = (this.changeRequestForm.value.jabatan ?? '').trim();
-    const nomorHP = (this.changeRequestForm.value.nomorHP ?? '').trim();
     const unitKerjaId = this.selectedUnitKerjaId;
 
     // At least one field must be provided
-    if (!jabatan && !unitKerjaId && !nomorHP) {
+    if (!jabatan && !unitKerjaId) {
       this.requestError = 'Minimal satu field harus diisi.';
       return;
     }
@@ -275,13 +270,6 @@ export class ProfileComponent implements OnInit {
     // Validate jabatan if provided
     if (jabatan && (jabatan.length < 3 || jabatan.length > 255)) {
       this.requestError = 'Jabatan harus antara 3-255 karakter.';
-      return;
-    }
-
-    // Validate nomorHP if provided
-    if (nomorHP && !/^(08|62)[0-9]{8,13}$/.test(nomorHP)) {
-      this.requestError =
-        'Format nomor HP tidak valid (contoh: 08xxx atau 62xxx).';
       return;
     }
 
@@ -295,7 +283,6 @@ export class ProfileComponent implements OnInit {
     const payload: any = {};
     if (jabatan) payload.jabatan = jabatan;
     if (unitKerjaId) payload.unitKerjaId = unitKerjaId;
-    if (nomorHP) payload.nomorHP = nomorHP;
 
     this.submittingRequest = true;
 
@@ -314,17 +301,9 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         this.submittingRequest = false;
-
         if (err?.status === 409) {
-          this.requestError =
-            'Anda sudah memiliki permintaan yang sedang menunggu. Batalkan atau tunggu hingga diproses.';
           return;
         }
-
-        this.requestError =
-          err?.error?.errors ||
-          err?.error?.message ||
-          'Gagal mengajukan permintaan.';
       },
     });
   }
@@ -428,43 +407,6 @@ export class ProfileComponent implements OnInit {
   closeDetailModal(): void {
     this.showDetailModal = false;
     this.selectedRequest = null;
-  }
-
-  // Cancel request
-  confirmCancel(requestId: string): void {
-    this.cancelTargetId = requestId;
-    this.showCancelConfirm = true;
-  }
-
-  closeCancelConfirm(): void {
-    this.showCancelConfirm = false;
-    this.cancelTargetId = '';
-  }
-
-  executeCancel(): void {
-    if (!this.cancelTargetId) return;
-
-    this.cancelLoading = true;
-
-    this.profileService.cancelMyProfileRequest(this.cancelTargetId).subscribe({
-      next: () => {
-        this.cancelLoading = false;
-        this.closeCancelConfirm();
-        this.closeDetailModal();
-        this.ui.success('Permintaan berhasil dibatalkan.', 'Berhasil');
-        this.checkPendingRequest();
-        this.fetchRequests(false);
-      },
-      error: (err) => {
-        this.cancelLoading = false;
-        this.ui.error(
-          err?.error?.errors ||
-            err?.error?.message ||
-            'Gagal membatalkan permintaan.',
-          'Gagal',
-        );
-      },
-    });
   }
 
   // ============ PASSWORD CHANGE ============

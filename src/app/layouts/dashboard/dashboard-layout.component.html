@@ -5,7 +5,10 @@
   </app-navbar>
 
   <div class="layout">
-    <app-sidebar [collapsed]="sidebarCollapsed"></app-sidebar>
+    <app-sidebar
+      [collapsed]="sidebarCollapsed"
+      (requestExpand)="sidebarCollapsed = false">
+    </app-sidebar>
 
     <main class="content" [class.sidebar-collapsed]="sidebarCollapsed">
       <router-outlet></router-outlet>

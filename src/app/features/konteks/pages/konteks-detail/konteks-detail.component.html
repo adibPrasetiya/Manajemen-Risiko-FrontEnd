@@ -215,13 +215,10 @@
                 <option *ngFor="let c of rawRiskCategories" [value]="c.id">{{ c.name }}</option>
               </select>
             </div>
+            <small class="error" *ngIf="lkErrors.category">{{ lkErrors.category }}</small>
           </div>
 
           <div class="toolbar-right">
-            <button class="btn" type="button" (click)="generateDefaultLK()" [disabled]="!selectedRiskCategoryId || loading">
-              + Generate 1-5
-            </button>
-
             <button class="btn primary" type="button" (click)="openCreateLK()" [disabled]="!selectedRiskCategoryId">
               + Tambah Likelihood
             </button>
@@ -293,6 +290,7 @@
                 <option *ngFor="let c of rawRiskCategories" [value]="c.id">{{ c.name }}</option>
               </select>
             </div>
+            <small class="error" *ngIf="imErrors.category">{{ imErrors.category }}</small>
           </div>
 
           <div class="toolbar-right">
@@ -443,7 +441,6 @@
         <small class="error" *ngIf="rcErrors.description">{{ rcErrors.description }}</small>
       </div>
 
-      <small class="error" *ngIf="rcErrors.general">{{ rcErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeRCModal()" [disabled]="loading">Batal</button>
@@ -482,7 +479,6 @@
         <small class="error" *ngIf="lkErrors.description">{{ lkErrors.description }}</small>
       </div>
 
-      <small class="error" *ngIf="lkErrors.general">{{ lkErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeLKModal()" [disabled]="loading">Batal</button>
@@ -521,7 +517,6 @@
         <small class="error" *ngIf="imErrors.description">{{ imErrors.description }}</small>
       </div>
 
-      <small class="error" *ngIf="imErrors.general">{{ imErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeIMModal()" [disabled]="loading">Batal</button>
@@ -570,7 +565,6 @@
         <small class="error" *ngIf="konteksModalErrors.riskAppetiteDescription">{{ konteksModalErrors.riskAppetiteDescription }}</small>
       </div>
 
-      <small class="error" *ngIf="konteksModalErrors.general">{{ konteksModalErrors.general }}</small>
 
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeKonteksModal()" [disabled]="loading">Batal</button>
