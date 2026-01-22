@@ -4,11 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
-import {
-  HttpClient,
-  HttpHeaders,
-  HttpParams,
-} from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 
 import {
   EditUserModalComponent,
@@ -17,6 +13,7 @@ import {
 } from '../../components/edit-user-modal/edit-user-modal.component';
 import { UiService } from '../../../../core/services/ui.service';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
+import { environment } from '../../../../../environments/environment';
 
 type UserItem = {
   id: string;
@@ -61,7 +58,7 @@ type PatchUserPayload = {
   styleUrl: './users.component.scss',
 })
 export class UsersComponent implements OnInit {
-  private baseUrl = 'http://api.dev.simulasibimtekd31.com';
+  private baseUrl = environment.apiBaseUrl;
   private endpoint = '/users';
 
   loading = false;
@@ -100,7 +97,10 @@ export class UsersComponent implements OnInit {
   editError = '';
   selectedUser: EditUserData | null = null;
 
-  constructor(private http: HttpClient, private ui: UiService) {}
+  constructor(
+    private http: HttpClient,
+    private ui: UiService,
+  ) {}
 
   ngOnInit(): void {
     this.fetchUsers(true);
@@ -108,7 +108,8 @@ export class UsersComponent implements OnInit {
 
   private buildHeaders(): HttpHeaders | undefined {
     const token =
-      localStorage.getItem('accessToken') || localStorage.getItem('access_token');
+      localStorage.getItem('accessToken') ||
+      localStorage.getItem('access_token');
     if (!token) return undefined;
 
     return new HttpHeaders({
@@ -126,30 +127,38 @@ export class UsersComponent implements OnInit {
       .set('limit', String(this.limit));
 
     if (this.fName.trim()) params = params.set('name', this.fName.trim());
-    if (this.fUsername.trim()) params = params.set('username', this.fUsername.trim());
+    if (this.fUsername.trim())
+      params = params.set('username', this.fUsername.trim());
 
     if (this.fRole !== 'ALL') params = params.set('role', this.fRole);
 
     if (this.fActive === 'ACTIVE') params = params.set('isActive', 'true');
     if (this.fActive === 'INACTIVE') params = params.set('isActive', 'false');
 
-    if (this.fVerified === 'VERIFIED') params = params.set('isVerified', 'true');
-    if (this.fVerified === 'UNVERIFIED') params = params.set('isVerified', 'false');
+    if (this.fVerified === 'VERIFIED')
+      params = params.set('isVerified', 'true');
+    if (this.fVerified === 'UNVERIFIED')
+      params = params.set('isVerified', 'false');
 
     return params;
   }
 
   // Params khusus untuk Stats: mengikuti filter (name/username/role/verified)
   // tapi active di-override agar bisa hitung total/active/inactive.
-  private buildStatsParams(activeOverride: 'true' | 'false' | null): HttpParams {
+  private buildStatsParams(
+    activeOverride: 'true' | 'false' | null,
+  ): HttpParams {
     let params = new HttpParams().set('page', '1').set('limit', '1');
 
     if (this.fName.trim()) params = params.set('name', this.fName.trim());
-    if (this.fUsername.trim()) params = params.set('username', this.fUsername.trim());
+    if (this.fUsername.trim())
+      params = params.set('username', this.fUsername.trim());
     if (this.fRole !== 'ALL') params = params.set('role', this.fRole);
 
-    if (this.fVerified === 'VERIFIED') params = params.set('isVerified', 'true');
-    if (this.fVerified === 'UNVERIFIED') params = params.set('isVerified', 'false');
+    if (this.fVerified === 'VERIFIED')
+      params = params.set('isVerified', 'true');
+    if (this.fVerified === 'UNVERIFIED')
+      params = params.set('isVerified', 'false');
 
     if (activeOverride) params = params.set('isActive', activeOverride);
 
@@ -166,7 +175,7 @@ export class UsersComponent implements OnInit {
       })
       .pipe(
         map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0))
+        catchError(() => of(0)),
       );
 
     const active$ = this.http
@@ -176,7 +185,7 @@ export class UsersComponent implements OnInit {
       })
       .pipe(
         map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0))
+        catchError(() => of(0)),
       );
 
     const inactive$ = this.http
@@ -186,14 +195,16 @@ export class UsersComponent implements OnInit {
       })
       .pipe(
         map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0))
+        catchError(() => of(0)),
       );
 
-    forkJoin({ total: total$, active: active$, inactive: inactive$ }).subscribe((r) => {
-      this.totalUsers = r.total;
-      this.totalActive = r.active;
-      this.totalInactive = r.inactive;
-    });
+    forkJoin({ total: total$, active: active$, inactive: inactive$ }).subscribe(
+      (r) => {
+        this.totalUsers = r.total;
+        this.totalActive = r.active;
+        this.totalInactive = r.inactive;
+      },
+    );
   }
 
   fetchUsers(resetPage: boolean): void {
@@ -204,7 +215,10 @@ export class UsersComponent implements OnInit {
     const params = this.buildParams(resetPage);
 
     this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, { headers, params })
+      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
+        headers,
+        params,
+      })
       .subscribe({
         next: (res) => {
           this.users = res.data ?? [];
@@ -268,7 +282,9 @@ export class UsersComponent implements OnInit {
 
   // Check if any advanced filter is active
   hasActiveAdvancedFilters(): boolean {
-    return this.fRole !== 'ALL' || this.fActive !== 'ALL' || this.fVerified !== 'ALL';
+    return (
+      this.fRole !== 'ALL' || this.fActive !== 'ALL' || this.fVerified !== 'ALL'
+    );
   }
 
   // pagination controls
@@ -341,7 +357,10 @@ export class UsersComponent implements OnInit {
 
   getShowingEnd(): number {
     if (!this.pagination) return 0;
-    return Math.min(this.pagination.page * this.limit, this.pagination.totalItems);
+    return Math.min(
+      this.pagination.page * this.limit,
+      this.pagination.totalItems,
+    );
   }
 
   // ===================== EDIT USER (MODAL) =====================
@@ -382,12 +401,14 @@ export class UsersComponent implements OnInit {
     this.loading = true;
 
     this.http
-      .patch<any>(`${this.baseUrl}${this.endpoint}/${result.id}`, payload, { headers })
+      .patch<any>(`${this.baseUrl}${this.endpoint}/${result.id}`, payload, {
+        headers,
+      })
       .subscribe({
         next: () => {
           // update table lokal biar langsung berubah
           this.users = this.users.map((x) =>
-            x.id === result.id ? { ...x, ...payload } : x
+            x.id === result.id ? { ...x, ...payload } : x,
           );
 
           // setelah edit, refresh stats juga
@@ -398,7 +419,8 @@ export class UsersComponent implements OnInit {
         },
         error: (e) => {
           this.loading = false;
-          this.editError = extractErrorMessage(e) || 'Gagal update user. Coba lagi.';
+          this.editError =
+            extractErrorMessage(e) || 'Gagal update user. Coba lagi.';
           this.ui.error(this.editError);
         },
       });

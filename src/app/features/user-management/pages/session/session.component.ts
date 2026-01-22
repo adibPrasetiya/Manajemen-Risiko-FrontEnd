@@ -5,6 +5,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { ConfirmModalComponent } from '../../../../shared/components/confirm-modal/confirm-modal.component';
 import { UiService } from '../../../../core/services/ui.service';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
+import { environment } from '../../../../../environments/environment';
 
 type SessionUser = {
   id: string;
@@ -52,7 +53,7 @@ type SessionsResponse = {
   styleUrl: './session.component.scss',
 })
 export class SessionComponent implements OnInit {
-  private baseUrl = 'http://api.dev.simulasibimtekd31.com';
+  private baseUrl = environment.apiBaseUrl;
   private endpoint = '/sessions';
 
   loading = false;
@@ -94,14 +95,19 @@ export class SessionComponent implements OnInit {
   // advanced filter toggle
   showAdvancedFilters = false;
 
-  constructor(private http: HttpClient, private ui: UiService) {}
+  constructor(
+    private http: HttpClient,
+    private ui: UiService,
+  ) {}
 
   ngOnInit(): void {
     this.fetchSessions(true);
   }
 
   private buildHeaders(): HttpHeaders | undefined {
-    const token = localStorage.getItem('accessToken') || localStorage.getItem('access_token');
+    const token =
+      localStorage.getItem('accessToken') ||
+      localStorage.getItem('access_token');
     if (!token) return undefined;
 
     return new HttpHeaders({
@@ -113,10 +119,13 @@ export class SessionComponent implements OnInit {
   private buildParams(resetPage: boolean): HttpParams {
     if (resetPage) this.page = 1;
 
-    let params = new HttpParams().set('page', String(this.page)).set('limit', String(this.limit));
+    let params = new HttpParams()
+      .set('page', String(this.page))
+      .set('limit', String(this.limit));
 
     // Kolom utama (username & status) tetap dikirim jika tersedia
-    if (this.fUsername.trim()) params = params.set('username', this.fUsername.trim());
+    if (this.fUsername.trim())
+      params = params.set('username', this.fUsername.trim());
     if (this.fStatus === 'ACTIVE') params = params.set('isActive', 'true');
     if (this.fStatus === 'EXPIRED') params = params.set('isActive', 'false');
 
@@ -136,40 +145,49 @@ export class SessionComponent implements OnInit {
     const headers = this.buildHeaders();
     const params = this.buildParams(resetPage);
 
-    this.http.get<SessionsResponse>(`${this.baseUrl}${this.endpoint}`, { headers, params }).subscribe({
-      next: (res) => {
-        this.sessions = res.data ?? [];
-        // normalisasi total / totalItems agar konsisten dengan komponen users
-        this.pagination = res.pagination
-          ? {
-              ...res.pagination,
-              totalItems: res.pagination.totalItems ?? (res.pagination as any).total ?? 0,
-            }
-          : null;
-        this.loading = false;
+    this.http
+      .get<SessionsResponse>(`${this.baseUrl}${this.endpoint}`, {
+        headers,
+        params,
+      })
+      .subscribe({
+        next: (res) => {
+          this.sessions = res.data ?? [];
+          // normalisasi total / totalItems agar konsisten dengan komponen users
+          this.pagination = res.pagination
+            ? {
+                ...res.pagination,
+                totalItems:
+                  res.pagination.totalItems ??
+                  (res.pagination as any).total ??
+                  0,
+              }
+            : null;
+          this.loading = false;
 
-        // filter frontend
-        this.applyClientFilters();
-      },
-      error: (err) => {
-        this.loading = false;
-        this.sessions = [];
-        this.filtered = [];
-        this.pagination = null;
-        this.totalSessions = 0;
-        this.totalActive = 0;
-        this.totalExpired = 0;
+          // filter frontend
+          this.applyClientFilters();
+        },
+        error: (err) => {
+          this.loading = false;
+          this.sessions = [];
+          this.filtered = [];
+          this.pagination = null;
+          this.totalSessions = 0;
+          this.totalActive = 0;
+          this.totalExpired = 0;
 
-        if (err?.status === 401) {
-          this.errorMsg = 'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
-          return;
-        }
-        this.errorMsg =
-          extractErrorMessage(err) ||
-          `Gagal fetch sessions dari API (HTTP ${err?.status || 'unknown'}).`;
-        this.ui.error(this.errorMsg);
-      },
-    });
+          if (err?.status === 401) {
+            this.errorMsg =
+              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+            return;
+          }
+          this.errorMsg =
+            extractErrorMessage(err) ||
+            `Gagal fetch sessions dari API (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
+        },
+      });
   }
 
   // ===== Filters =====
@@ -199,8 +217,10 @@ export class SessionComponent implements OnInit {
 
     this.filtered = (this.sessions ?? []).filter((s) => {
       // username/email
-      if (qUser && !(s.user?.username || '').toLowerCase().includes(qUser)) return false;
-      if (qEmail && !(s.user?.email || '').toLowerCase().includes(qEmail)) return false;
+      if (qUser && !(s.user?.username || '').toLowerCase().includes(qUser))
+        return false;
+      if (qEmail && !(s.user?.email || '').toLowerCase().includes(qEmail))
+        return false;
 
       // status
       const expired = this.isExpired(s.expiresAt);
@@ -220,7 +240,9 @@ export class SessionComponent implements OnInit {
 
   private refreshSessionStats(list: SessionItem[]): void {
     this.totalSessions = list.length;
-    this.totalActive = list.filter((s) => !this.isExpired(s.expiresAt) && s.isActive).length;
+    this.totalActive = list.filter(
+      (s) => !this.isExpired(s.expiresAt) && s.isActive,
+    ).length;
     this.totalExpired = list.filter((s) => this.isExpired(s.expiresAt)).length;
   }
 
@@ -355,20 +377,24 @@ export class SessionComponent implements OnInit {
 
     const headers = this.buildHeaders();
 
-    this.http.delete<{ message?: string }>(`${this.baseUrl}${this.endpoint}/${s.id}`, { headers }).subscribe({
-      next: (res) => {
-        this.successMsg = res?.message || 'Session berhasil direvoke.';
-        this.actionLoadingId = null;
-        this.fetchSessions(false);
-      },
-      error: (err) => {
-        this.errorMsg =
-          extractErrorMessage(err) ||
-          `Gagal revoke session (HTTP ${err?.status || 'unknown'}).`;
-        this.ui.error(this.errorMsg);
-        this.actionLoadingId = null;
-      },
-    });
+    this.http
+      .delete<{
+        message?: string;
+      }>(`${this.baseUrl}${this.endpoint}/${s.id}`, { headers })
+      .subscribe({
+        next: (res) => {
+          this.successMsg = res?.message || 'Session berhasil direvoke.';
+          this.actionLoadingId = null;
+          this.fetchSessions(false);
+        },
+        error: (err) => {
+          this.errorMsg =
+            extractErrorMessage(err) ||
+            `Gagal revoke session (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
+          this.actionLoadingId = null;
+        },
+      });
   }
 
   private performRevokeAllExpired(): void {
@@ -378,20 +404,25 @@ export class SessionComponent implements OnInit {
 
     const headers = this.buildHeaders();
 
-    this.http.delete<{ message?: string }>(`${this.baseUrl}${this.endpoint}/expired`, { headers }).subscribe({
-      next: (res) => {
-        this.successMsg = res?.message || 'Semua session expired berhasil direvoke.';
-        this.revokeExpiredLoading = false;
-        this.fetchSessions(true);
-      },
-      error: (err) => {
-        this.errorMsg =
-          extractErrorMessage(err) ||
-          `Gagal revoke expired sessions (HTTP ${err?.status || 'unknown'}).`;
-        this.ui.error(this.errorMsg);
-        this.revokeExpiredLoading = false;
-      },
-    });
+    this.http
+      .delete<{
+        message?: string;
+      }>(`${this.baseUrl}${this.endpoint}/expired`, { headers })
+      .subscribe({
+        next: (res) => {
+          this.successMsg =
+            res?.message || 'Semua session expired berhasil direvoke.';
+          this.revokeExpiredLoading = false;
+          this.fetchSessions(true);
+        },
+        error: (err) => {
+          this.errorMsg =
+            extractErrorMessage(err) ||
+            `Gagal revoke expired sessions (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
+          this.revokeExpiredLoading = false;
+        },
+      });
   }
 
   // ✅ ini yang bikin error kamu hilang
