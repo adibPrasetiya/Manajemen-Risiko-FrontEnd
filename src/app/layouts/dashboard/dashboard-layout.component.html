@@ -7,7 +7,7 @@
   <div class="layout">
     <app-sidebar
       [collapsed]="sidebarCollapsed"
-      (requestExpand)="sidebarCollapsed = false">
+      (requestExpand)="expandSidebar()">
     </app-sidebar>
 
     <main class="content" [class.sidebar-collapsed]="sidebarCollapsed">

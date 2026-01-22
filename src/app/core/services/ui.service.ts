@@ -86,8 +86,8 @@ export class UiService {
   success(message: string, title = 'Sukses', durationMs = 1400) {
     this.toast('success', message, title, durationMs);
   }
-  error(message: string, title = 'Error', durationMs = 2200) {
-    this.toast('error', message, title, durationMs);
+  error(message: string, title = 'Error', durationMs = 2200, persist = true) {
+    this.toast('error', message, title, durationMs, persist);
   }
   info(message: string, title = 'Info', durationMs = 1400, persist = false) {
     this.toast('info', message, title, durationMs, persist);

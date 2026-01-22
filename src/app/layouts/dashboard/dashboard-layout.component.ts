@@ -13,8 +13,25 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar.compon
 })
 export class DashboardLayoutComponent {
   sidebarCollapsed = false;
+  private readonly sidebarStorageKey = 'sidebarCollapsed';
+
+  constructor() {
+    const stored = localStorage.getItem(this.sidebarStorageKey);
+    if (stored !== null) {
+      this.sidebarCollapsed = stored === 'true';
+    }
+  }
 
   toggleSidebar() {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
+    this.setSidebarCollapsed(!this.sidebarCollapsed);
+  }
+
+  expandSidebar() {
+    this.setSidebarCollapsed(false);
+  }
+
+  private setSidebarCollapsed(value: boolean) {
+    this.sidebarCollapsed = value;
+    localStorage.setItem(this.sidebarStorageKey, String(value));
   }
 }

@@ -54,7 +54,7 @@
       </div>
 
       <div class="actions">
-        <button class="btn outline" (click)="logout()">
+        <button class="btn primary" (click)="logout()">
           <i class="fa-solid fa-right-from-bracket"></i>
           Logout
         </button>
@@ -99,12 +99,16 @@
         </div>
       </div>
 
-      <div class="actions">
-        <button class="btn outline" (click)="logout()">
+      <div class="actions" *ngIf="redirectCountdown === 0">
+        <button class="btn primary" (click)="logout()">
           <i class="fa-solid fa-right-from-bracket"></i>
           Logout
         </button>
       </div>
+
+      <p class="redirect-note" *ngIf="redirectCountdown > 0">
+        Anda akan diarahkan ke halaman profile dalam {{ redirectCountdown }} detik.
+      </p>
     </div>
 
     <!-- Approved State (redirect soon) -->

@@ -73,15 +73,22 @@ export class ErrorInterceptor implements HttpInterceptor {
               (profileNotFound.includes('profile tidak ditemukan') ||
                 profileNotFound.includes('profil tidak ditemukan'));
 
-            if (isProfileRequestMissing) {
-              return throwError(() => err);
-            }
-
-            // For other 403 errors, show the error message
-            const msg = extractErrorMessage(err);
-            this.ui.error(String(msg));
+          if (isProfileRequestMissing) {
             return throwError(() => err);
           }
+
+          // For other 403 errors, show the error message
+          let msg = extractErrorMessage(err);
+          const msgLower = String(msg).toLowerCase();
+          if (
+            msgLower.includes('profile tidak ditemukan') ||
+            msgLower.includes('profil tidak ditemukan')
+          ) {
+            msg = 'Profil anda ditolak silahkan buat ulang profill';
+          }
+          this.ui.error(String(msg));
+          return throwError(() => err);
+        }
 
           if (Array.isArray(err.error?.details) && err.error.details.length > 0) {
             return throwError(() => err);
@@ -97,7 +104,14 @@ export class ErrorInterceptor implements HttpInterceptor {
             return throwError(() => err);
           }
 
-          const msg = extractErrorMessage(err);
+          let msg = extractErrorMessage(err);
+          const msgLower = String(msg).toLowerCase();
+          if (
+            msgLower.includes('profile tidak ditemukan') ||
+            msgLower.includes('profil tidak ditemukan')
+          ) {
+            msg = 'Profil anda ditolak silahkan buat ulang profill';
+          }
           this.ui.error(String(msg));
         } else {
           this.ui.error('Terjadi kesalahan tidak terduga');
