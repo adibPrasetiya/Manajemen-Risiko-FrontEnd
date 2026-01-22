@@ -55,6 +55,7 @@ export class AuthService {
           localStorage.setItem('accessToken', res.data.accessToken);
           localStorage.setItem('email', res.data.user.email);
           localStorage.setItem('auth_username', res.data.user.username);
+          localStorage.setItem('user_roles', JSON.stringify(res.data.user.roles));
         }),
       );
   }
@@ -85,6 +86,7 @@ export class AuthService {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('auth_username');
           localStorage.removeItem('user_profile');
+          localStorage.removeItem('user_roles');
         }),
       );
   }
@@ -102,9 +104,29 @@ export class AuthService {
     return localStorage.getItem('accessToken') ?? '';
   }
 
+  isAuthenticated(): boolean {
+    const token = this.getAccessToken();
+    return !!token && token.length > 0;
+  }
+
   clearSession() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user_roles');
     // optional: redirect to login
+  }
+
+  getUserRoles(): string[] {
+    const roles = localStorage.getItem('user_roles');
+    return roles ? JSON.parse(roles) : [];
+  }
+
+  hasRole(role: string): boolean {
+    return this.getUserRoles().includes(role);
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    const userRoles = this.getUserRoles();
+    return roles.some(role => userRoles.includes(role));
   }
 }
