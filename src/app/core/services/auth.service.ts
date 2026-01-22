@@ -71,7 +71,6 @@ export class AuthService {
           localStorage.setItem('accessToken', r.data.accessToken);
         }),
         catchError((err) => {
-          console.log(err);
           return throwError(() => err);
         }),
       );
@@ -83,10 +82,11 @@ export class AuthService {
       .delete(`${this.base}/users/me/logout`, { withCredentials: true })
       .pipe(
         tap(() => {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('auth_username');
-          localStorage.removeItem('user_profile');
-          localStorage.removeItem('user_roles');
+          this.clearClientState();
+        }),
+        catchError((err) => {
+          this.clearClientState();
+          return throwError(() => err);
         }),
       );
   }
@@ -110,9 +110,7 @@ export class AuthService {
   }
 
   clearSession() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user_roles');
+    this.clearClientState();
     // optional: redirect to login
   }
 
@@ -128,5 +126,21 @@ export class AuthService {
   hasAnyRole(roles: string[]): boolean {
     const userRoles = this.getUserRoles();
     return roles.some(role => userRoles.includes(role));
+  }
+
+  private clearClientState() {
+    localStorage.clear();
+    sessionStorage.clear();
+    this.clearCookies();
+  }
+
+  private clearCookies() {
+    if (typeof document === 'undefined') return;
+    const cookies = document.cookie.split(';');
+    cookies.forEach((cookie) => {
+      const name = cookie.split('=')[0]?.trim();
+      if (!name) return;
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    });
   }
 }

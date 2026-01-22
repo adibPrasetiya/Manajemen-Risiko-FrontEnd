@@ -49,8 +49,6 @@ export class AuthInterceptor implements HttpInterceptor {
           return throwError(() => error);
         }
 
-        console.log('Token expired, attempting refresh...');
-
         // === HANDLE 401 WITH REFRESH QUEUE ===
         if (!this.isRefreshing) {
           this.isRefreshing = true;

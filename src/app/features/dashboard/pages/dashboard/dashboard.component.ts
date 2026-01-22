@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, HostListener } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth.service';
 
 type UserProfile = {
   jabatan: string;
@@ -24,7 +25,7 @@ export class DashboardComponent {
 
   profile: UserProfile | null = null;
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private authService: AuthService) {
     const raw = localStorage.getItem('user_profile');
     this.profile = raw ? (JSON.parse(raw) as UserProfile) : null;
   }
@@ -45,10 +46,14 @@ export class DashboardComponent {
 
   logout() {
     this.dropdownOpen = false;
-    localStorage.removeItem('user_profile');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    this.router.navigate(['/auth/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/auth/login']);
+      },
+      error: () => {
+        this.router.navigate(['/auth/login']);
+      },
+    });
   }
 
   @HostListener('document:click', ['$event'])

@@ -244,17 +244,18 @@ export class KonteksDetailComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error fetch konteks detail:', err);
         this.loading = false;
 
         if (err?.status === 401) {
           this.errorMsg =
             'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+          this.ui.error(this.errorMsg);
           return;
         }
         this.errorMsg = `Gagal fetch konteks (HTTP ${
           err?.status || 'unknown'
         }).`;
+        this.ui.error(this.errorMsg);
       },
     });
   }
@@ -323,7 +324,7 @@ export class KonteksDetailComponent implements OnInit {
         if (Object.keys(fieldErrors).length) {
           this.konteksModalErrors = fieldErrors;
         }
-        console.error('[PATCH /konteks/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menyimpan perubahan konteks.');
       },
     });
   }
@@ -343,7 +344,7 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        console.error('[PATCH /konteks/:id/activate] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal mengaktifkan konteks.');
       },
     });
   }
@@ -362,7 +363,7 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        console.error('[PATCH /konteks/:id/deactivate] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menonaktifkan konteks.');
       },
     });
   }
@@ -470,7 +471,6 @@ export class KonteksDetailComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
-          console.error('Error fetch risk categories:', err);
           this.loading = false;
 
           this.rawRiskCategories = [];
@@ -480,12 +480,14 @@ export class KonteksDetailComponent implements OnInit {
           if (err?.status === 401) {
             this.errorMsg =
               'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+            this.ui.error(this.errorMsg);
             return;
           }
 
           this.errorMsg = `Gagal fetch risk categories (HTTP ${
             err?.status || 'unknown'
           }).`;
+          this.ui.error(this.errorMsg);
         },
       });
   }
@@ -592,7 +594,7 @@ export class KonteksDetailComponent implements OnInit {
             if (Object.keys(fieldErrors).length) {
               this.rcErrors = fieldErrors;
             }
-            console.error('[POST risk-categories] error:', e);
+            this.ui.error(extractErrorMessage(e) || 'Gagal menambah kategori risiko.');
           },
         });
       return;
@@ -613,7 +615,7 @@ export class KonteksDetailComponent implements OnInit {
         if (Object.keys(fieldErrors).length) {
           this.rcErrors = fieldErrors;
         }
-        console.error('[PATCH risk-categories/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menyimpan kategori risiko.');
       },
     });
   }
@@ -652,7 +654,7 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        console.error('[DELETE risk-categories/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menghapus kategori risiko.');
       },
     });
   }
@@ -701,7 +703,6 @@ export class KonteksDetailComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
-          console.error('Error fetch likelihood:', err);
           this.loading = false;
           this.likelihoods = [];
           this.lkPagination = null;
@@ -710,12 +711,14 @@ export class KonteksDetailComponent implements OnInit {
           if (err?.status === 401) {
             this.errorMsg =
               'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+            this.ui.error(this.errorMsg);
             return;
           }
 
           this.errorMsg =
             extractErrorMessage(err) ||
             `Gagal fetch likelihood scales (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
         },
       });
   }
@@ -800,7 +803,7 @@ export class KonteksDetailComponent implements OnInit {
             if (Object.keys(fieldErrors).length) {
               this.lkErrors = fieldErrors;
             }
-            console.error('[POST likelihood-scales] error:', e);
+            this.ui.error(extractErrorMessage(e) || 'Gagal menambah likelihood.');
           },
         });
       return;
@@ -826,7 +829,7 @@ export class KonteksDetailComponent implements OnInit {
         if (Object.keys(fieldErrors).length) {
           this.lkErrors = fieldErrors;
         }
-        console.error('[PATCH likelihood-scales/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menyimpan likelihood.');
       },
     });
   }
@@ -857,7 +860,7 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        console.error('[DELETE likelihood-scales/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menghapus likelihood.');
       },
     });
   }
@@ -906,7 +909,6 @@ export class KonteksDetailComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
-          console.error('Error fetch impact:', err);
           this.loading = false;
           this.impactScales = [];
           this.imPagination = null;
@@ -915,12 +917,14 @@ export class KonteksDetailComponent implements OnInit {
           if (err?.status === 401) {
             this.errorMsg =
               'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+            this.ui.error(this.errorMsg);
             return;
           }
 
           this.errorMsg =
             extractErrorMessage(err) ||
             `Gagal fetch impact scales (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
         },
       });
   }
@@ -1005,7 +1009,7 @@ export class KonteksDetailComponent implements OnInit {
             if (Object.keys(fieldErrors).length) {
               this.imErrors = fieldErrors;
             }
-            console.error('[POST impact-scales] error:', e);
+            this.ui.error(extractErrorMessage(e) || 'Gagal menambah impact.');
           },
         });
       return;
@@ -1031,7 +1035,7 @@ export class KonteksDetailComponent implements OnInit {
         if (Object.keys(fieldErrors).length) {
           this.imErrors = fieldErrors;
         }
-        console.error('[PATCH impact-scales/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menyimpan impact.');
       },
     });
   }
@@ -1062,7 +1066,7 @@ export class KonteksDetailComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        console.error('[DELETE impact-scales/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menghapus impact.');
       },
     });
   }

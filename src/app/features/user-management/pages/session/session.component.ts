@@ -3,6 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { ConfirmModalComponent } from '../../../../shared/components/confirm-modal/confirm-modal.component';
+import { UiService } from '../../../../core/services/ui.service';
+import { extractErrorMessage } from '../../../../core/utils/error-utils';
 
 type SessionUser = {
   id: string;
@@ -92,7 +94,7 @@ export class SessionComponent implements OnInit {
   // advanced filter toggle
   showAdvancedFilters = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private ui: UiService) {}
 
   ngOnInit(): void {
     this.fetchSessions(true);
@@ -150,7 +152,6 @@ export class SessionComponent implements OnInit {
         this.applyClientFilters();
       },
       error: (err) => {
-        console.error('Error fetching sessions:', err);
         this.loading = false;
         this.sessions = [];
         this.filtered = [];
@@ -163,7 +164,10 @@ export class SessionComponent implements OnInit {
           this.errorMsg = 'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
           return;
         }
-        this.errorMsg = `Gagal fetch sessions dari API (HTTP ${err?.status || 'unknown'}).`;
+        this.errorMsg =
+          extractErrorMessage(err) ||
+          `Gagal fetch sessions dari API (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
       },
     });
   }
@@ -358,8 +362,10 @@ export class SessionComponent implements OnInit {
         this.fetchSessions(false);
       },
       error: (err) => {
-        console.error('Error revoke session:', err);
-        this.errorMsg = `Gagal revoke session (HTTP ${err?.status || 'unknown'}).`;
+        this.errorMsg =
+          extractErrorMessage(err) ||
+          `Gagal revoke session (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
         this.actionLoadingId = null;
       },
     });
@@ -379,8 +385,10 @@ export class SessionComponent implements OnInit {
         this.fetchSessions(true);
       },
       error: (err) => {
-        console.error('Error revoke expired sessions:', err);
-        this.errorMsg = `Gagal revoke expired sessions (HTTP ${err?.status || 'unknown'}).`;
+        this.errorMsg =
+          extractErrorMessage(err) ||
+          `Gagal revoke expired sessions (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
         this.revokeExpiredLoading = false;
       },
     });

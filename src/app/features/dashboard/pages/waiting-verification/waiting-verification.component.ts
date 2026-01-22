@@ -208,11 +208,9 @@ export class WaitingVerificationComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout().subscribe({
       next: () => {
-        localStorage.clear();
         this.router.navigate(['/auth/login']);
       },
       error: () => {
-        localStorage.clear();
         this.router.navigate(['/auth/login']);
       },
     });

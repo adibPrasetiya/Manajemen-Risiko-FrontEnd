@@ -23,7 +23,7 @@
       </a>
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" *ngIf="isAdmin || isKomitePusat">
       <div class="section-label">Konteks Management</div>
       <a class="nav-item" routerLink="/konteks-management" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
         <span class="nav-icon"><i class="fa-solid fa-puzzle-piece"></i></span>
@@ -31,7 +31,7 @@
       </a>
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" *ngIf="isAdmin">
       <div class="section-label">User Management</div>
       <button class="nav-item nav-parent" type="button" (click)="toggleUsersMenu()">
         <span class="nav-icon"><i class="fa-solid fa-users"></i></span>

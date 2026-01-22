@@ -11,6 +11,8 @@ import {
   UnitKerjaService,
   UnitKerja,
 } from '../../../../core/services/unit-kerja.service';
+import { UiService } from '../../../../core/services/ui.service';
+import { extractErrorMessage } from '../../../../core/utils/error-utils';
 
 type Pagination = {
   limit: number;
@@ -48,6 +50,7 @@ export class UnverifiedProfilesComponent implements OnInit {
     private profileRequestService: ProfileRequestService,
     private unitKerjaService: UnitKerjaService,
     private router: Router,
+    private ui: UiService,
   ) {}
 
   ngOnInit(): void {
@@ -83,13 +86,11 @@ export class UnverifiedProfilesComponent implements OnInit {
 
     this.profileRequestService.getUnverifiedProfiles(params).subscribe({
       next: (res) => {
-        console.log(res);
         this.profiles = res.data ?? [];
         this.pagination = res.pagination ?? null;
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error fetching unverified profiles:', err);
         this.loading = false;
         this.profiles = [];
         this.pagination = null;
@@ -104,8 +105,9 @@ export class UnverifiedProfilesComponent implements OnInit {
         }
 
         this.errorMsg =
-          err?.error?.message ||
+          extractErrorMessage(err) ||
           `Failed to fetch unverified profiles (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
       },
     });
   }

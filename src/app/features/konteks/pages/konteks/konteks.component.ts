@@ -273,7 +273,6 @@ export class KonteksComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error fetching konteks:', err);
         this.loading = false;
         this.items = [];
         this.pagination = null;
@@ -285,7 +284,10 @@ export class KonteksComponent implements OnInit {
             'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
           return;
         }
-        this.errorMsg = `Gagal fetch konteks dari API (HTTP ${err?.status || 'unknown'}).`;
+        this.errorMsg =
+          extractErrorMessage(err) ||
+          `Gagal fetch konteks dari API (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
       },
     });
   }
@@ -465,7 +467,7 @@ export class KonteksComponent implements OnInit {
         if (Object.keys(fieldErrors).length) {
           this.createErrors = fieldErrors;
         }
-        console.error('[POST /konteks] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menambah konteks.');
       },
     });
   }
@@ -564,7 +566,7 @@ export class KonteksComponent implements OnInit {
         if (Object.keys(fieldErrors).length) {
           this.editErrors = fieldErrors;
         }
-        console.error('[PATCH /konteks/:id] error:', e);
+        this.ui.error(extractErrorMessage(e) || 'Gagal menyimpan perubahan konteks.');
       },
     });
   }

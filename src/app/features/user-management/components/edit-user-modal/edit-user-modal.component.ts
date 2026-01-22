@@ -43,7 +43,7 @@ export class EditUserModalComponent implements OnChanges {
     name: '',
     isActive: false,
     isVerified: false,
-    roles: { USER: false, ADMIN: false },
+    roles: { USER: false, ADMIN: false, KOMITE_PUSAT: false },
   };
 
   validationError = '';
@@ -59,11 +59,12 @@ export class EditUserModalComponent implements OnChanges {
         roles: {
           USER: (this.user.roles ?? []).includes('USER'),
           ADMIN: (this.user.roles ?? []).includes('ADMIN') || (this.user.roles ?? []).includes('ADMINISTRATOR'),
+          KOMITE_PUSAT: (this.user.roles ?? []).includes('KOMITE_PUSAT'),
         },
       };
 
       // Minimal 1 role
-      if (!this.formData.roles.USER && !this.formData.roles.ADMIN) {
+      if (!this.formData.roles.USER && !this.formData.roles.ADMIN && !this.formData.roles.KOMITE_PUSAT) {
         this.formData.roles.USER = true;
       }
 
@@ -107,6 +108,7 @@ export class EditUserModalComponent implements OnChanges {
     const roles: string[] = [];
     if (this.formData.roles.USER) roles.push('USER');
     if (this.formData.roles.ADMIN) roles.push('ADMINISTRATOR');
+    if (this.formData.roles.KOMITE_PUSAT) roles.push('KOMITE_PUSAT');
 
     if (roles.length === 0) {
       this.validationError = 'Minimal pilih 1 role.';

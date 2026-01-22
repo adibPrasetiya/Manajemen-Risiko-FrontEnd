@@ -6,6 +6,8 @@ import {
   HttpHeaders,
   HttpParams,
 } from '@angular/common/http';
+import { UiService } from '../../../../core/services/ui.service';
+import { extractErrorMessage } from '../../../../core/utils/error-utils';
 
 type UnitKerjaItem = {
   id: string;
@@ -82,7 +84,7 @@ export class UnitKerjaComponent implements OnInit {
     email: '',
   };
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private ui: UiService) {}
 
   ngOnInit(): void {
     this.fetch(true);
@@ -144,7 +146,6 @@ export class UnitKerjaComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
-          console.error('Error fetching unit kerja:', err);
           this.loading = false;
 
           this.items = [];
@@ -157,7 +158,10 @@ export class UnitKerjaComponent implements OnInit {
             return;
           }
 
-          this.errorMsg = `Gagal fetch unit kerja (HTTP ${err?.status || 'unknown'}).`;
+          this.errorMsg =
+            extractErrorMessage(err) ||
+            `Gagal fetch unit kerja (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
         },
       });
   }
@@ -283,8 +287,8 @@ export class UnitKerjaComponent implements OnInit {
         error: (e) => {
           this.loading = false;
           this.editError =
-            e?.error?.errors || e?.error?.message || 'Gagal update unit kerja.';
-          console.error('[PATCH /unit-kerja/:id] error:', e);
+            extractErrorMessage(e) || 'Gagal update unit kerja.';
+          this.ui.error(this.editError);
         },
       });
   }
@@ -326,8 +330,8 @@ export class UnitKerjaComponent implements OnInit {
         error: (e) => {
           this.loading = false;
           this.deleteError =
-            e?.error?.errors || e?.error?.message || 'Gagal hapus unit kerja.';
-          console.error('[DELETE /unit-kerja/:id] error:', e);
+            extractErrorMessage(e) || 'Gagal hapus unit kerja.';
+          this.ui.error(this.deleteError);
         },
       });
   }
@@ -394,8 +398,8 @@ export class UnitKerjaComponent implements OnInit {
       error: (e) => {
         this.loading = false;
         this.createError =
-          e?.error?.errors || e?.error?.message || 'Gagal membuat unit kerja.';
-        console.error('[POST /unit-kerja] error:', e);
+          extractErrorMessage(e) || 'Gagal membuat unit kerja.';
+        this.ui.error(this.createError);
       },
     });
   }

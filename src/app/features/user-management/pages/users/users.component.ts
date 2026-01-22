@@ -15,6 +15,8 @@ import {
   EditUserData,
   EditUserResult,
 } from '../../components/edit-user-modal/edit-user-modal.component';
+import { UiService } from '../../../../core/services/ui.service';
+import { extractErrorMessage } from '../../../../core/utils/error-utils';
 
 type UserItem = {
   id: string;
@@ -98,7 +100,7 @@ export class UsersComponent implements OnInit {
   editError = '';
   selectedUser: EditUserData | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private ui: UiService) {}
 
   ngOnInit(): void {
     this.fetchUsers(true);
@@ -215,7 +217,6 @@ export class UsersComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
-          console.error('Error fetching users:', err);
           this.loading = false;
           this.users = [];
           this.pagination = null;
@@ -231,7 +232,10 @@ export class UsersComponent implements OnInit {
             return;
           }
 
-          this.errorMsg = `Gagal fetch users dari API (HTTP ${err?.status || 'unknown'}).`;
+          this.errorMsg =
+            extractErrorMessage(err) ||
+            `Gagal fetch users dari API (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
         },
       });
   }
@@ -394,9 +398,8 @@ export class UsersComponent implements OnInit {
         },
         error: (e) => {
           this.loading = false;
-          this.editError =
-            e?.error?.errors || e?.error?.message || 'Gagal update user. Coba lagi.';
-          console.error('[PATCH /users/:id] error:', e);
+          this.editError = extractErrorMessage(e) || 'Gagal update user. Coba lagi.';
+          this.ui.error(this.editError);
         },
       });
   }

@@ -15,6 +15,8 @@ import {
   UnitKerja,
 } from '../../../../core/services/unit-kerja.service';
 import { RequestDetailModalComponent } from '../../components/request-detail-modal/request-detail-modal.component';
+import { UiService } from '../../../../core/services/ui.service';
+import { extractErrorMessage } from '../../../../core/utils/error-utils';
 
 type Pagination = {
   limit: number;
@@ -66,6 +68,7 @@ export class ProfileRequestsComponent implements OnInit {
   constructor(
     private profileRequestService: ProfileRequestService,
     private unitKerjaService: UnitKerjaService,
+    private ui: UiService,
   ) {}
 
   ngOnInit(): void {
@@ -140,14 +143,12 @@ export class ProfileRequestsComponent implements OnInit {
 
     this.profileRequestService.getProfileRequests(params).subscribe({
       next: (res) => {
-        console.log(res);
         this.requests = res.data ?? [];
         this.pagination = res.pagination ?? null;
         this.refreshStats();
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error fetching profile requests:', err);
         this.loading = false;
         this.requests = [];
         this.pagination = null;
@@ -165,8 +166,9 @@ export class ProfileRequestsComponent implements OnInit {
         }
 
         this.errorMsg =
-          err?.error?.message ||
+          extractErrorMessage(err) ||
           `Failed to fetch profile requests (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
       },
     });
   }
