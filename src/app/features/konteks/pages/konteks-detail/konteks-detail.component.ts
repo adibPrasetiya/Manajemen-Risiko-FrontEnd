@@ -20,6 +20,11 @@ import {
   CreateImpactPayload,
   UpdateImpactPayload,
   TabKey,
+  RiskLevel,
+  RiskMatrixItem,
+  RiskMatrixEntry,
+  CreateRiskMatrixBulkPayload,
+  RiskLevelConfig,
 } from '../../../../core/models/konteks.model';
 import { extractErrorMessage, extractFieldErrors } from '../../../../core/utils/error-utils';
 
@@ -139,12 +144,33 @@ export class KonteksDetailComponent implements OnInit {
   confirmConfirmText = 'OK';
   confirmShowCancel = true;
   confirmTone: 'danger' | 'primary' | 'neutral' = 'danger';
-  confirmAction: 'delete-rc' | 'delete-lk' | 'delete-im' | 'info' | null = null;
+  confirmAction: 'delete-rc' | 'delete-lk' | 'delete-im' | 'info' | 'discard-matrix-changes' | 'delete-matrix' | null = null;
   pendingRiskCategory: RiskCategory | null = null;
   pendingLikelihood: LikelihoodScale | null = null;
   pendingImpact: ImpactScale | null = null;
 
   appetiteOptions = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+  // ===================== RISK MATRIX STATE =====================
+  riskLevelOptions: RiskLevel[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  savedRiskMatrices: RiskMatrixItem[] = [];
+  matrixState: Map<string, RiskLevel> = new Map();
+  matrixEditMode = false;
+  matrixLoading = false;
+  matrixSaving = false;
+  matrixHasChanges = false;
+  matrixErrorMsg = '';
+  matrixDeleting = false;
+
+  // Configuration Modal
+  showMatrixConfigModal = false;
+  matrixConfigPreview: Map<string, RiskLevel> = new Map();
+  riskLevelConfigs: RiskLevelConfig[] = [
+    { level: 'LOW', label: 'Low (Hijau)', minScore: 1, maxScore: 5, color: '#22c55e' },
+    { level: 'MEDIUM', label: 'Medium (Kuning)', minScore: 6, maxScore: 10, color: '#f59e0b' },
+    { level: 'HIGH', label: 'High (Oranye)', minScore: 11, maxScore: 20, color: '#f97316' },
+    { level: 'CRITICAL', label: 'Critical (Merah)', minScore: 21, maxScore: 25, color: '#dc2626' },
+  ];
 
   konteksForm: KonteksFormModel = {
     name: '',
@@ -216,6 +242,10 @@ export class KonteksDetailComponent implements OnInit {
     if (t === 'RISK_IMPACT') {
       this.ensureSelectedCategoryValid();
       if (this.selectedRiskCategoryId) this.fetchImpactScales(true);
+    }
+
+    if (t === 'RISK_MATRIX') {
+      this.fetchRiskMatrices();
     }
   }
 
@@ -376,7 +406,7 @@ export class KonteksDetailComponent implements OnInit {
     confirmText?: string;
     showCancel?: boolean;
     tone?: 'danger' | 'primary' | 'neutral';
-    action?: 'delete-rc' | 'delete-lk' | 'delete-im' | 'info';
+    action?: 'delete-rc' | 'delete-lk' | 'delete-im' | 'info' | 'discard-matrix-changes' | 'delete-matrix';
   }): void {
     this.confirmTitle = opts.title;
     this.confirmMessage = opts.message;
@@ -426,6 +456,18 @@ export class KonteksDetailComponent implements OnInit {
       const target = this.pendingImpact;
       this.closeConfirmModal();
       this.performDeleteIM(target);
+      return;
+    }
+
+    if (this.confirmAction === 'discard-matrix-changes') {
+      this.closeConfirmModal();
+      this.discardMatrixChanges();
+      return;
+    }
+
+    if (this.confirmAction === 'delete-matrix') {
+      this.closeConfirmModal();
+      this.performDeleteMatrix();
       return;
     }
 
@@ -1099,6 +1141,11 @@ export class KonteksDetailComponent implements OnInit {
     return Array.from({ length: size }, (_, i) => i + 1);
   }
 
+  getMaxScore(): number {
+    const size = this.getMatrixSize();
+    return size * size;
+  }
+
   getRiskScore(impact: number, likelihood: number): number {
     return Number(impact) * Number(likelihood);
   }
@@ -1112,5 +1159,346 @@ export class KonteksDetailComponent implements OnInit {
     if (score <= lowMax) return 'low';
     if (score <= mediumMax) return 'medium';
     return 'high';
+  }
+
+  // ===================== RISK MATRIX INTERACTIVE METHODS =====================
+
+  private getMatrixKey(likelihood: number, impact: number): string {
+    return `${likelihood}-${impact}`;
+  }
+
+  private parseMatrixKey(key: string): { likelihood: number; impact: number } {
+    const [likelihood, impact] = key.split('-').map(Number);
+    return { likelihood, impact };
+  }
+
+  private initializeEmptyMatrix(): void {
+    this.matrixState.clear();
+    const size = this.getMatrixSize();
+
+    for (let likelihood = 1; likelihood <= size; likelihood++) {
+      for (let impact = 1; impact <= size; impact++) {
+        const key = this.getMatrixKey(likelihood, impact);
+        const defaultLevel = this.calculateDefaultRiskLevel(likelihood, impact);
+        this.matrixState.set(key, defaultLevel);
+      }
+    }
+  }
+
+  private calculateDefaultRiskLevel(likelihood: number, impact: number): RiskLevel {
+    const score = likelihood * impact;
+    const size = this.getMatrixSize();
+    const maxScore = size * size;
+
+    // Dynamic thresholds based on matrix size
+    const lowMax = Math.ceil(maxScore * 0.2);
+    const mediumMax = Math.ceil(maxScore * 0.4);
+    const highMax = Math.ceil(maxScore * 0.7);
+
+    if (score <= lowMax) return 'LOW';
+    if (score <= mediumMax) return 'MEDIUM';
+    if (score <= highMax) return 'HIGH';
+    return 'CRITICAL';
+  }
+
+  private populateMatrixFromSaved(): void {
+    this.initializeEmptyMatrix();
+
+    for (const item of this.savedRiskMatrices) {
+      const key = this.getMatrixKey(item.likelihoodLevel, item.impactLevel);
+      this.matrixState.set(key, item.riskLevel);
+    }
+
+    this.matrixHasChanges = false;
+  }
+
+  getCellRiskLevel(likelihood: number, impact: number): RiskLevel {
+    const key = this.getMatrixKey(likelihood, impact);
+    return this.matrixState.get(key) || 'LOW';
+  }
+
+  getRiskLevelClass(level: RiskLevel): string {
+    switch (level) {
+      case 'LOW': return 'risk-low';
+      case 'MEDIUM': return 'risk-medium';
+      case 'HIGH': return 'risk-high';
+      case 'CRITICAL': return 'risk-critical';
+      default: return '';
+    }
+  }
+
+  onCellClick(likelihood: number, impact: number): void {
+    if (!this.matrixEditMode) return;
+
+    const key = this.getMatrixKey(likelihood, impact);
+    const currentLevel = this.matrixState.get(key) || 'LOW';
+
+    const currentIndex = this.riskLevelOptions.indexOf(currentLevel);
+    const nextIndex = (currentIndex + 1) % this.riskLevelOptions.length;
+    const nextLevel = this.riskLevelOptions[nextIndex];
+
+    this.matrixState.set(key, nextLevel);
+    this.matrixHasChanges = true;
+  }
+
+  toggleMatrixEditMode(): void {
+    if (this.matrixEditMode && this.matrixHasChanges) {
+      this.openConfirmModal({
+        title: 'Perubahan Belum Disimpan',
+        message: 'Anda memiliki perubahan yang belum disimpan. Batalkan perubahan?',
+        confirmText: 'Ya, Batalkan',
+        tone: 'danger',
+        action: 'discard-matrix-changes',
+      });
+      return;
+    }
+
+    this.matrixEditMode = !this.matrixEditMode;
+
+    if (!this.matrixEditMode) {
+      this.populateMatrixFromSaved();
+    }
+  }
+
+  fetchRiskMatrices(): void {
+    this.matrixLoading = true;
+    this.matrixErrorMsg = '';
+
+    this.konteksService.getRiskMatrices(this.konteksId, { limit: 100 }).subscribe({
+      next: (res) => {
+        this.savedRiskMatrices = res.data ?? [];
+        this.populateMatrixFromSaved();
+        this.matrixLoading = false;
+      },
+      error: (err) => {
+        this.matrixLoading = false;
+
+        if (err?.status === 401) {
+          this.matrixErrorMsg = 'HTTP 401: Token tidak ada/invalid.';
+          this.ui.error(this.matrixErrorMsg);
+          return;
+        }
+
+        if (err?.status === 404) {
+          this.savedRiskMatrices = [];
+          this.initializeEmptyMatrix();
+          this.matrixHasChanges = false;
+          return;
+        }
+
+        this.matrixErrorMsg = extractErrorMessage(err) || 'Gagal memuat risk matrix.';
+        this.ui.error(this.matrixErrorMsg);
+      },
+    });
+  }
+
+  discardMatrixChanges(): void {
+    this.populateMatrixFromSaved();
+    this.matrixEditMode = false;
+    this.matrixHasChanges = false;
+  }
+
+  // ===================== MATRIX CONFIG MODAL =====================
+
+  isMatrixEmpty(): boolean {
+    return this.savedRiskMatrices.length === 0;
+  }
+
+  openMatrixConfigModal(): void {
+    this.resetRiskLevelConfigs();
+    this.updateConfigPreview();
+    this.showMatrixConfigModal = true;
+  }
+
+  closeMatrixConfigModal(): void {
+    this.showMatrixConfigModal = false;
+  }
+
+  private resetRiskLevelConfigs(): void {
+    const size = this.getMatrixSize();
+    const maxScore = size * size;
+
+    // Dynamic thresholds based on matrix size
+    const lowMax = Math.ceil(maxScore * 0.2);
+    const mediumMax = Math.ceil(maxScore * 0.4);
+    const highMax = Math.ceil(maxScore * 0.7);
+
+    this.riskLevelConfigs = [
+      { level: 'LOW', label: 'Low (Hijau)', minScore: 1, maxScore: lowMax, color: '#22c55e' },
+      { level: 'MEDIUM', label: 'Medium (Kuning)', minScore: lowMax + 1, maxScore: mediumMax, color: '#f59e0b' },
+      { level: 'HIGH', label: 'High (Oranye)', minScore: mediumMax + 1, maxScore: highMax, color: '#f97316' },
+      { level: 'CRITICAL', label: 'Critical (Merah)', minScore: highMax + 1, maxScore: maxScore, color: '#dc2626' },
+    ];
+  }
+
+  onConfigChange(): void {
+    this.updateConfigPreview();
+  }
+
+  updateConfigPreview(): void {
+    this.matrixConfigPreview.clear();
+    const size = this.getMatrixSize();
+
+    for (let likelihood = 1; likelihood <= size; likelihood++) {
+      for (let impact = 1; impact <= size; impact++) {
+        const key = this.getMatrixKey(likelihood, impact);
+        const score = likelihood * impact;
+        const level = this.getRiskLevelFromScore(score);
+        this.matrixConfigPreview.set(key, level);
+      }
+    }
+  }
+
+  private getRiskLevelFromScore(score: number): RiskLevel {
+    for (const config of this.riskLevelConfigs) {
+      if (score >= config.minScore && score <= config.maxScore) {
+        return config.level;
+      }
+    }
+    return 'LOW';
+  }
+
+  getPreviewCellRiskLevel(likelihood: number, impact: number): RiskLevel {
+    const key = this.getMatrixKey(likelihood, impact);
+    return this.matrixConfigPreview.get(key) || 'LOW';
+  }
+
+  isConfigValid(): boolean {
+    const size = this.getMatrixSize();
+    const maxScore = size * size;
+
+    const allScores = new Set<number>();
+    let hasOverlap = false;
+    let hasGap = false;
+
+    for (const config of this.riskLevelConfigs) {
+      if (config.minScore > config.maxScore) return false;
+      if (config.minScore < 1 || config.maxScore > maxScore) return false;
+
+      for (let s = config.minScore; s <= config.maxScore; s++) {
+        if (allScores.has(s)) {
+          hasOverlap = true;
+        }
+        allScores.add(s);
+      }
+    }
+
+    for (let s = 1; s <= maxScore; s++) {
+      if (!allScores.has(s)) {
+        hasGap = true;
+      }
+    }
+
+    return !hasOverlap && !hasGap;
+  }
+
+  createMatrixFromConfig(): void {
+    if (!this.isConfigValid()) {
+      const maxScore = this.getMatrixSize() * this.getMatrixSize();
+      this.ui.error(`Konfigurasi tidak valid. Pastikan semua skor 1-${maxScore} tercakup tanpa overlap.`);
+      return;
+    }
+
+    this.matrixSaving = true;
+
+    const matrices: RiskMatrixEntry[] = [];
+    const size = this.getMatrixSize();
+
+    for (let likelihood = 1; likelihood <= size; likelihood++) {
+      for (let impact = 1; impact <= size; impact++) {
+        const score = likelihood * impact;
+        const riskLevel = this.getRiskLevelFromScore(score);
+        matrices.push({
+          likelihoodLevel: likelihood,
+          impactLevel: impact,
+          riskLevel,
+        });
+      }
+    }
+
+    const payload: CreateRiskMatrixBulkPayload = { matrices };
+
+    this.konteksService.createRiskMatricesBulk(this.konteksId, payload).subscribe({
+      next: (res) => {
+        this.matrixSaving = false;
+        this.savedRiskMatrices = res.data?.created ?? [];
+        this.populateMatrixFromSaved();
+        this.closeMatrixConfigModal();
+        this.ui.success('Risk matrix berhasil dibuat.');
+        this.fetchKonteksDetail();
+      },
+      error: (err) => {
+        this.matrixSaving = false;
+        this.ui.error(extractErrorMessage(err) || 'Gagal membuat risk matrix.');
+      },
+    });
+  }
+
+  // ===================== DELETE MATRIX =====================
+
+  confirmDeleteMatrix(): void {
+    if (this.savedRiskMatrices.length === 0) {
+      this.ui.info('Tidak ada matrix untuk dihapus.');
+      return;
+    }
+
+    this.openConfirmModal({
+      title: 'Hapus Risk Matrix',
+      message: `Hapus seluruh risk matrix (${this.savedRiskMatrices.length} cell)?`,
+      details: ['Tindakan ini tidak dapat dibatalkan.'],
+      confirmText: 'Ya, Hapus',
+      tone: 'danger',
+      action: 'delete-matrix',
+    });
+  }
+
+  private performDeleteMatrix(): void {
+    if (this.savedRiskMatrices.length === 0) return;
+
+    this.matrixDeleting = true;
+    this.matrixLoading = true;
+
+    const deleteRequests = this.savedRiskMatrices.map((item) =>
+      this.konteksService.deleteRiskMatrix(this.konteksId, item.id)
+    );
+
+    let completed = 0;
+    let errors = 0;
+
+    deleteRequests.forEach((req) => {
+      req.subscribe({
+        next: () => {
+          completed++;
+          this.checkDeleteCompletion(completed, errors, deleteRequests.length);
+        },
+        error: () => {
+          completed++;
+          errors++;
+          this.checkDeleteCompletion(completed, errors, deleteRequests.length);
+        },
+      });
+    });
+  }
+
+  private checkDeleteCompletion(completed: number, errors: number, total: number): void {
+    if (completed === total) {
+      this.matrixDeleting = false;
+      this.matrixLoading = false;
+
+      if (errors === 0) {
+        this.savedRiskMatrices = [];
+        this.matrixState.clear();
+        this.matrixEditMode = false;
+        this.matrixHasChanges = false;
+        this.ui.success('Risk matrix berhasil dihapus.');
+        this.fetchKonteksDetail();
+      } else if (errors < total) {
+        this.ui.error(`Sebagian matrix gagal dihapus (${errors}/${total} error). Silakan coba lagi.`);
+        this.fetchRiskMatrices();
+      } else {
+        this.ui.error('Gagal menghapus risk matrix.');
+        this.fetchRiskMatrices();
+      }
+    }
   }
 }

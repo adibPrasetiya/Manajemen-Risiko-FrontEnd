@@ -19,6 +19,11 @@ import {
   ImpactScaleDetailResponse,
   CreateImpactPayload,
   UpdateImpactPayload,
+  RiskMatrixListResponse,
+  RiskMatrixDetailResponse,
+  CreateRiskMatrixBulkPayload,
+  RiskMatrixBulkResponse,
+  UpdateRiskMatrixPayload,
 } from '../models/konteks.model';
 
 @Injectable({ providedIn: 'root' })
@@ -226,6 +231,65 @@ export class KonteksService {
   ): Observable<void> {
     return this.http.delete<void>(
       `${this.baseUrl}/konteks/${konteksId}/risk-categories/${categoryId}/impact-scales/${impactId}`,
+      { withCredentials: true }
+    );
+  }
+
+  // ===================== RISK MATRIX =====================
+
+  getRiskMatrices(
+    konteksId: string,
+    params?: { page?: number; limit?: number }
+  ): Observable<RiskMatrixListResponse> {
+    let httpParams = new HttpParams();
+    if (params?.page) httpParams = httpParams.set('page', String(params.page));
+    if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
+
+    return this.http.get<RiskMatrixListResponse>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-matrices`,
+      { params: httpParams, withCredentials: true }
+    );
+  }
+
+  createRiskMatricesBulk(
+    konteksId: string,
+    payload: CreateRiskMatrixBulkPayload
+  ): Observable<RiskMatrixBulkResponse> {
+    return this.http.post<RiskMatrixBulkResponse>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-matrices/bulk`,
+      payload,
+      { withCredentials: true }
+    );
+  }
+
+  getRiskMatrixById(
+    konteksId: string,
+    matrixId: string
+  ): Observable<RiskMatrixDetailResponse> {
+    return this.http.get<RiskMatrixDetailResponse>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-matrices/${matrixId}`,
+      { withCredentials: true }
+    );
+  }
+
+  updateRiskMatrix(
+    konteksId: string,
+    matrixId: string,
+    payload: UpdateRiskMatrixPayload
+  ): Observable<RiskMatrixDetailResponse> {
+    return this.http.patch<RiskMatrixDetailResponse>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-matrices/${matrixId}`,
+      payload,
+      { withCredentials: true }
+    );
+  }
+
+  deleteRiskMatrix(
+    konteksId: string,
+    matrixId: string
+  ): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/konteks/${konteksId}/risk-matrices/${matrixId}`,
       { withCredentials: true }
     );
   }

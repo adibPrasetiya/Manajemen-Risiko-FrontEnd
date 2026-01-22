@@ -227,3 +227,61 @@ export interface UpdateImpactPayload {
 }
 
 export type TabKey = 'RISK_CATEGORY' | 'RISK_IMPACT' | 'LIKELIHOOD' | 'RISK_MATRIX';
+
+// ===================== RISK MATRIX =====================
+
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface RiskMatrixItem {
+  id: string;
+  konteksId: string;
+  likelihoodLevel: number;
+  impactLevel: number;
+  riskLevel: RiskLevel;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RiskMatrixListResponse {
+  message: string;
+  data: RiskMatrixItem[];
+  pagination: Pagination;
+}
+
+export interface RiskMatrixEntry {
+  likelihoodLevel: number;
+  impactLevel: number;
+  riskLevel: RiskLevel;
+}
+
+export interface CreateRiskMatrixBulkPayload {
+  matrices: RiskMatrixEntry[];
+}
+
+export interface RiskMatrixBulkResponse {
+  message: string;
+  data: {
+    created: RiskMatrixItem[];
+    createdCount: number;
+    totalInKonteks: number;
+    expectedTotal: number;
+    isComplete: boolean;
+  };
+}
+
+export interface RiskMatrixDetailResponse {
+  message: string;
+  data: RiskMatrixItem;
+}
+
+export interface UpdateRiskMatrixPayload {
+  riskLevel: RiskLevel;
+}
+
+export interface RiskLevelConfig {
+  level: RiskLevel;
+  label: string;
+  minScore: number;
+  maxScore: number;
+  color: string;
+}
