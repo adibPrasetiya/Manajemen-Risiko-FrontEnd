@@ -1,14 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-
-import {
-  HttpClient,
-  HttpHeaders,
-  HttpParams,
-} from '@angular/common/http';
 
 import {
   EditUserModalComponent,
@@ -17,41 +9,14 @@ import {
 } from '../../components/edit-user-modal/edit-user-modal.component';
 import { UiService } from '../../../../core/services/ui.service';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
-
-type UserItem = {
-  id: string;
-  username: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-  isVerified: boolean;
-  roles: string[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-type Pagination = {
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-};
-
-type UsersResponse = {
-  message: string;
-  data: UserItem[];
-  pagination: Pagination;
-};
-
-type PatchUserPayload = {
-  email: string;
-  name: string;
-  isActive: boolean;
-  isVerified: boolean;
-  roles: string[];
-};
+import {
+  PatchUserPayload,
+  Pagination,
+  UserItem,
+  UserListParams,
+  UserService,
+  UserStatsParams,
+} from '../../../../core/services/user.service';
 
 @Component({
   selector: 'app-users',
@@ -61,9 +26,6 @@ type PatchUserPayload = {
   styleUrl: './users.component.scss',
 })
 export class UsersComponent implements OnInit {
-  private baseUrl = 'http://api.dev.simulasibimtekd31.com';
-  private endpoint = '/users';
-
   loading = false;
   errorMsg = '';
 
@@ -100,96 +62,52 @@ export class UsersComponent implements OnInit {
   editError = '';
   selectedUser: EditUserData | null = null;
 
-  constructor(private http: HttpClient, private ui: UiService) {}
+  constructor(private userService: UserService, private ui: UiService) {}
 
   ngOnInit(): void {
     this.fetchUsers(true);
   }
 
-  private buildHeaders(): HttpHeaders | undefined {
-    const token =
-      localStorage.getItem('accessToken') || localStorage.getItem('access_token');
-    if (!token) return undefined;
-
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    });
-  }
-
   // Build query params ke backend (sesuai tab Params di Postman)
-  private buildParams(resetPage: boolean): HttpParams {
+  private buildListParams(resetPage: boolean): UserListParams {
     if (resetPage) this.page = 1;
 
-    let params = new HttpParams()
-      .set('page', String(this.page))
-      .set('limit', String(this.limit));
+    const params: UserListParams = {
+      page: this.page,
+      limit: this.limit,
+    };
 
-    if (this.fName.trim()) params = params.set('name', this.fName.trim());
-    if (this.fUsername.trim()) params = params.set('username', this.fUsername.trim());
+    if (this.fName.trim()) params.name = this.fName.trim();
+    if (this.fUsername.trim()) params.username = this.fUsername.trim();
 
-    if (this.fRole !== 'ALL') params = params.set('role', this.fRole);
+    if (this.fRole !== 'ALL') params.role = this.fRole;
 
-    if (this.fActive === 'ACTIVE') params = params.set('isActive', 'true');
-    if (this.fActive === 'INACTIVE') params = params.set('isActive', 'false');
+    if (this.fActive === 'ACTIVE') params.isActive = true;
+    if (this.fActive === 'INACTIVE') params.isActive = false;
 
-    if (this.fVerified === 'VERIFIED') params = params.set('isVerified', 'true');
-    if (this.fVerified === 'UNVERIFIED') params = params.set('isVerified', 'false');
+    if (this.fVerified === 'VERIFIED') params.isVerified = true;
+    if (this.fVerified === 'UNVERIFIED') params.isVerified = false;
 
     return params;
   }
 
   // Params khusus untuk Stats: mengikuti filter (name/username/role/verified)
   // tapi active di-override agar bisa hitung total/active/inactive.
-  private buildStatsParams(activeOverride: 'true' | 'false' | null): HttpParams {
-    let params = new HttpParams().set('page', '1').set('limit', '1');
+  private buildStatsParams(): UserStatsParams {
+    const params: UserStatsParams = {};
 
-    if (this.fName.trim()) params = params.set('name', this.fName.trim());
-    if (this.fUsername.trim()) params = params.set('username', this.fUsername.trim());
-    if (this.fRole !== 'ALL') params = params.set('role', this.fRole);
+    if (this.fName.trim()) params.name = this.fName.trim();
+    if (this.fUsername.trim()) params.username = this.fUsername.trim();
+    if (this.fRole !== 'ALL') params.role = this.fRole;
 
-    if (this.fVerified === 'VERIFIED') params = params.set('isVerified', 'true');
-    if (this.fVerified === 'UNVERIFIED') params = params.set('isVerified', 'false');
-
-    if (activeOverride) params = params.set('isActive', activeOverride);
+    if (this.fVerified === 'VERIFIED') params.isVerified = true;
+    if (this.fVerified === 'UNVERIFIED') params.isVerified = false;
 
     return params;
   }
 
   private refreshUserStats(): void {
-    const headers = this.buildHeaders();
-
-    const total$ = this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams(null),
-      })
-      .pipe(
-        map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0))
-      );
-
-    const active$ = this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams('true'),
-      })
-      .pipe(
-        map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0))
-      );
-
-    const inactive$ = this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams('false'),
-      })
-      .pipe(
-        map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0))
-      );
-
-    forkJoin({ total: total$, active: active$, inactive: inactive$ }).subscribe((r) => {
+    this.userService.getUserStats(this.buildStatsParams()).subscribe((r) => {
       this.totalUsers = r.total;
       this.totalActive = r.active;
       this.totalInactive = r.inactive;
@@ -200,44 +118,41 @@ export class UsersComponent implements OnInit {
     this.loading = true;
     this.errorMsg = '';
 
-    const headers = this.buildHeaders();
-    const params = this.buildParams(resetPage);
+    const params = this.buildListParams(resetPage);
 
-    this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, { headers, params })
-      .subscribe({
-        next: (res) => {
-          this.users = res.data ?? [];
-          this.pagination = res.pagination ?? null;
-          this.buildRoleOptions();
+    this.userService.getUsers(params).subscribe({
+      next: (res) => {
+        this.users = res.data ?? [];
+        this.pagination = res.pagination ?? null;
+        this.buildRoleOptions();
 
-          // ✅ update stats berdasarkan filter saat ini (name/username/role/verified)
-          this.refreshUserStats();
+        // update stats berdasarkan filter saat ini (name/username/role/verified)
+        this.refreshUserStats();
 
-          this.loading = false;
-        },
-        error: (err) => {
-          this.loading = false;
-          this.users = [];
-          this.pagination = null;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        this.users = [];
+        this.pagination = null;
 
-          // reset stats biar ga nyangkut angka lama
-          this.totalUsers = 0;
-          this.totalActive = 0;
-          this.totalInactive = 0;
+        // reset stats biar ga nyangkut angka lama
+        this.totalUsers = 0;
+        this.totalActive = 0;
+        this.totalInactive = 0;
 
-          if (err?.status === 401) {
-            this.errorMsg =
-              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
-            return;
-          }
-
+        if (err?.status === 401) {
           this.errorMsg =
-            extractErrorMessage(err) ||
-            `Gagal fetch users dari API (HTTP ${err?.status || 'unknown'}).`;
-          this.ui.error(this.errorMsg);
-        },
-      });
+            'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+          return;
+        }
+
+        this.errorMsg =
+          extractErrorMessage(err) ||
+          `Gagal fetch users dari API (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
+      },
+    });
   }
 
   buildRoleOptions(): void {
@@ -246,6 +161,11 @@ export class UsersComponent implements OnInit {
       for (const r of u.roles || []) set.add(r);
     }
     this.roleOptions = ['ALL', ...Array.from(set).sort()];
+  }
+
+  roleLabel(role: string): string {
+    if (role === 'PENGELOLA_RISIKO_UKER') return 'PENGELOLA';
+    return role;
   }
 
   applyFilters(): void {
@@ -365,8 +285,7 @@ export class UsersComponent implements OnInit {
   }
 
   onSaveUser(result: EditUserResult): void {
-    const headers = this.buildHeaders();
-    if (!headers) {
+    if (!this.userService.hasAuthToken()) {
       this.editError = 'Token tidak ditemukan. Silakan login ulang.';
       return;
     }
@@ -381,27 +300,25 @@ export class UsersComponent implements OnInit {
 
     this.loading = true;
 
-    this.http
-      .patch<any>(`${this.baseUrl}${this.endpoint}/${result.id}`, payload, { headers })
-      .subscribe({
-        next: () => {
-          // update table lokal biar langsung berubah
-          this.users = this.users.map((x) =>
-            x.id === result.id ? { ...x, ...payload } : x
-          );
+    this.userService.updateUser(result.id, payload).subscribe({
+      next: () => {
+        // update table lokal biar langsung berubah
+        this.users = this.users.map((x) =>
+          x.id === result.id ? { ...x, ...payload } : x
+        );
 
-          // setelah edit, refresh stats juga
-          this.refreshUserStats();
+        // setelah edit, refresh stats juga
+        this.refreshUserStats();
 
-          this.loading = false;
-          this.closeEditModal();
-        },
-        error: (e) => {
-          this.loading = false;
-          this.editError = extractErrorMessage(e) || 'Gagal update user. Coba lagi.';
-          this.ui.error(this.editError);
-        },
-      });
+        this.loading = false;
+        this.closeEditModal();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.editError = extractErrorMessage(e) || 'Gagal update user. Coba lagi.';
+        this.ui.error(this.editError);
+      },
+    });
   }
 
   trackById(_: number, item: UserItem) {

@@ -43,9 +43,10 @@
 // MODAL CONTAINER
 // ==============================================
 .modal {
-  width: min(480px, 100%);
+  width: 100%;
+  max-width: 560px;
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 16px;  
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.05),
     0 4px 6px -2px rgba(0, 0, 0, 0.05),
@@ -268,13 +269,13 @@ input[type="checkbox"]:disabled + .toggle-slider {
 // ROLE CHIPS
 // ==============================================
 .role-chips {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .role-chip {
-  display: inline-flex;
+  display: block;
   cursor: pointer;
 
   input[type="checkbox"] {
@@ -282,8 +283,9 @@ input[type="checkbox"]:disabled + .toggle-slider {
   }
 
   .chip-content {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 10px 16px;
     border-radius: 10px;
@@ -293,6 +295,7 @@ input[type="checkbox"]:disabled + .toggle-slider {
     font-weight: 500;
     color: #6b7280;
     transition: all 150ms ease;
+    width: 100%;
 
     svg {
       flex-shrink: 0;

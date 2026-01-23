@@ -1,0 +1,251 @@
+<div class="asset-categories-page">
+  <div class="action-row">
+    <button class="btn primary" type="button" (click)="openCreate()">
+      <i class="fa-solid fa-plus"></i>
+      Tambah Kategori Aset
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="head-left">
+        <span class="head-ico"><i class="fa-solid fa-layer-group"></i></span>
+        <span class="head-title">Asset Categories</span>
+      </div>
+
+      <div class="filters-primary">
+        <div class="search-group">
+          <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              [(ngModel)]="q"
+              placeholder="Cari nama / deskripsi..."
+              (keyup.enter)="applySearch()"
+            />
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn primary" type="button" (click)="applySearch()" [disabled]="loading">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search
+          </button>
+          <button class="btn" type="button" (click)="resetSearch()" [disabled]="loading">
+            <i class="fa-solid fa-rotate-right"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint" *ngIf="loading">Loading...</div>
+    <div class="hint warn" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>NAME</th>
+            <th>DESCRIPTION</th>
+            <th class="th-center">TOTAL ASSET</th>
+            <th>CREATED AT</th>
+            <th class="th-actions">ACTIONS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of items; trackBy: trackById">
+            <td>
+              <div class="cell-stack">
+                <div class="primary">{{ item.name }}</div>
+              </div>
+            </td>
+
+            <td>
+              <div class="desc">{{ item.description || '-' }}</div>
+            </td>
+
+            <td class="td-center">{{ item._count?.assets ?? 0 }}</td>
+
+            <td class="muted">{{ item.createdAt | date: 'd MMM y, HH.mm' }}</td>
+
+            <td class="td-actions">
+              <button type="button" class="icon-btn" (click)="openEdit(item)" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+
+              <button
+                type="button"
+                class="icon-btn danger"
+                (click)="openDelete(item)"
+                title="Hapus"
+              >
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading && items.length === 0">
+            <td colspan="5" class="empty">Data kategori aset tidak ditemukan.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="pagination && pagination.totalPages > 0">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> - <strong>{{ getShowingEnd() }}</strong>
+          of <strong>{{ pagination.totalItems }}</strong> data
+        </span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || !pagination.hasPrevPage"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || !pagination.hasNextPage"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: CREATE ASSET CATEGORY ===================== -->
+<div class="modal-backdrop" *ngIf="showCreateModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Tambah Kategori Aset</h3>
+      <button type="button" class="icon-close" (click)="closeCreate()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="field">
+        <label>Nama</label>
+        <input [(ngModel)]="createModel.name" name="createName" />
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <textarea [(ngModel)]="createModel.description" name="createDescription"></textarea>
+      </div>
+
+      <small class="error" *ngIf="createError">{{ createError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeCreate()" [disabled]="loading">
+          Batal
+        </button>
+        <button type="button" class="btn primary" (click)="createAssetCategory()" [disabled]="loading">
+          Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: EDIT ASSET CATEGORY ===================== -->
+<div class="modal-backdrop" *ngIf="showEditModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Ubah Kategori Aset</h3>
+      <button type="button" class="icon-close" (click)="closeEdit()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="field">
+        <label>Nama</label>
+        <input [(ngModel)]="editModel.name" name="editName" />
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <textarea [(ngModel)]="editModel.description" name="editDescription"></textarea>
+      </div>
+
+      <small class="error" *ngIf="editError">{{ editError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeEdit()" [disabled]="loading">
+          Batal
+        </button>
+        <button type="button" class="btn primary" (click)="saveEdit()" [disabled]="loading">
+          Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: DELETE ASSET CATEGORY ===================== -->
+<div class="modal-backdrop" *ngIf="showDeleteModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Hapus Kategori Aset</h3>
+      <button type="button" class="icon-close" (click)="closeDelete()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="confirm">
+        Yakin ingin menghapus:
+        <b>{{ deleteTarget?.name }}</b> ?
+      </p>
+
+      <small class="error" *ngIf="deleteError">{{ deleteError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeDelete()" [disabled]="loading">
+          Batal
+        </button>
+        <button type="button" class="btn danger" (click)="confirmDelete()" [disabled]="loading">
+          Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

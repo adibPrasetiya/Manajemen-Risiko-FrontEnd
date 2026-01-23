@@ -23,7 +23,7 @@
       </a>
     </div>
 
-    <div class="nav-section" *ngIf="isAdmin || isKomitePusat">
+    <div class="nav-section" *ngIf="(isAdmin || isKomitePusat) && !isPengelola">
       <div class="section-label">Konteks Management</div>
       <a class="nav-item" routerLink="/konteks-management" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
         <span class="nav-icon"><i class="fa-solid fa-puzzle-piece"></i></span>
@@ -31,7 +31,7 @@
       </a>
     </div>
 
-    <div class="nav-section" *ngIf="isAdmin">
+    <div class="nav-section" *ngIf="isAdmin && !isPengelola">
       <div class="section-label">User Management</div>
       <button class="nav-item nav-parent" type="button" (click)="toggleUsersMenu()">
         <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
@@ -62,6 +62,14 @@
       <a class="nav-item" routerLink="/user-management/session" routerLinkActive="active">
         <span class="nav-icon"><i class="fa-solid fa-clock"></i></span>
         <span class="nav-text">Session</span>
+      </a>
+    </div>
+
+    <div class="nav-section" *ngIf="isAdmin && !isPengelola">
+      <div class="section-label">Settings</div>
+      <a class="nav-item" routerLink="/settings/asset-categories" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-layer-group"></i></span>
+        <span class="nav-text">Asset Categories</span>
       </a>
     </div>
   </nav>

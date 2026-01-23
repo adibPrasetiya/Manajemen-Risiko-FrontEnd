@@ -43,7 +43,7 @@ export class EditUserModalComponent implements OnChanges {
     name: '',
     isActive: false,
     isVerified: false,
-    roles: { USER: false, ADMIN: false, KOMITE_PUSAT: false },
+    roles: { USER: false, ADMIN: false, KOMITE_PUSAT: false, PENGELOLA: false },
   };
 
   validationError = '';
@@ -60,11 +60,17 @@ export class EditUserModalComponent implements OnChanges {
           USER: (this.user.roles ?? []).includes('USER'),
           ADMIN: (this.user.roles ?? []).includes('ADMIN') || (this.user.roles ?? []).includes('ADMINISTRATOR'),
           KOMITE_PUSAT: (this.user.roles ?? []).includes('KOMITE_PUSAT'),
+          PENGELOLA: (this.user.roles ?? []).includes('PENGELOLA_RISIKO_UKER') || (this.user.roles ?? []).includes('PENGELOLA'),
         },
       };
 
       // Minimal 1 role
-      if (!this.formData.roles.USER && !this.formData.roles.ADMIN && !this.formData.roles.KOMITE_PUSAT) {
+      if (
+        !this.formData.roles.USER &&
+        !this.formData.roles.ADMIN &&
+        !this.formData.roles.KOMITE_PUSAT &&
+        !this.formData.roles.PENGELOLA
+      ) {
         this.formData.roles.USER = true;
       }
 
@@ -109,6 +115,7 @@ export class EditUserModalComponent implements OnChanges {
     if (this.formData.roles.USER) roles.push('USER');
     if (this.formData.roles.ADMIN) roles.push('ADMINISTRATOR');
     if (this.formData.roles.KOMITE_PUSAT) roles.push('KOMITE_PUSAT');
+    if (this.formData.roles.PENGELOLA) roles.push('PENGELOLA_RISIKO_UKER');
 
     if (roles.length === 0) {
       this.validationError = 'Minimal pilih 1 role.';

@@ -4,27 +4,26 @@ import { FormsModule } from '@angular/forms';
 import { UiService } from '../../../../core/services/ui.service';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
 import {
+  AssetCategoryItem,
+  AssetCategoryListParams,
+  AssetCategoryPayload,
   Pagination,
-  UnitKerjaItem,
-  UnitKerjaListParams,
-  UnitKerjaPayload,
   UserService,
 } from '../../../../core/services/user.service';
 
 @Component({
-  selector: 'app-unit-kerja',
+  selector: 'app-asset-categories',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './unit-kerja.component.html',
-  styleUrl: './unit-kerja.component.scss',
+  templateUrl: './asset-categories.component.html',
+  styleUrl: './asset-categories.component.scss',
 })
-export class UnitKerjaComponent implements OnInit {
+export class AssetCategoriesComponent implements OnInit {
   loading = false;
   errorMsg = '';
 
-  items: UnitKerjaItem[] = [];
-  allItems: UnitKerjaItem[] = [];
-
+  items: AssetCategoryItem[] = [];
+  allItems: AssetCategoryItem[] = [];
   pagination: Pagination | null = null;
 
   q = '';
@@ -35,23 +34,21 @@ export class UnitKerjaComponent implements OnInit {
 
   showEditModal = false;
   editError = '';
-  editModel: { id: string; name: string; code: string; email: string } = {
+  editModel: { id: string; name: string; description: string } = {
     id: '',
     name: '',
-    code: '',
-    email: '',
+    description: '',
   };
 
   showDeleteModal = false;
   deleteError = '';
-  deleteTarget: UnitKerjaItem | null = null;
+  deleteTarget: AssetCategoryItem | null = null;
 
   showCreateModal = false;
   createError = '';
-  createModel: { name: string; code: string; email: string } = {
+  createModel: { name: string; description: string } = {
     name: '',
-    code: '',
-    email: '',
+    description: '',
   };
 
   constructor(private userService: UserService, private ui: UiService) {}
@@ -60,25 +57,26 @@ export class UnitKerjaComponent implements OnInit {
     this.fetch(true);
   }
 
-  private buildListParams(resetPage: boolean): UnitKerjaListParams {
+  private buildListParams(resetPage: boolean): AssetCategoryListParams {
     if (resetPage) this.page = 1;
 
-    // backend kamu tidak menerima q, jadi cuma page & limit
     return {
       page: this.page,
       limit: this.limit,
     };
   }
 
-  private applyLocalFilter(list: UnitKerjaItem[], keyword: string): UnitKerjaItem[] {
+  private applyLocalFilter(
+    list: AssetCategoryItem[],
+    keyword: string
+  ): AssetCategoryItem[] {
     const k = (keyword ?? '').trim().toLowerCase();
     if (!k) return list;
 
     return list.filter((x) => {
       const name = (x.name ?? '').toLowerCase();
-      const code = (x.code ?? '').toLowerCase();
-      const email = (x.email ?? '').toLowerCase();
-      return name.includes(k) || code.includes(k) || email.includes(k);
+      const desc = (x.description ?? '').toLowerCase();
+      return name.includes(k) || desc.includes(k);
     });
   }
 
@@ -92,19 +90,17 @@ export class UnitKerjaComponent implements OnInit {
 
     const params = this.buildListParams(resetPage);
 
-    this.userService.getUnitKerjaList(params).subscribe({
+    this.userService.getAssetCategories(params).subscribe({
       next: (res) => {
         this.allItems = res.data ?? [];
         this.pagination = res.pagination ?? null;
 
-        // apply keyword filter (kalau ada)
         this.renderList();
 
         this.loading = false;
       },
       error: (err) => {
         this.loading = false;
-
         this.items = [];
         this.allItems = [];
         this.pagination = null;
@@ -117,7 +113,7 @@ export class UnitKerjaComponent implements OnInit {
 
         this.errorMsg =
           extractErrorMessage(err) ||
-          `Gagal fetch unit kerja (HTTP ${err?.status || 'unknown'}).`;
+          `Gagal fetch asset categories (HTTP ${err?.status || 'unknown'}).`;
         this.ui.error(this.errorMsg);
       },
     });
@@ -186,13 +182,12 @@ export class UnitKerjaComponent implements OnInit {
   }
 
   // ===================== EDIT =====================
-  openEdit(u: UnitKerjaItem): void {
+  openEdit(item: AssetCategoryItem): void {
     this.editError = '';
     this.editModel = {
-      id: u.id,
-      name: u.name ?? '',
-      code: u.code ?? '',
-      email: u.email ?? '',
+      id: item.id,
+      name: item.name ?? '',
+      description: item.description ?? '',
     };
     this.showEditModal = true;
   }
@@ -209,8 +204,8 @@ export class UnitKerjaComponent implements OnInit {
       this.editError = 'Nama wajib diisi.';
       return;
     }
-    if (!this.editModel.code.trim()) {
-      this.editError = 'Kode wajib diisi.';
+    if (!this.editModel.description.trim()) {
+      this.editError = 'Deskripsi wajib diisi.';
       return;
     }
 
@@ -219,18 +214,15 @@ export class UnitKerjaComponent implements OnInit {
       return;
     }
 
-    const payload: UnitKerjaPayload = {
+    const payload: AssetCategoryPayload = {
       name: this.editModel.name.trim(),
-      code: this.editModel.code.trim(),
-      email: this.editModel.email.trim() || undefined,
+      description: this.editModel.description.trim(),
     };
 
     this.loading = true;
 
-    // PATCH /unit-kerja/:id
-    this.userService.updateUnitKerja(this.editModel.id, payload).subscribe({
+    this.userService.updateAssetCategory(this.editModel.id, payload).subscribe({
       next: () => {
-        // update cache, tetap simpan _count lama
         this.allItems = this.allItems.map((x) =>
           x.id === this.editModel.id ? { ...x, ...payload } : x
         );
@@ -240,16 +232,16 @@ export class UnitKerjaComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.editError = extractErrorMessage(e) || 'Gagal update unit kerja.';
+        this.editError = extractErrorMessage(e) || 'Gagal update kategori aset.';
         this.ui.error(this.editError);
       },
     });
   }
 
-  // ===================== DELETE / REVOKE =====================
-  openDelete(u: UnitKerjaItem): void {
+  // ===================== DELETE =====================
+  openDelete(item: AssetCategoryItem): void {
     this.deleteError = '';
-    this.deleteTarget = u;
+    this.deleteTarget = item;
     this.showDeleteModal = true;
   }
 
@@ -269,8 +261,7 @@ export class UnitKerjaComponent implements OnInit {
 
     this.loading = true;
 
-    // DELETE /unit-kerja/:id
-    this.userService.deleteUnitKerja(this.deleteTarget.id).subscribe({
+    this.userService.deleteAssetCategory(this.deleteTarget.id).subscribe({
       next: () => {
         this.allItems = this.allItems.filter((x) => x.id !== this.deleteTarget!.id);
         this.renderList();
@@ -279,7 +270,7 @@ export class UnitKerjaComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.deleteError = extractErrorMessage(e) || 'Gagal hapus unit kerja.';
+        this.deleteError = extractErrorMessage(e) || 'Gagal hapus kategori aset.';
         this.ui.error(this.deleteError);
       },
     });
@@ -300,20 +291,19 @@ export class UnitKerjaComponent implements OnInit {
     this.createError = '';
     this.createModel = {
       name: '',
-      code: '',
-      email: '',
+      description: '',
     };
   }
 
-  createUnitKerja(): void {
+  createAssetCategory(): void {
     this.createError = '';
 
     if (!this.createModel.name.trim()) {
       this.createError = 'Nama wajib diisi.';
       return;
     }
-    if (!this.createModel.code.trim()) {
-      this.createError = 'Kode wajib diisi.';
+    if (!this.createModel.description.trim()) {
+      this.createError = 'Deskripsi wajib diisi.';
       return;
     }
 
@@ -322,16 +312,14 @@ export class UnitKerjaComponent implements OnInit {
       return;
     }
 
-    const payload: UnitKerjaPayload = {
+    const payload: AssetCategoryPayload = {
       name: this.createModel.name.trim(),
-      code: this.createModel.code.trim(),
-      email: this.createModel.email.trim() || undefined,
+      description: this.createModel.description.trim(),
     };
 
     this.loading = true;
 
-    // POST /unit-kerja
-    this.userService.createUnitKerja(payload).subscribe({
+    this.userService.createAssetCategory(payload).subscribe({
       next: (res) => {
         const created = res?.data;
         if (created?.id) {
@@ -345,13 +333,13 @@ export class UnitKerjaComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.createError = extractErrorMessage(e) || 'Gagal membuat unit kerja.';
+        this.createError = extractErrorMessage(e) || 'Gagal membuat kategori aset.';
         this.ui.error(this.createError);
       },
     });
   }
 
-  trackById(_: number, item: UnitKerjaItem) {
+  trackById(_: number, item: AssetCategoryItem) {
     return item.id;
   }
 }
