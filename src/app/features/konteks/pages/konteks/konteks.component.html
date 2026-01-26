@@ -215,8 +215,8 @@
 
             <!-- STATUS -->
             <td>
-              <span class="badge" [class.green]="k.isActive" [class.red]="!k.isActive">
-                {{ k.isActive ? 'Active' : 'Inactive' }}
+              <span class="badge" [class.green]="k.status === 'ACTIVE'" [class.red]="k.status !== 'ACTIVE'">
+                {{ k.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
               </span>
             </td>
 
@@ -595,14 +595,12 @@
       <div class="divider"></div>
 
       <div class="section-title">Status</div>
-      <div class="toggle-grid">
-        <label class="toggle-card">
-          <input type="checkbox" [(ngModel)]="editModel.isActive" name="editActive" />
-          <span class="toggle-text">
-            <span class="toggle-label">Active</span>
-            <span class="toggle-desc">Konteks aktif digunakan</span>
-          </span>
-        </label>
+      <div class="field">
+        <label>Status</label>
+        <select [(ngModel)]="editModel.status" name="editStatus">
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
       </div>
 
       <div class="modal-actions">

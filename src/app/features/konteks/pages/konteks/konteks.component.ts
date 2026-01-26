@@ -10,11 +10,18 @@ import {
   CreateKonteksPayload,
   EditKonteksModel,
   KonteksItem,
+  KonteksStatus,
   Pagination,
   UpdateKonteksPayload,
 } from '../../../../core/models/konteks.model';
 import { extractErrorMessage, extractFieldErrors } from '../../../../core/utils/error-utils';
 import { UiService } from '../../../../core/services/ui.service';
+
+type KonteksItemRaw = Omit<KonteksItem, 'status'> & {
+  status?: string;
+  isActive?: boolean;
+};
+
 @Component({
   selector: 'app-konteks',
   standalone: true,
@@ -73,7 +80,7 @@ export class KonteksComponent implements OnInit {
     matrixSize: 5,
     riskAppetiteLevel: 'LOW',
     riskAppetiteDescription: '',
-    isActive: false,
+    status: 'INACTIVE',
   };
 
   // ===== Create Modal =====
@@ -124,6 +131,19 @@ export class KonteksComponent implements OnInit {
   private buildListParams(resetPage: boolean): { page: number; limit: number } {
     if (resetPage) this.page = 1;
     return { page: this.page, limit: this.limit };
+  }
+  private normalizeStatus(status?: string, isActive?: boolean): KonteksStatus {
+    const normalized = String(status ?? '').toUpperCase();
+    if (normalized === 'ACTIVE' || normalized === 'INACTIVE') {
+      return normalized as KonteksStatus;
+    }
+    return isActive ? 'ACTIVE' : 'INACTIVE';
+  }
+  private normalizeKonteksList(list: KonteksItemRaw[]): KonteksItem[] {
+    return (list ?? []).map((k) => ({
+      ...k,
+      status: this.normalizeStatus(k.status, k.isActive),
+    }));
   }
   // Stats params: ngikut filters, tapi page/limit kecil
   private buildStatsParams(activeOverride: boolean | null): {
@@ -221,8 +241,8 @@ export class KonteksComponent implements OnInit {
       if (this.fMatrixSize !== 'ALL' && String(k.matrixSize) !== String(this.fMatrixSize)) {
         return false;
       }
-      if (this.fActive === 'ACTIVE' && !k.isActive) return false;
-      if (this.fActive === 'INACTIVE' && k.isActive) return false;
+      if (this.fActive === 'ACTIVE' && k.status !== 'ACTIVE') return false;
+      if (this.fActive === 'INACTIVE' && k.status !== 'INACTIVE') return false;
       if (this.fPeriode !== 'ALL') {
         const y = Number(this.fPeriode);
         if (!(k.periodStart <= y && y <= k.periodEnd)) return false;
@@ -232,8 +252,8 @@ export class KonteksComponent implements OnInit {
   }
   private refreshStatsClient(filtered: KonteksItem[]): void {
     this.totalKonteks = filtered.length;
-    this.totalAktif = filtered.filter((x) => x.isActive).length;
-    this.totalNonAktif = filtered.filter((x) => !x.isActive).length;
+    this.totalAktif = filtered.filter((x) => x.status === 'ACTIVE').length;
+    this.totalNonAktif = filtered.filter((x) => x.status === 'INACTIVE').length;
   }
   // OPTIONAL: kalau backend sudah support isActive filter (true/false), stats lebih akurat cross-page
   private refreshKonteksStatsFromBackend(): void {
@@ -258,11 +278,12 @@ export class KonteksComponent implements OnInit {
     this.errorMsg = '';
     this.konteksService.getKonteksList(this.buildListParams(resetPage)).subscribe({
       next: (res) => {
-        const raw = res.data ?? [];
+        const raw = (res.data ?? []) as KonteksItemRaw[];
+        const normalized = this.normalizeKonteksList(raw);
         // periode options dari range fixed
         this.buildPeriodeOptions();
         // apply filter client-side biar UX sama kayak users
-        const filtered = this.applyClientFilters(raw);
+        const filtered = this.applyClientFilters(normalized);
         this.items = filtered;
         // stats client (sesuai filter + page ini)
         this.refreshStatsClient(filtered);
@@ -485,7 +506,7 @@ export class KonteksComponent implements OnInit {
       matrixSize: k.matrixSize ?? 5,
       riskAppetiteLevel: k.riskAppetiteLevel ?? 'LOW',
       riskAppetiteDescription: k.riskAppetiteDescription ?? '',
-      isActive: !!k.isActive,
+      status: this.normalizeStatus(k.status),
     };
     this.showEditModal = true;
   }
@@ -540,7 +561,7 @@ export class KonteksComponent implements OnInit {
       matrixSize: Number(this.editModel.matrixSize),
       riskAppetiteLevel: String(this.editModel.riskAppetiteLevel),
       riskAppetiteDescription: (this.editModel.riskAppetiteDescription ?? '').trim(),
-      isActive: !!this.editModel.isActive,
+      status: this.editModel.status,
     };
     this.loading = true;
     this.konteksService.updateKonteks(this.editModel.id, payload).subscribe({

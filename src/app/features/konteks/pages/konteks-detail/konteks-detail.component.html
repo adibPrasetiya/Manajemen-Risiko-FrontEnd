@@ -15,7 +15,7 @@
 
       <div class="head-actions">
         <button
-          *ngIf="konteksDetail && !konteksDetail.isActive"
+          *ngIf="konteksDetail && konteksDetail.status !== 'ACTIVE'"
           class="btn btn-activate"
           type="button"
           (click)="activateKonteks()"
@@ -23,7 +23,7 @@
           <i class="fa-solid fa-toggle-on"></i> Aktifkan
         </button>
         <button
-          *ngIf="konteksDetail && konteksDetail.isActive"
+          *ngIf="konteksDetail && konteksDetail.status === 'ACTIVE'"
           class="btn btn-deactivate"
           type="button"
           (click)="deactivateKonteks()"
@@ -97,8 +97,8 @@
           <div class="info-row">
             <span class="info-label">Status:</span>
             <span class="info-value">
-              <span class="status-badge" [ngClass]="konteksDetail.isActive ? 'active' : 'inactive'">
-                {{ konteksDetail.isActive ? 'Aktif' : 'Tidak Aktif' }}
+              <span class="status-badge" [ngClass]="konteksDetail.status === 'ACTIVE' ? 'active' : 'inactive'">
+                {{ konteksDetail.status === 'ACTIVE' ? 'Aktif' : 'Tidak Aktif' }}
               </span>
             </span>
           </div>
@@ -360,12 +360,13 @@
         <div class="risk-matrix">
           <div class="matrix-header">
             <div class="matrix-title">Risk Matrix {{ getMatrixSize() }}x{{ getMatrixSize() }}</div>
-            <div class="matrix-legend">
-              <span class="legend-pill low"><i class="fa-solid fa-shield"></i> LOW</span>
-              <span class="legend-pill medium"><i class="fa-solid fa-triangle-exclamation"></i> MEDIUM</span>
-              <span class="legend-pill high"><i class="fa-solid fa-fire"></i> HIGH</span>
-            </div>
+          <div class="matrix-legend">
+            <span class="legend-pill low"><i class="fa-solid fa-shield"></i> LOW</span>
+            <span class="legend-pill medium"><i class="fa-solid fa-triangle-exclamation"></i> MEDIUM</span>
+            <span class="legend-pill high"><i class="fa-solid fa-fire"></i> HIGH</span>
+            <span class="legend-pill critical"><i class="fa-solid fa-bolt"></i> CRITICAL</span>
           </div>
+        </div>
 
           <div class="matrix-grid">
             <div class="matrix-axis y-axis">Impact</div>
@@ -377,10 +378,8 @@
                   <div
                     class="matrix-cell"
                     *ngFor="let likelihood of getMatrixLevels()"
-                    [class.low]="getRiskClass(getRiskScore(impact, likelihood))==='low'"
-                    [class.medium]="getRiskClass(getRiskScore(impact, likelihood))==='medium'"
-                    [class.high]="getRiskClass(getRiskScore(impact, likelihood))==='high'">
-                    {{ getRiskScore(impact, likelihood) }}
+                    [ngClass]="getRiskLevelClass(impact, likelihood)">
+                    {{ getRiskLevelLabel(impact, likelihood) }}
                   </div>
                 </div>
               </div>

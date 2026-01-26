@@ -887,6 +887,12 @@ table td:last-child {
   border-color: #f9bcbc;
 }
 
+.legend-pill.critical {
+  background: #fce7f3;
+  color: #9d174d;
+  border-color: #f9a8d4;
+}
+
 .matrix-grid {
   display: grid;
   gap: 10px;
@@ -955,6 +961,17 @@ table td:last-child {
 .matrix-cell.high {
   background: #e5492d;
   border-color: #cc3b22;
+}
+
+.matrix-cell.critical {
+  background: #a11a4a;
+  border-color: #89133e;
+}
+
+.matrix-cell.empty {
+  background: #e5e7eb;
+  color: #6b7280;
+  border-color: #d1d5db;
 }
 
 .matrix-axis.x-axis {

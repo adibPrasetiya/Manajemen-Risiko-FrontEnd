@@ -8,9 +8,12 @@ import { UiService } from '../../../../core/services/ui.service';
 import {
   Pagination,
   KonteksItem,
+  KonteksStatus,
   RiskCategory,
   LikelihoodScale,
   ImpactScale,
+  RiskLevel,
+  RiskMatrixItem,
   KonteksFormModel,
   UpdateKonteksPayload,
   CreateRiskCategoryPayload,
@@ -22,6 +25,11 @@ import {
   TabKey,
 } from '../../../../core/models/konteks.model';
 import { extractErrorMessage, extractFieldErrors } from '../../../../core/utils/error-utils';
+
+type KonteksItemRaw = Omit<KonteksItem, 'status'> & {
+  status?: string;
+  isActive?: boolean;
+};
 
 @Component({
   selector: 'app-konteks-detail',
@@ -73,6 +81,10 @@ export class KonteksDetailComponent implements OnInit {
   imPage = 1;
   imLimit = 10;
   imEmptyHint = '';
+
+  // Risk Matrix
+  riskMatrices: RiskMatrixItem[] = [];
+  riskMatrixMap: Record<string, RiskLevel> = {};
 
   // MODAL: Risk Category
   showRCModal = false;
@@ -190,6 +202,13 @@ export class KonteksDetailComponent implements OnInit {
       hasPrevPage: !!p.hasPrevPage,
     };
   }
+  private normalizeStatus(status?: string, isActive?: boolean): KonteksStatus {
+    const normalized = String(status ?? '').toUpperCase();
+    if (normalized === 'ACTIVE' || normalized === 'INACTIVE') {
+      return normalized as KonteksStatus;
+    }
+    return isActive ? 'ACTIVE' : 'INACTIVE';
+  }
 
   private ensureSelectedCategoryValid(): void {
     if (!this.rawRiskCategories?.length) {
@@ -217,6 +236,10 @@ export class KonteksDetailComponent implements OnInit {
       this.ensureSelectedCategoryValid();
       if (this.selectedRiskCategoryId) this.fetchImpactScales(true);
     }
+
+    if (t === 'RISK_MATRIX') {
+      this.fetchRiskMatrices(true);
+    }
   }
 
   // ===================== KONTEKS: GET BY ID =====================
@@ -227,18 +250,29 @@ export class KonteksDetailComponent implements OnInit {
     this.konteksService.getKonteksById(this.konteksId).subscribe({
       next: (res) => {
         const found = res.data ?? null;
+        this.konteksDetail = found
+          ? {
+              ...found,
+              status: this.normalizeStatus(
+                (found as KonteksItemRaw).status,
+                (found as KonteksItemRaw).isActive
+              ),
+            }
+          : null;
 
-        this.konteksDetail = found;
+        if (this.konteksDetail) {
+          this.konteksName = this.konteksDetail.name ?? this.konteksName;
+          this.konteksCode = this.konteksDetail.code ?? this.konteksCode;
+          this.periodStart = this.konteksDetail.periodStart;
+          this.periodEnd = this.konteksDetail.periodEnd;
 
-        if (found) {
-          this.konteksName = found.name ?? this.konteksName;
-          this.konteksCode = found.code ?? this.konteksCode;
-          this.periodStart = found.periodStart;
-          this.periodEnd = found.periodEnd;
+          this.matrixSize = this.konteksDetail.matrixSize;
+          this.riskAppetiteLevel = this.konteksDetail.riskAppetiteLevel;
+          this.riskAppetiteDesc = this.konteksDetail.riskAppetiteDescription;
+        }
 
-          this.matrixSize = found.matrixSize;
-          this.riskAppetiteLevel = found.riskAppetiteLevel;
-          this.riskAppetiteDesc = found.riskAppetiteDescription;
+        if (this.activeTab === 'RISK_MATRIX') {
+          this.fetchRiskMatrices(true);
         }
 
         this.loading = false;
@@ -1051,6 +1085,57 @@ export class KonteksDetailComponent implements OnInit {
     });
   }
 
+  // ===================== RISK MATRIX: GET =====================
+  private buildRiskMatrixKey(likelihood: number, impact: number): string {
+    return `${likelihood}-${impact}`;
+  }
+
+  private rebuildRiskMatrixMap(): void {
+    const map: Record<string, RiskLevel> = {};
+    for (const item of this.riskMatrices) {
+      map[this.buildRiskMatrixKey(item.likelihoodLevel, item.impactLevel)] =
+        item.riskLevel;
+    }
+    this.riskMatrixMap = map;
+  }
+
+  fetchRiskMatrices(resetPage: boolean): void {
+    if (!this.konteksId) return;
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    const size = this.getMatrixSize();
+    const limit = Math.max(25, size * size);
+
+    this.konteksService
+      .getRiskMatrices(this.konteksId, { page: resetPage ? 1 : 1, limit })
+      .subscribe({
+        next: (res) => {
+          this.riskMatrices = res.data ?? [];
+          this.rebuildRiskMatrixMap();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.loading = false;
+          this.riskMatrices = [];
+          this.riskMatrixMap = {};
+
+          if (err?.status === 401) {
+            this.errorMsg =
+              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+            this.ui.error(this.errorMsg);
+            return;
+          }
+
+          this.errorMsg =
+            extractErrorMessage(err) ||
+            `Gagal fetch risk matrices (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
+        },
+      });
+  }
+
   private performDeleteIM(i: ImpactScale): void {
     if (!this.selectedRiskCategoryId) return;
 
@@ -1099,18 +1184,22 @@ export class KonteksDetailComponent implements OnInit {
     return Array.from({ length: size }, (_, i) => i + 1);
   }
 
-  getRiskScore(impact: number, likelihood: number): number {
-    return Number(impact) * Number(likelihood);
+  getRiskLevel(impact: number, likelihood: number): RiskLevel | null {
+    return (
+      this.riskMatrixMap[this.buildRiskMatrixKey(likelihood, impact)] ?? null
+    );
   }
 
-  getRiskClass(score: number): 'low' | 'medium' | 'high' {
-    const size = this.getMatrixSize();
-    const max = size * size;
-    const lowMax = Math.max(1, Math.floor(max * 0.33));
-    const mediumMax = Math.max(lowMax + 1, Math.floor(max * 0.66));
+  getRiskLevelLabel(impact: number, likelihood: number): string {
+    return this.getRiskLevel(impact, likelihood) ?? '-';
+  }
 
-    if (score <= lowMax) return 'low';
-    if (score <= mediumMax) return 'medium';
-    return 'high';
+  getRiskLevelClass(impact: number, likelihood: number): string {
+    const level = this.getRiskLevel(impact, likelihood);
+    if (!level) return 'empty';
+    if (level === 'LOW') return 'low';
+    if (level === 'MEDIUM') return 'medium';
+    if (level === 'HIGH') return 'high';
+    return 'critical';
   }
 }

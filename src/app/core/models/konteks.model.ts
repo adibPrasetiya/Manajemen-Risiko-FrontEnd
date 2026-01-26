@@ -7,6 +7,9 @@ export interface Pagination {
   hasPrevPage: boolean;
 }
 
+export type KonteksStatus = 'ACTIVE' | 'INACTIVE';
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
 export interface KonteksItem {
   id: string;
   name: string;
@@ -17,7 +20,7 @@ export interface KonteksItem {
   matrixSize: number;
   riskAppetiteLevel: string;
   riskAppetiteDescription: string;
-  isActive: boolean;
+  status: KonteksStatus;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -48,7 +51,7 @@ export interface UpdateKonteksPayload {
   matrixSize?: number;
   riskAppetiteLevel?: string;
   riskAppetiteDescription?: string;
-  isActive?: boolean;
+  status?: KonteksStatus;
 }
 
 export interface KonteksFormModel {
@@ -79,7 +82,7 @@ export interface EditKonteksModel {
   matrixSize: number;
   riskAppetiteLevel: string;
   riskAppetiteDescription: string;
-  isActive: boolean;
+  status: KonteksStatus;
 }
 
 export interface CreateKonteksModel {
@@ -107,8 +110,63 @@ export interface RiskCategory {
     code: string;
     periodStart?: number;
     periodEnd?: number;
+    status?: KonteksStatus;
+  };
+}
+
+export interface RiskMatrixItem {
+  id: string;
+  konteksId: string;
+  likelihoodLevel: number;
+  impactLevel: number;
+  riskLevel: RiskLevel;
+  createdAt: string;
+  updatedAt: string;
+  konteks?: {
+    id: string;
+    name: string;
+    code: string;
+    periodStart?: number;
+    periodEnd?: number;
+    status?: KonteksStatus;
     isActive?: boolean;
   };
+}
+
+export interface RiskMatrixListResponse {
+  message: string;
+  data: RiskMatrixItem[];
+  pagination: Pagination;
+}
+
+export interface RiskMatrixDetailResponse {
+  message: string;
+  data: RiskMatrixItem;
+}
+
+export interface CreateRiskMatrixPayload {
+  likelihoodLevel: number;
+  impactLevel: number;
+  riskLevel: RiskLevel;
+}
+
+export interface CreateRiskMatrixBulkPayload {
+  matrices: CreateRiskMatrixPayload[];
+}
+
+export interface CreateRiskMatrixBulkResponse {
+  message: string;
+  data: {
+    created: RiskMatrixItem[];
+    createdCount: number;
+    totalInKonteks: number;
+    expectedTotal: number;
+    isComplete: boolean;
+  };
+}
+
+export interface UpdateRiskMatrixPayload {
+  riskLevel: RiskLevel;
 }
 
 export interface RiskCategoryListResponse {
@@ -152,7 +210,7 @@ export interface LikelihoodScale {
       code: string;
       periodStart: number;
       periodEnd: number;
-      isActive: boolean;
+      status?: KonteksStatus;
     };
   };
 }
@@ -198,7 +256,7 @@ export interface ImpactScale {
       code: string;
       periodStart: number;
       periodEnd: number;
-      isActive: boolean;
+      status?: KonteksStatus;
     };
   };
 }

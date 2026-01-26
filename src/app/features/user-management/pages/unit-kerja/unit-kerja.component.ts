@@ -63,14 +63,16 @@ export class UnitKerjaComponent implements OnInit {
   private buildListParams(resetPage: boolean): UnitKerjaListParams {
     if (resetPage) this.page = 1;
 
-    // backend kamu tidak menerima q, jadi cuma page & limit
     return {
       page: this.page,
       limit: this.limit,
     };
   }
 
-  private applyLocalFilter(list: UnitKerjaItem[], keyword: string): UnitKerjaItem[] {
+  private applyLocalFilter(
+    list: UnitKerjaItem[],
+    keyword: string,
+  ): UnitKerjaItem[] {
     const k = (keyword ?? '').trim().toLowerCase();
     if (!k) return list;
 
@@ -182,7 +184,10 @@ export class UnitKerjaComponent implements OnInit {
 
   getShowingEnd(): number {
     if (!this.pagination) return 0;
-    return Math.min(this.pagination.page * this.limit, this.pagination.totalItems);
+    return Math.min(
+      this.pagination.page * this.limit,
+      this.pagination.totalItems,
+    );
   }
 
   // ===================== EDIT =====================
@@ -226,11 +231,9 @@ export class UnitKerjaComponent implements OnInit {
     };
 
     this.loading = true;
-
     // PATCH /unit-kerja/:id
     this.userService.updateUnitKerja(this.editModel.id, payload).subscribe({
       next: () => {
-        // update cache, tetap simpan _count lama
         this.allItems = this.allItems.map((x) =>
           x.id === this.editModel.id ? { ...x, ...payload } : x
         );
