@@ -54,7 +54,10 @@ export class UnitKerjaComponent implements OnInit {
     email: '',
   };
 
-  constructor(private userService: UserService, private ui: UiService) {}
+  constructor(
+    private userService: UserService,
+    private ui: UiService,
+  ) {}
 
   ngOnInit(): void {
     this.fetch(true);
@@ -235,7 +238,7 @@ export class UnitKerjaComponent implements OnInit {
     this.userService.updateUnitKerja(this.editModel.id, payload).subscribe({
       next: () => {
         this.allItems = this.allItems.map((x) =>
-          x.id === this.editModel.id ? { ...x, ...payload } : x
+          x.id === this.editModel.id ? { ...x, ...payload } : x,
         );
         this.renderList();
         this.loading = false;
@@ -275,7 +278,9 @@ export class UnitKerjaComponent implements OnInit {
     // DELETE /unit-kerja/:id
     this.userService.deleteUnitKerja(this.deleteTarget.id).subscribe({
       next: () => {
-        this.allItems = this.allItems.filter((x) => x.id !== this.deleteTarget!.id);
+        this.allItems = this.allItems.filter(
+          (x) => x.id !== this.deleteTarget!.id,
+        );
         this.renderList();
         this.loading = false;
         this.closeDelete();
@@ -348,7 +353,8 @@ export class UnitKerjaComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.createError = extractErrorMessage(e) || 'Gagal membuat unit kerja.';
+        this.createError =
+          extractErrorMessage(e) || 'Gagal membuat unit kerja.';
         this.ui.error(this.createError);
       },
     });

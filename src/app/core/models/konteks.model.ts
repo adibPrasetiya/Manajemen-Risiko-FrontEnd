@@ -133,6 +133,12 @@ export interface RiskMatrixItem {
   };
 }
 
+export interface RiskMatrixEntry {
+  likelihoodLevel: number;
+  impactLevel: number;
+  riskLevel: RiskLevel;
+}
+
 export interface RiskMatrixListResponse {
   message: string;
   data: RiskMatrixItem[];
@@ -151,10 +157,10 @@ export interface CreateRiskMatrixPayload {
 }
 
 export interface CreateRiskMatrixBulkPayload {
-  matrices: CreateRiskMatrixPayload[];
+  matrices: RiskMatrixEntry[];
 }
 
-export interface CreateRiskMatrixBulkResponse {
+export interface RiskMatrixBulkResponse {
   message: string;
   data: {
     created: RiskMatrixItem[];
@@ -284,4 +290,16 @@ export interface UpdateImpactPayload {
   description: string;
 }
 
-export type TabKey = 'RISK_CATEGORY' | 'RISK_IMPACT' | 'LIKELIHOOD' | 'RISK_MATRIX';
+export type TabKey =
+  | 'RISK_CATEGORY'
+  | 'RISK_IMPACT'
+  | 'LIKELIHOOD'
+  | 'RISK_MATRIX';
+
+export interface RiskLevelConfig {
+  level: RiskLevel;
+  label: string;
+  minScore: number;
+  maxScore: number;
+  color: string;
+}

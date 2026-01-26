@@ -356,17 +356,18 @@
         </div>
       </ng-container>
 
+      <!-- ===================== TAB: RISK MATRIX ===================== -->
       <ng-container *ngIf="activeTab==='RISK_MATRIX'">
         <div class="risk-matrix">
           <div class="matrix-header">
             <div class="matrix-title">Risk Matrix {{ getMatrixSize() }}x{{ getMatrixSize() }}</div>
-          <div class="matrix-legend">
-            <span class="legend-pill low"><i class="fa-solid fa-shield"></i> LOW</span>
-            <span class="legend-pill medium"><i class="fa-solid fa-triangle-exclamation"></i> MEDIUM</span>
-            <span class="legend-pill high"><i class="fa-solid fa-fire"></i> HIGH</span>
-            <span class="legend-pill critical"><i class="fa-solid fa-bolt"></i> CRITICAL</span>
+            <div class="matrix-legend">
+              <span class="legend-pill low"><i class="fa-solid fa-shield"></i> LOW</span>
+              <span class="legend-pill medium"><i class="fa-solid fa-triangle-exclamation"></i> MEDIUM</span>
+              <span class="legend-pill high"><i class="fa-solid fa-fire"></i> HIGH</span>
+              <span class="legend-pill critical"><i class="fa-solid fa-bolt"></i> CRITICAL</span>
+            </div>
           </div>
-        </div>
 
           <div class="matrix-grid">
             <div class="matrix-axis y-axis">Impact</div>
@@ -378,8 +379,9 @@
                   <div
                     class="matrix-cell"
                     *ngFor="let likelihood of getMatrixLevels()"
-                    [ngClass]="getRiskLevelClass(impact, likelihood)">
-                    {{ getRiskLevelLabel(impact, likelihood) }}
+                    [ngClass]="getMatrixCellClass(likelihood, impact)"
+                    (click)="onCellClick(likelihood, impact)">
+                    {{ getCellRiskLevel(likelihood, impact) }}
                   </div>
                 </div>
               </div>
@@ -392,6 +394,17 @@
               </div>
             </div>
           </div>
+
+          <div class="matrix-instructions" *ngIf="matrixEditMode">
+            <div class="instruction-card">
+              <h4><i class="fa-solid fa-lightbulb"></i> Petunjuk Penggunaan</h4>
+              <ul>
+                <li><strong>Klik cell</strong> untuk mengubah level risiko (LOW -> MEDIUM -> HIGH -> CRITICAL -> LOW)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </ng-container>
         </div>
       </ng-container>
     </div>
@@ -568,6 +581,123 @@
       <div class="modal-actions">
         <button type="button" class="btn secondary" (click)="closeKonteksModal()" [disabled]="loading">Batal</button>
         <button type="button" class="btn primary" (click)="saveKonteks()" [disabled]="loading">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: KONFIGURASI RISK MATRIX ===================== -->
+<div class="modal-backdrop" *ngIf="showMatrixConfigModal">
+  <div class="modal modal-matrix-config">
+    <div class="modal-head">
+      <h3>Konfigurasi Risk Matrix</h3>
+      <button type="button" class="icon-close" (click)="closeMatrixConfigModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body modal-scroll">
+      <div class="matrix-config-layout">
+        <!-- Left: Configuration Form -->
+        <div class="config-form-section">
+          <p class="config-hint">
+            Tentukan range skor untuk setiap level risiko.<br />
+            <small>(Skor = Likelihood x Impact, range 1-{{ getMaxScore() }})</small>
+          </p>
+
+          <div class="config-cards">
+            <div class="config-card" *ngFor="let config of riskLevelConfigs">
+              <div class="config-card-header" [ngClass]="'bg-' + config.level.toLowerCase()">
+                <span class="config-level-label">{{ config.label }}</span>
+              </div>
+              <div class="config-card-body">
+                <div class="config-range-inputs">
+                  <div class="range-field">
+                    <label>Dari:</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="config.minScore"
+                      (ngModelChange)="onConfigChange()"
+                      min="1"
+                      [max]="getMaxScore()" />
+                  </div>
+                  <span class="range-separator">-</span>
+                  <div class="range-field">
+                    <label>Sampai:</label>
+                    <input
+                      type="number"
+                      [(ngModel)]="config.maxScore"
+                      (ngModelChange)="onConfigChange()"
+                      min="1"
+                      [max]="getMaxScore()" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="config-validation" *ngIf="!isConfigValid()">
+            <i class="fa-solid fa-exclamation-triangle"></i>
+            <span>Konfigurasi tidak valid. Pastikan semua skor 1-{{ getMaxScore() }} tercakup tanpa overlap.</span>
+          </div>
+        </div>
+
+        <!-- Right: Preview Matrix -->
+        <div class="config-preview-section">
+          <h4><i class="fa-solid fa-eye"></i> Preview Matrix</h4>
+
+          <div class="preview-matrix-container">
+            <!-- Y-Axis Label -->
+            <div class="preview-y-axis">
+              <span class="preview-axis-text">Likelihood</span>
+            </div>
+
+            <div class="preview-matrix-wrapper">
+              <!-- Matrix Body -->
+              <div class="preview-matrix-body">
+                <div class="preview-matrix-row" *ngFor="let likelihood of getMatrixLevels().slice().reverse()">
+                  <div class="preview-row-label">{{ likelihood }}</div>
+                  <div class="preview-cells">
+                    <div
+                      class="preview-cell"
+                      *ngFor="let impact of getMatrixLevels()"
+                      [ngClass]="getRiskLevelClass(getPreviewCellRiskLevel(likelihood, impact))"
+                      [title]="'Score: ' + (likelihood * impact)">
+                      <span class="preview-cell-text">{{ getPreviewCellRiskLevel(likelihood, impact).charAt(0) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- X-Axis Labels -->
+              <div class="preview-x-axis">
+                <div class="preview-x-spacer"></div>
+                <div class="preview-x-labels">
+                  <span *ngFor="let impact of getMatrixLevels()">{{ impact }}</span>
+                </div>
+              </div>
+
+              <!-- X-Axis Title -->
+              <div class="preview-x-title">
+                <span class="preview-axis-text">Impact</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Legend -->
+          <div class="preview-legend">
+            <span class="preview-legend-item risk-low">L = LOW</span>
+            <span class="preview-legend-item risk-medium">M = MEDIUM</span>
+            <span class="preview-legend-item risk-high">H = HIGH</span>
+            <span class="preview-legend-item risk-critical">C = CRITICAL</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeMatrixConfigModal()" [disabled]="matrixSaving">Batal</button>
+        <button type="button" class="btn primary" (click)="createMatrixFromConfig()" [disabled]="matrixSaving || !isConfigValid()">
+          <i class="fa-solid" [class.fa-spinner]="matrixSaving" [class.fa-spin]="matrixSaving" [class.fa-check]="!matrixSaving"></i>
+          {{ matrixSaving ? 'Membuat...' : 'Buat Matrix' }}
+        </button>
       </div>
     </div>
   </div>

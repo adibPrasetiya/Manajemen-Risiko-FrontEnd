@@ -23,7 +23,7 @@ import {
   RiskMatrixDetailResponse,
   CreateRiskMatrixPayload,
   CreateRiskMatrixBulkPayload,
-  CreateRiskMatrixBulkResponse,
+  RiskMatrixBulkResponse,
   UpdateRiskMatrixPayload,
 } from '../models/konteks.model';
 
@@ -276,8 +276,8 @@ export class KonteksService {
   createRiskMatricesBulk(
     konteksId: string,
     payload: CreateRiskMatrixBulkPayload
-  ): Observable<CreateRiskMatrixBulkResponse> {
-    return this.http.post<CreateRiskMatrixBulkResponse>(
+  ): Observable<RiskMatrixBulkResponse> {
+    return this.http.post<RiskMatrixBulkResponse>(
       `${this.baseUrl}/konteks/${konteksId}/risk-matrices/bulk`,
       payload,
       { withCredentials: true }
@@ -296,7 +296,10 @@ export class KonteksService {
     );
   }
 
-  deleteRiskMatrix(konteksId: string, matrixId: string): Observable<void> {
+  deleteRiskMatrix(
+    konteksId: string,
+    matrixId: string
+  ): Observable<void> {
     return this.http.delete<void>(
       `${this.baseUrl}/konteks/${konteksId}/risk-matrices/${matrixId}`,
       { withCredentials: true }

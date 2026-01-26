@@ -14,7 +14,10 @@ import {
   Pagination,
   UpdateKonteksPayload,
 } from '../../../../core/models/konteks.model';
-import { extractErrorMessage, extractFieldErrors } from '../../../../core/utils/error-utils';
+import {
+  extractErrorMessage,
+  extractFieldErrors,
+} from '../../../../core/utils/error-utils';
 import { UiService } from '../../../../core/services/ui.service';
 
 type KonteksItemRaw = Omit<KonteksItem, 'status'> & {
@@ -109,12 +112,12 @@ export class KonteksComponent implements OnInit {
   constructor(
     private konteksService: KonteksService,
     private router: Router,
-    private ui: UiService
+    private ui: UiService,
   ) {}
   openDropdown: string | null = null;
   openKonteksDetail(k: any): void {
-  this.router.navigate(['/konteks-management', k.id]);
-}
+    this.router.navigate(['/konteks-management', k.id]);
+  }
   ngOnInit(): void {
     this.buildPeriodeOptions();
     this.fetchKonteks(true);
@@ -230,15 +233,23 @@ export class KonteksComponent implements OnInit {
     return (list ?? []).filter((k) => {
       if (nameQ && !(k.name ?? '').toLowerCase().includes(nameQ)) return false;
       if (codeQ && !(k.code ?? '').toLowerCase().includes(codeQ)) return false;
-      if (descQ && !(k.description ?? '').toLowerCase().includes(descQ)) return false;
+      if (descQ && !(k.description ?? '').toLowerCase().includes(descQ))
+        return false;
       if (catMinRaw) {
         const catMin = Number(catMinRaw);
-        if (!Number.isNaN(catMin) && (k._count?.riskCategories ?? 0) < catMin) return false;
+        if (!Number.isNaN(catMin) && (k._count?.riskCategories ?? 0) < catMin)
+          return false;
       }
-      if (this.fRiskAppetite !== 'ALL' && (k.riskAppetiteLevel ?? '') !== this.fRiskAppetite) {
+      if (
+        this.fRiskAppetite !== 'ALL' &&
+        (k.riskAppetiteLevel ?? '') !== this.fRiskAppetite
+      ) {
         return false;
       }
-      if (this.fMatrixSize !== 'ALL' && String(k.matrixSize) !== String(this.fMatrixSize)) {
+      if (
+        this.fMatrixSize !== 'ALL' &&
+        String(k.matrixSize) !== String(this.fMatrixSize)
+      ) {
         return false;
       }
       if (this.fActive === 'ACTIVE' && k.status !== 'ACTIVE') return false;
@@ -259,19 +270,30 @@ export class KonteksComponent implements OnInit {
   private refreshKonteksStatsFromBackend(): void {
     const total$ = this.konteksService
       .getKonteksList(this.buildStatsParams(null))
-      .pipe(map((r) => r?.pagination?.totalItems ?? 0), catchError(() => of(0)));
+      .pipe(
+        map((r) => r?.pagination?.totalItems ?? 0),
+        catchError(() => of(0)),
+      );
     const active$ = this.konteksService
       .getKonteksList(this.buildStatsParams(true))
-      .pipe(map((r) => r?.pagination?.totalItems ?? 0), catchError(() => of(0)));
+      .pipe(
+        map((r) => r?.pagination?.totalItems ?? 0),
+        catchError(() => of(0)),
+      );
     const inactive$ = this.konteksService
       .getKonteksList(this.buildStatsParams(false))
-      .pipe(map((r) => r?.pagination?.totalItems ?? 0), catchError(() => of(0)));
-    forkJoin({ total: total$, active: active$, inactive: inactive$ }).subscribe((r) => {
-      // hanya update kalau response bukan 0 semua karena error
-      this.totalKonteks = r.total;
-      this.totalAktif = r.active;
-      this.totalNonAktif = r.inactive;
-    });
+      .pipe(
+        map((r) => r?.pagination?.totalItems ?? 0),
+        catchError(() => of(0)),
+      );
+    forkJoin({ total: total$, active: active$, inactive: inactive$ }).subscribe(
+      (r) => {
+        // hanya update kalau response bukan 0 semua karena error
+        this.totalKonteks = r.total;
+        this.totalAktif = r.active;
+        this.totalNonAktif = r.inactive;
+      },
+    );
   }
   fetchKonteks(resetPage: boolean): void {
     this.loading = true;
@@ -302,15 +324,11 @@ export class KonteksComponent implements OnInit {
         this.totalNonAktif = 0;
         if (err?.status === 401) {
           this.errorMsg =
-            'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
-          return;
-        }
-        this.errorMsg =
-          extractErrorMessage(err) ||
-          `Gagal fetch konteks dari API (HTTP ${err?.status || 'unknown'}).`;
-        this.ui.error(this.errorMsg);
-      },
-    });
+            extractErrorMessage(err) ||
+            `Gagal fetch konteks dari API (HTTP ${err?.status || 'unknown'}).`;
+          this.ui.error(this.errorMsg);
+        },
+      });
   }
   applyFilters(): void {
     this.fetchKonteks(true);
@@ -391,7 +409,10 @@ export class KonteksComponent implements OnInit {
   getShowingEnd(): number {
     if (!this.pagination) return 0;
     if (this.pagination.totalItems <= 0) return 0;
-    return Math.min(this.pagination.page * this.limit, this.pagination.totalItems);
+    return Math.min(
+      this.pagination.page * this.limit,
+      this.pagination.totalItems,
+    );
   }
 
   // ===================== CREATE KONTEKS (MODAL) =====================
@@ -448,17 +469,20 @@ export class KonteksComponent implements OnInit {
       return;
     }
     if (ps > pe) {
-      this.createErrors.periodEnd = 'Periode akhir tidak boleh lebih kecil dari periode mulai.';
+      this.createErrors.periodEnd =
+        'Periode akhir tidak boleh lebih kecil dari periode mulai.';
       return;
     }
 
     if (![3, 4, 5].includes(Number(this.createModel.matrixSize))) {
-      this.createErrors.matrixSize = 'Ukuran matriks hanya mendukung 3, 4, atau 5.';
+      this.createErrors.matrixSize =
+        'Ukuran matriks hanya mendukung 3, 4, atau 5.';
       return;
     }
 
     if (!this.createModel.riskAppetiteLevel) {
-      this.createErrors.riskAppetiteLevel = 'Risk appetite level wajib dipilih.';
+      this.createErrors.riskAppetiteLevel =
+        'Risk appetite level wajib dipilih.';
       return;
     }
 
@@ -470,7 +494,9 @@ export class KonteksComponent implements OnInit {
       periodEnd: pe,
       matrixSize: Number(this.createModel.matrixSize),
       riskAppetiteLevel: String(this.createModel.riskAppetiteLevel),
-      riskAppetiteDescription: (this.createModel.riskAppetiteDescription ?? '').trim(),
+      riskAppetiteDescription: (
+        this.createModel.riskAppetiteDescription ?? ''
+      ).trim(),
     };
 
     this.createLoading = true;
@@ -541,11 +567,13 @@ export class KonteksComponent implements OnInit {
       return;
     }
     if (ps > pe) {
-      this.editErrors.periodEnd = 'Periode akhir tidak boleh lebih kecil dari periode mulai.';
+      this.editErrors.periodEnd =
+        'Periode akhir tidak boleh lebih kecil dari periode mulai.';
       return;
     }
     if (![3, 4, 5].includes(Number(this.editModel.matrixSize))) {
-      this.editErrors.matrixSize = 'Ukuran matriks hanya mendukung 3, 4, atau 5.';
+      this.editErrors.matrixSize =
+        'Ukuran matriks hanya mendukung 3, 4, atau 5.';
       return;
     }
     if (!this.editModel.riskAppetiteLevel) {
@@ -573,7 +601,7 @@ export class KonteksComponent implements OnInit {
                 ...x,
                 ...payload,
               }
-            : x
+            : x,
         );
         // refresh stats client
         this.refreshStatsClient(this.items);
@@ -587,7 +615,9 @@ export class KonteksComponent implements OnInit {
         if (Object.keys(fieldErrors).length) {
           this.editErrors = fieldErrors;
         }
-        this.ui.error(extractErrorMessage(e) || 'Gagal menyimpan perubahan konteks.');
+        this.ui.error(
+          extractErrorMessage(e) || 'Gagal menyimpan perubahan konteks.',
+        );
       },
     });
   }
