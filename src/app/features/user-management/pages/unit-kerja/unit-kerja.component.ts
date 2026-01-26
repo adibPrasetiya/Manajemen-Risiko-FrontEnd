@@ -1,41 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-<<<<<<< HEAD
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { UiService } from '../../../../core/services/ui.service';
-import { extractErrorMessage } from '../../../../core/utils/error-utils';
-import { environment } from '../../../../../environments/environment';
-
-type UnitKerjaItem = {
-  id: string;
-  name: string;
-  code: string;
-  email?: string;
-  createdAt: string;
-  updatedAt?: string;
-
-  // ✅ sesuai backend kamu
-  _count?: {
-    profiles?: number;
-  };
-};
-
-type Pagination = {
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-};
-
-type ListResponse = {
-  message: string;
-  data: UnitKerjaItem[];
-  pagination?: Pagination;
-};
-=======
 import { UiService } from '../../../../core/services/ui.service';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
 import {
@@ -45,7 +10,6 @@ import {
   UnitKerjaPayload,
   UserService,
 } from '../../../../core/services/user.service';
->>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
 
 @Component({
   selector: 'app-unit-kerja',
@@ -55,12 +19,6 @@ import {
   styleUrl: './unit-kerja.component.scss',
 })
 export class UnitKerjaComponent implements OnInit {
-<<<<<<< HEAD
-  private baseUrl = environment.apiBaseUrl;
-  private endpoint = '/unit-kerja';
-
-=======
->>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   loading = false;
   errorMsg = '';
 
@@ -96,36 +54,16 @@ export class UnitKerjaComponent implements OnInit {
     email: '',
   };
 
-<<<<<<< HEAD
   constructor(
-    private http: HttpClient,
+    private userService: UserService,
     private ui: UiService,
   ) {}
-=======
-  constructor(private userService: UserService, private ui: UiService) {}
->>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
 
   ngOnInit(): void {
     this.fetch(true);
   }
 
-<<<<<<< HEAD
-  private buildHeaders(): HttpHeaders | undefined {
-    const token =
-      localStorage.getItem('accessToken') ||
-      localStorage.getItem('access_token');
-    if (!token) return undefined;
-
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    });
-  }
-
-  private buildParams(resetPage: boolean): HttpParams {
-=======
   private buildListParams(resetPage: boolean): UnitKerjaListParams {
->>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
     if (resetPage) this.page = 1;
 
     // backend kamu tidak menerima q, jadi cuma page & limit
@@ -299,35 +237,11 @@ export class UnitKerjaComponent implements OnInit {
     this.loading = true;
 
     // PATCH /unit-kerja/:id
-<<<<<<< HEAD
-    this.http
-      .patch<any>(
-        `${this.baseUrl}${this.endpoint}/${this.editModel.id}`,
-        payload,
-        { headers },
-      )
-      .subscribe({
-        next: () => {
-          // ✅ update cache, tetap simpan _count lama
-          this.allItems = this.allItems.map((x) =>
-            x.id === this.editModel.id ? { ...x, ...payload } : x,
-          );
-          this.renderList();
-          this.loading = false;
-          this.closeEdit();
-        },
-        error: (e) => {
-          this.loading = false;
-          this.editError = extractErrorMessage(e) || 'Gagal update unit kerja.';
-          this.ui.error(this.editError);
-        },
-      });
-=======
     this.userService.updateUnitKerja(this.editModel.id, payload).subscribe({
       next: () => {
         // update cache, tetap simpan _count lama
         this.allItems = this.allItems.map((x) =>
-          x.id === this.editModel.id ? { ...x, ...payload } : x
+          x.id === this.editModel.id ? { ...x, ...payload } : x,
         );
         this.renderList();
         this.loading = false;
@@ -339,7 +253,6 @@ export class UnitKerjaComponent implements OnInit {
         this.ui.error(this.editError);
       },
     });
->>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   }
 
   // ===================== DELETE / REVOKE =====================
@@ -366,31 +279,11 @@ export class UnitKerjaComponent implements OnInit {
     this.loading = true;
 
     // DELETE /unit-kerja/:id
-<<<<<<< HEAD
-    this.http
-      .delete<any>(`${this.baseUrl}${this.endpoint}/${this.deleteTarget.id}`, {
-        headers,
-      })
-      .subscribe({
-        next: () => {
-          this.allItems = this.allItems.filter(
-            (x) => x.id !== this.deleteTarget!.id,
-          );
-          this.renderList();
-          this.loading = false;
-          this.closeDelete();
-        },
-        error: (e) => {
-          this.loading = false;
-          this.deleteError =
-            extractErrorMessage(e) || 'Gagal hapus unit kerja.';
-          this.ui.error(this.deleteError);
-        },
-      });
-=======
     this.userService.deleteUnitKerja(this.deleteTarget.id).subscribe({
       next: () => {
-        this.allItems = this.allItems.filter((x) => x.id !== this.deleteTarget!.id);
+        this.allItems = this.allItems.filter(
+          (x) => x.id !== this.deleteTarget!.id,
+        );
         this.renderList();
         this.loading = false;
         this.closeDelete();
@@ -401,7 +294,6 @@ export class UnitKerjaComponent implements OnInit {
         this.ui.error(this.deleteError);
       },
     });
->>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   }
 
   // ===================== CREATE =====================
@@ -450,31 +342,6 @@ export class UnitKerjaComponent implements OnInit {
     this.loading = true;
 
     // POST /unit-kerja
-<<<<<<< HEAD
-    this.http
-      .post<{
-        data?: UnitKerjaItem;
-      }>(`${this.baseUrl}${this.endpoint}`, payload, { headers })
-      .subscribe({
-        next: (res) => {
-          const created = res?.data;
-          if (created?.id) {
-            this.allItems = [created, ...this.allItems];
-            this.renderList();
-          } else {
-            this.fetch(true);
-          }
-          this.loading = false;
-          this.closeCreate();
-        },
-        error: (e) => {
-          this.loading = false;
-          this.createError =
-            extractErrorMessage(e) || 'Gagal membuat unit kerja.';
-          this.ui.error(this.createError);
-        },
-      });
-=======
     this.userService.createUnitKerja(payload).subscribe({
       next: (res) => {
         const created = res?.data;
@@ -489,11 +356,11 @@ export class UnitKerjaComponent implements OnInit {
       },
       error: (e) => {
         this.loading = false;
-        this.createError = extractErrorMessage(e) || 'Gagal membuat unit kerja.';
+        this.createError =
+          extractErrorMessage(e) || 'Gagal membuat unit kerja.';
         this.ui.error(this.createError);
       },
     });
->>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   }
 
   trackById(_: number, item: UnitKerjaItem) {

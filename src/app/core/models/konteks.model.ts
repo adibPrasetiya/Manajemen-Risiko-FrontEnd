@@ -226,7 +226,11 @@ export interface UpdateImpactPayload {
   description: string;
 }
 
-export type TabKey = 'RISK_CATEGORY' | 'RISK_IMPACT' | 'LIKELIHOOD' | 'RISK_MATRIX';
+export type TabKey =
+  | 'RISK_CATEGORY'
+  | 'RISK_IMPACT'
+  | 'LIKELIHOOD'
+  | 'RISK_MATRIX';
 
 // ===================== RISK MATRIX =====================
 

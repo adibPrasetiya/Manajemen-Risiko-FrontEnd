@@ -67,7 +67,7 @@ export class UsersComponent implements OnInit {
   selectedUser: EditUserData | null = null;
 
   constructor(
-    private http: HttpClient,
+    private userService: UserService,
     private ui: UiService,
   ) {}
 
@@ -96,19 +96,13 @@ export class UsersComponent implements OnInit {
       limit: this.limit,
     };
 
-    if (this.fName.trim()) params = params.set('name', this.fName.trim());
-    if (this.fUsername.trim())
-      params = params.set('username', this.fUsername.trim());
-
+    if (this.fName.trim()) params.name = this.fName.trim();
+    if (this.fUsername.trim()) params.username = this.fUsername.trim();
     if (this.fRole !== 'ALL') params.role = this.fRole;
-
     if (this.fActive === 'ACTIVE') params.isActive = true;
     if (this.fActive === 'INACTIVE') params.isActive = false;
-
-    if (this.fVerified === 'VERIFIED')
-      params = params.set('isVerified', 'true');
-    if (this.fVerified === 'UNVERIFIED')
-      params = params.set('isVerified', 'false');
+    if (this.fVerified === 'VERIFIED') params.isVerified = true;
+    if (this.fVerified === 'UNVERIFIED') params.isVerified = false;
 
     return params;
   }
@@ -136,45 +130,27 @@ export class UsersComponent implements OnInit {
   }
 
   private refreshUserStats(): void {
-    const headers = this.buildHeaders();
+    const params: UserStatsParams = {};
 
-    const total$ = this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams(null),
-      })
-      .pipe(
-        map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0)),
-      );
+    if (this.fName.trim()) params.name = this.fName.trim();
+    if (this.fUsername.trim()) params.username = this.fUsername.trim();
+    if (this.fRole !== 'ALL') params.role = this.fRole;
+    if (this.fVerified === 'VERIFIED') params.isVerified = true;
+    if (this.fVerified === 'UNVERIFIED') params.isVerified = false;
 
-    const active$ = this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams('true'),
-      })
-      .pipe(
-        map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0)),
-      );
-
-    const inactive$ = this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params: this.buildStatsParams('false'),
-      })
-      .pipe(
-        map((r) => r?.pagination?.totalItems ?? 0),
-        catchError(() => of(0)),
-      );
-
-    forkJoin({ total: total$, active: active$, inactive: inactive$ }).subscribe(
-      (r) => {
-        this.totalUsers = r.total;
-        this.totalActive = r.active;
-        this.totalInactive = r.inactive;
+    this.userService.getUserStats(params).subscribe({
+      next: (stats) => {
+        this.totalUsers = stats.total;
+        this.totalActive = stats.active;
+        this.totalInactive = stats.inactive;
       },
-    );
+      error: () => {
+        // fail silently → stats jangan ganggu tabel utama
+        this.totalUsers = 0;
+        this.totalActive = 0;
+        this.totalInactive = 0;
+      },
+    });
   }
 
   fetchUsers(resetPage: boolean): void {
@@ -183,44 +159,28 @@ export class UsersComponent implements OnInit {
 
     const params = this.buildListParams(resetPage);
 
-    this.http
-      .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
-        headers,
-        params,
-      })
-      .subscribe({
-        next: (res) => {
-          this.users = res.data ?? [];
-          this.pagination = res.pagination ?? null;
-          this.buildRoleOptions();
+    this.userService.getUsers(params).subscribe({
+      next: (res) => {
+        this.users = res.data ?? [];
+        this.pagination = res.pagination ?? null;
+        (this.buildRoleOptions(), this.refreshUserStats());
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        this.users = [];
+        this.pagination = null;
+        this.totalUsers = 0;
+        this.totalActive = 0;
+        this.totalInactive = 0;
 
-          // update stats berdasarkan filter saat ini (name/username/role/verified)
-          this.refreshUserStats();
+        this.errorMsg =
+          extractErrorMessage(err) ??
+          `Gagal fetch users (HTTP ${err?.status ?? 'unkown'})`;
 
-          this.loading = false;
-        },
-        error: (err) => {
-          this.loading = false;
-          this.users = [];
-          this.pagination = null;
-
-          // reset stats biar ga nyangkut angka lama
-          this.totalUsers = 0;
-          this.totalActive = 0;
-          this.totalInactive = 0;
-
-          if (err?.status === 401) {
-            this.errorMsg =
-              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
-            return;
-          }
-
-          this.errorMsg =
-            extractErrorMessage(err) ||
-            `Gagal fetch users dari API (HTTP ${err?.status || 'unknown'}).`;
-          this.ui.error(this.errorMsg);
-        },
-      });
+        this.ui.error(this.errorMsg);
+      },
+    });
   }
 
   buildRoleOptions(): void {
@@ -373,30 +333,24 @@ export class UsersComponent implements OnInit {
 
     this.loading = true;
 
-    this.http
-      .patch<any>(`${this.baseUrl}${this.endpoint}/${result.id}`, payload, {
-        headers,
-      })
-      .subscribe({
-        next: () => {
-          // update table lokal biar langsung berubah
-          this.users = this.users.map((x) =>
-            x.id === result.id ? { ...x, ...payload } : x,
-          );
+    this.userService.updateUser(result.id, payload).subscribe({
+      next: () => {
+        this.users = this.users.map((u) =>
+          u.id === result.id ? { ...u, ...payload } : u,
+        );
 
-          // setelah edit, refresh stats juga
-          this.refreshUserStats();
+        this.refreshUserStats();
 
-          this.loading = false;
-          this.closeEditModal();
-        },
-        error: (e) => {
-          this.loading = false;
-          this.editError =
-            extractErrorMessage(e) || 'Gagal update user. Coba lagi.';
-          this.ui.error(this.editError);
-        },
-      });
+        this.loading = false;
+        this.closeEditModal();
+      },
+      error: (err) => {
+        this.loading = false;
+        this.editError =
+          extractErrorMessage(err) || 'Gagal update user. Coba lagi';
+        this.ui.error(this.editError);
+      },
+    });
   }
 
   trackById(_: number, item: UserItem) {
