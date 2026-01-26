@@ -16,10 +16,12 @@ export class SidebarComponent implements OnChanges {
   usersMenuOpen = true;
   readonly isAdmin: boolean;
   readonly isKomitePusat: boolean;
+  readonly isPengelola: boolean;
 
   constructor(private auth: AuthService) {
     this.isAdmin = this.auth.hasRole('ADMINISTRATOR');
     this.isKomitePusat = this.auth.hasRole('KOMITE_PUSAT');
+    this.isPengelola = this.auth.hasRole('PENGELOLA_RISIKO_UKER');
   }
 
   ngOnChanges(changes: SimpleChanges): void {

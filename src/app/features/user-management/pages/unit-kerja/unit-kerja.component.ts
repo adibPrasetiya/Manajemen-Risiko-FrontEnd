@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+<<<<<<< HEAD
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { UiService } from '../../../../core/services/ui.service';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
@@ -34,6 +35,17 @@ type ListResponse = {
   data: UnitKerjaItem[];
   pagination?: Pagination;
 };
+=======
+import { UiService } from '../../../../core/services/ui.service';
+import { extractErrorMessage } from '../../../../core/utils/error-utils';
+import {
+  Pagination,
+  UnitKerjaItem,
+  UnitKerjaListParams,
+  UnitKerjaPayload,
+  UserService,
+} from '../../../../core/services/user.service';
+>>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
 
 @Component({
   selector: 'app-unit-kerja',
@@ -43,9 +55,12 @@ type ListResponse = {
   styleUrl: './unit-kerja.component.scss',
 })
 export class UnitKerjaComponent implements OnInit {
+<<<<<<< HEAD
   private baseUrl = environment.apiBaseUrl;
   private endpoint = '/unit-kerja';
 
+=======
+>>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   loading = false;
   errorMsg = '';
 
@@ -81,15 +96,20 @@ export class UnitKerjaComponent implements OnInit {
     email: '',
   };
 
+<<<<<<< HEAD
   constructor(
     private http: HttpClient,
     private ui: UiService,
   ) {}
+=======
+  constructor(private userService: UserService, private ui: UiService) {}
+>>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
 
   ngOnInit(): void {
     this.fetch(true);
   }
 
+<<<<<<< HEAD
   private buildHeaders(): HttpHeaders | undefined {
     const token =
       localStorage.getItem('accessToken') ||
@@ -103,12 +123,16 @@ export class UnitKerjaComponent implements OnInit {
   }
 
   private buildParams(resetPage: boolean): HttpParams {
+=======
+  private buildListParams(resetPage: boolean): UnitKerjaListParams {
+>>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
     if (resetPage) this.page = 1;
 
-    // ✅ backend kamu tidak menerima q, jadi cuma page & limit
-    return new HttpParams()
-      .set('page', String(this.page))
-      .set('limit', String(this.limit));
+    // backend kamu tidak menerima q, jadi cuma page & limit
+    return {
+      page: this.page,
+      limit: this.limit,
+    };
   }
 
   private applyLocalFilter(
@@ -134,40 +158,37 @@ export class UnitKerjaComponent implements OnInit {
     this.loading = true;
     this.errorMsg = '';
 
-    const headers = this.buildHeaders();
-    const params = this.buildParams(resetPage);
+    const params = this.buildListParams(resetPage);
 
-    this.http
-      .get<ListResponse>(`${this.baseUrl}${this.endpoint}`, { headers, params })
-      .subscribe({
-        next: (res) => {
-          this.allItems = res.data ?? [];
-          this.pagination = res.pagination ?? null;
+    this.userService.getUnitKerjaList(params).subscribe({
+      next: (res) => {
+        this.allItems = res.data ?? [];
+        this.pagination = res.pagination ?? null;
 
-          // ✅ apply keyword filter (kalau ada)
-          this.renderList();
+        // apply keyword filter (kalau ada)
+        this.renderList();
 
-          this.loading = false;
-        },
-        error: (err) => {
-          this.loading = false;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
 
-          this.items = [];
-          this.allItems = [];
-          this.pagination = null;
+        this.items = [];
+        this.allItems = [];
+        this.pagination = null;
 
-          if (err?.status === 401) {
-            this.errorMsg =
-              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
-            return;
-          }
-
+        if (err?.status === 401) {
           this.errorMsg =
-            extractErrorMessage(err) ||
-            `Gagal fetch unit kerja (HTTP ${err?.status || 'unknown'}).`;
-          this.ui.error(this.errorMsg);
-        },
-      });
+            'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+          return;
+        }
+
+        this.errorMsg =
+          extractErrorMessage(err) ||
+          `Gagal fetch unit kerja (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
+      },
+    });
   }
 
   applySearch(): void {
@@ -264,13 +285,12 @@ export class UnitKerjaComponent implements OnInit {
       return;
     }
 
-    const headers = this.buildHeaders();
-    if (!headers) {
+    if (!this.userService.hasAuthToken()) {
       this.editError = 'Token tidak ditemukan. Silakan login ulang.';
       return;
     }
 
-    const payload = {
+    const payload: UnitKerjaPayload = {
       name: this.editModel.name.trim(),
       code: this.editModel.code.trim(),
       email: this.editModel.email.trim() || undefined,
@@ -279,6 +299,7 @@ export class UnitKerjaComponent implements OnInit {
     this.loading = true;
 
     // PATCH /unit-kerja/:id
+<<<<<<< HEAD
     this.http
       .patch<any>(
         `${this.baseUrl}${this.endpoint}/${this.editModel.id}`,
@@ -301,6 +322,24 @@ export class UnitKerjaComponent implements OnInit {
           this.ui.error(this.editError);
         },
       });
+=======
+    this.userService.updateUnitKerja(this.editModel.id, payload).subscribe({
+      next: () => {
+        // update cache, tetap simpan _count lama
+        this.allItems = this.allItems.map((x) =>
+          x.id === this.editModel.id ? { ...x, ...payload } : x
+        );
+        this.renderList();
+        this.loading = false;
+        this.closeEdit();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.editError = extractErrorMessage(e) || 'Gagal update unit kerja.';
+        this.ui.error(this.editError);
+      },
+    });
+>>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   }
 
   // ===================== DELETE / REVOKE =====================
@@ -319,8 +358,7 @@ export class UnitKerjaComponent implements OnInit {
   confirmDelete(): void {
     if (!this.deleteTarget) return;
 
-    const headers = this.buildHeaders();
-    if (!headers) {
+    if (!this.userService.hasAuthToken()) {
       this.deleteError = 'Token tidak ditemukan. Silakan login ulang.';
       return;
     }
@@ -328,6 +366,7 @@ export class UnitKerjaComponent implements OnInit {
     this.loading = true;
 
     // DELETE /unit-kerja/:id
+<<<<<<< HEAD
     this.http
       .delete<any>(`${this.baseUrl}${this.endpoint}/${this.deleteTarget.id}`, {
         headers,
@@ -348,6 +387,21 @@ export class UnitKerjaComponent implements OnInit {
           this.ui.error(this.deleteError);
         },
       });
+=======
+    this.userService.deleteUnitKerja(this.deleteTarget.id).subscribe({
+      next: () => {
+        this.allItems = this.allItems.filter((x) => x.id !== this.deleteTarget!.id);
+        this.renderList();
+        this.loading = false;
+        this.closeDelete();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.deleteError = extractErrorMessage(e) || 'Gagal hapus unit kerja.';
+        this.ui.error(this.deleteError);
+      },
+    });
+>>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   }
 
   // ===================== CREATE =====================
@@ -382,13 +436,12 @@ export class UnitKerjaComponent implements OnInit {
       return;
     }
 
-    const headers = this.buildHeaders();
-    if (!headers) {
+    if (!this.userService.hasAuthToken()) {
       this.createError = 'Token tidak ditemukan. Silakan login ulang.';
       return;
     }
 
-    const payload = {
+    const payload: UnitKerjaPayload = {
       name: this.createModel.name.trim(),
       code: this.createModel.code.trim(),
       email: this.createModel.email.trim() || undefined,
@@ -397,6 +450,7 @@ export class UnitKerjaComponent implements OnInit {
     this.loading = true;
 
     // POST /unit-kerja
+<<<<<<< HEAD
     this.http
       .post<{
         data?: UnitKerjaItem;
@@ -420,6 +474,26 @@ export class UnitKerjaComponent implements OnInit {
           this.ui.error(this.createError);
         },
       });
+=======
+    this.userService.createUnitKerja(payload).subscribe({
+      next: (res) => {
+        const created = res?.data;
+        if (created?.id) {
+          this.allItems = [created, ...this.allItems];
+          this.renderList();
+        } else {
+          this.fetch(true);
+        }
+        this.loading = false;
+        this.closeCreate();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.createError = extractErrorMessage(e) || 'Gagal membuat unit kerja.';
+        this.ui.error(this.createError);
+      },
+    });
+>>>>>>> 335723d2b022666ab1e4fe6069942e4db94e7a24
   }
 
   trackById(_: number, item: UnitKerjaItem) {

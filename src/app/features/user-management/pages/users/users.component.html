@@ -91,7 +91,7 @@
             <label>Role</label>
             <select [(ngModel)]="fRole">
               <option *ngFor="let r of roleOptions" [value]="r">
-                {{ r === 'ALL' ? 'All Roles' : r }}
+                {{ r === 'ALL' ? 'All Roles' : roleLabel(r) }}
               </option>
             </select>
           </div>
@@ -177,7 +177,7 @@
 
             <!-- ROLES -->
             <td>
-              <span class="badge role" *ngFor="let r of u.roles">{{ r }}</span>
+              <span class="badge role" *ngFor="let r of u.roles">{{ roleLabel(r) }}</span>
             </td>
 
             <!-- CREATED AT -->

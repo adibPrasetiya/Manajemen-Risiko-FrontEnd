@@ -13,42 +13,14 @@ import {
 } from '../../components/edit-user-modal/edit-user-modal.component';
 import { UiService } from '../../../../core/services/ui.service';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
-import { environment } from '../../../../../environments/environment';
-
-type UserItem = {
-  id: string;
-  username: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-  isVerified: boolean;
-  roles: string[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-type Pagination = {
-  page: number;
-  limit: number;
-  totalItems: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-};
-
-type UsersResponse = {
-  message: string;
-  data: UserItem[];
-  pagination: Pagination;
-};
-
-type PatchUserPayload = {
-  email: string;
-  name: string;
-  isActive: boolean;
-  isVerified: boolean;
-  roles: string[];
-};
+import {
+  PatchUserPayload,
+  Pagination,
+  UserItem,
+  UserListParams,
+  UserService,
+  UserStatsParams,
+} from '../../../../core/services/user.service';
 
 @Component({
   selector: 'app-users',
@@ -58,9 +30,6 @@ type PatchUserPayload = {
   styleUrl: './users.component.scss',
 })
 export class UsersComponent implements OnInit {
-  private baseUrl = environment.apiBaseUrl;
-  private endpoint = '/users';
-
   loading = false;
   errorMsg = '';
 
@@ -119,21 +88,22 @@ export class UsersComponent implements OnInit {
   }
 
   // Build query params ke backend (sesuai tab Params di Postman)
-  private buildParams(resetPage: boolean): HttpParams {
+  private buildListParams(resetPage: boolean): UserListParams {
     if (resetPage) this.page = 1;
 
-    let params = new HttpParams()
-      .set('page', String(this.page))
-      .set('limit', String(this.limit));
+    const params: UserListParams = {
+      page: this.page,
+      limit: this.limit,
+    };
 
     if (this.fName.trim()) params = params.set('name', this.fName.trim());
     if (this.fUsername.trim())
       params = params.set('username', this.fUsername.trim());
 
-    if (this.fRole !== 'ALL') params = params.set('role', this.fRole);
+    if (this.fRole !== 'ALL') params.role = this.fRole;
 
-    if (this.fActive === 'ACTIVE') params = params.set('isActive', 'true');
-    if (this.fActive === 'INACTIVE') params = params.set('isActive', 'false');
+    if (this.fActive === 'ACTIVE') params.isActive = true;
+    if (this.fActive === 'INACTIVE') params.isActive = false;
 
     if (this.fVerified === 'VERIFIED')
       params = params.set('isVerified', 'true');
@@ -211,8 +181,7 @@ export class UsersComponent implements OnInit {
     this.loading = true;
     this.errorMsg = '';
 
-    const headers = this.buildHeaders();
-    const params = this.buildParams(resetPage);
+    const params = this.buildListParams(resetPage);
 
     this.http
       .get<UsersResponse>(`${this.baseUrl}${this.endpoint}`, {
@@ -225,7 +194,7 @@ export class UsersComponent implements OnInit {
           this.pagination = res.pagination ?? null;
           this.buildRoleOptions();
 
-          // ✅ update stats berdasarkan filter saat ini (name/username/role/verified)
+          // update stats berdasarkan filter saat ini (name/username/role/verified)
           this.refreshUserStats();
 
           this.loading = false;
@@ -260,6 +229,11 @@ export class UsersComponent implements OnInit {
       for (const r of u.roles || []) set.add(r);
     }
     this.roleOptions = ['ALL', ...Array.from(set).sort()];
+  }
+
+  roleLabel(role: string): string {
+    if (role === 'PENGELOLA_RISIKO_UKER') return 'PENGELOLA';
+    return role;
   }
 
   applyFilters(): void {
@@ -384,8 +358,7 @@ export class UsersComponent implements OnInit {
   }
 
   onSaveUser(result: EditUserResult): void {
-    const headers = this.buildHeaders();
-    if (!headers) {
+    if (!this.userService.hasAuthToken()) {
       this.editError = 'Token tidak ditemukan. Silakan login ulang.';
       return;
     }
