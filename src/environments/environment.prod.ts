@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'http://api.dev.simulasibimtekd31.com',
+  apiBaseUrl: 'https://api.staging.simulasibimtekd31.com',
 };

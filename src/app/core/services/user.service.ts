@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 export type UserItem = {
   id: string;
@@ -121,7 +122,7 @@ export type AssetCategoryPayload = {
   providedIn: 'root',
 })
 export class UserService {
-  private baseUrl = 'http://api.dev.simulasibimtekd31.com';
+  private baseUrl = environment.apiBaseUrl;
   private usersEndpoint = '/users';
   private unitKerjaEndpoint = '/unit-kerja';
   private assetCategoriesEndpoint = '/asset-categories';
