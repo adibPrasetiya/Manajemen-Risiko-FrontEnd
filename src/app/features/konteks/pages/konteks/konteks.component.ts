@@ -298,31 +298,38 @@ export class KonteksComponent implements OnInit {
   fetchKonteks(resetPage: boolean): void {
     this.loading = true;
     this.errorMsg = '';
-    this.konteksService.getKonteksList(this.buildListParams(resetPage)).subscribe({
-      next: (res) => {
-        const raw = (res.data ?? []) as KonteksItemRaw[];
-        const normalized = this.normalizeKonteksList(raw);
-        // periode options dari range fixed
-        this.buildPeriodeOptions();
-        // apply filter client-side biar UX sama kayak users
-        const filtered = this.applyClientFilters(normalized);
-        this.items = filtered;
-        // stats client (sesuai filter + page ini)
-        this.refreshStatsClient(filtered);
-        // pagination tetap dari backend
-        this.pagination = res.pagination ?? null;
-        // OPTIONAL: kalau backend support stats lebih akurat, aktifkan:
-        // this.refreshKonteksStatsFromBackend();
-        this.loading = false;
-      },
-      error: (err) => {
-        this.loading = false;
-        this.items = [];
-        this.pagination = null;
-        this.totalKonteks = 0;
-        this.totalAktif = 0;
-        this.totalNonAktif = 0;
-        if (err?.status === 401) {
+    this.konteksService
+      .getKonteksList(this.buildListParams(resetPage))
+      .subscribe({
+        next: (res) => {
+          const raw = (res.data ?? []) as KonteksItemRaw[];
+          const normalized = this.normalizeKonteksList(raw);
+          // periode options dari range fixed
+          this.buildPeriodeOptions();
+          // apply filter client-side biar UX sama kayak users
+          const filtered = this.applyClientFilters(normalized);
+          this.items = filtered;
+          // stats client (sesuai filter + page ini)
+          this.refreshStatsClient(filtered);
+          // pagination tetap dari backend
+          this.pagination = res.pagination ?? null;
+          // OPTIONAL: kalau backend support stats lebih akurat, aktifkan:
+          // this.refreshKonteksStatsFromBackend();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.loading = false;
+          this.items = [];
+          this.pagination = null;
+          this.totalKonteks = 0;
+          this.totalAktif = 0;
+          this.totalNonAktif = 0;
+          if (err?.status === 401) {
+            this.errorMsg =
+              'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+            this.ui.error(this.errorMsg);
+            return;
+          }
           this.errorMsg =
             extractErrorMessage(err) ||
             `Gagal fetch konteks dari API (HTTP ${err?.status || 'unknown'}).`;
