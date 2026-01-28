@@ -192,6 +192,10 @@ export class KonteksDetailComponent implements OnInit {
     private ui: UiService
   ) {}
 
+  get isKonteksActive(): boolean {
+    return this.konteksDetail?.status === 'ACTIVE';
+  }
+
   ngOnInit(): void {
     this.konteksId = this.route.snapshot.paramMap.get('konteksId') || '';
     if (!this.konteksId) {

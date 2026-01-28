@@ -30,7 +30,12 @@
           [disabled]="loading">
           <i class="fa-solid fa-toggle-off"></i> Nonaktifkan
         </button>
-        <button class="btn primary" type="button" (click)="openEditKonteks()" [disabled]="loading">
+        <button
+          *ngIf="isKonteksActive"
+          class="btn primary"
+          type="button"
+          (click)="openEditKonteks()"
+          [disabled]="loading">
           <i class="fa-solid fa-pen-to-square"></i> Edit Konteks
         </button>
         <button class="btn secondary" type="button" (click)="back()">
@@ -147,7 +152,11 @@
           </div>
 
           <div class="toolbar-right">
-            <button class="btn primary" type="button" (click)="openCreateRC()">
+            <button
+              *ngIf="isKonteksActive"
+              class="btn primary"
+              type="button"
+              (click)="openCreateRC()">
               + Tambah Kategori
             </button>
           </div>
@@ -178,8 +187,22 @@
                 <td class="muted">{{ c.description || '-' }}</td>
 
                 <td class="td-actions">
-                  <button type="button" class="icon-btn" (click)="openEditRC(c)" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                  <button type="button" class="icon-btn danger" (click)="deleteRC(c)" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                  <button
+                    *ngIf="isKonteksActive"
+                    type="button"
+                    class="icon-btn"
+                    (click)="openEditRC(c)"
+                    title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button
+                    *ngIf="isKonteksActive"
+                    type="button"
+                    class="icon-btn danger"
+                    (click)="deleteRC(c)"
+                    title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
                 </td>
               </tr>
 
@@ -219,7 +242,12 @@
           </div>
 
           <div class="toolbar-right">
-            <button class="btn primary" type="button" (click)="openCreateLK()" [disabled]="!selectedRiskCategoryId">
+            <button
+              *ngIf="isKonteksActive"
+              class="btn primary"
+              type="button"
+              (click)="openCreateLK()"
+              [disabled]="!selectedRiskCategoryId">
               + Tambah Likelihood
             </button>
           </div>
@@ -250,8 +278,22 @@
                 <td class="muted">{{ l.description || '-' }}</td>
 
                 <td class="td-actions">
-                  <button type="button" class="icon-btn" (click)="openEditLK(l)" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                  <button type="button" class="icon-btn danger" (click)="deleteLK(l)" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                  <button
+                    *ngIf="isKonteksActive"
+                    type="button"
+                    class="icon-btn"
+                    (click)="openEditLK(l)"
+                    title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button
+                    *ngIf="isKonteksActive"
+                    type="button"
+                    class="icon-btn danger"
+                    (click)="deleteLK(l)"
+                    title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
                 </td>
               </tr>
 
@@ -294,7 +336,12 @@
           </div>
 
           <div class="toolbar-right">
-            <button class="btn primary" type="button" (click)="openCreateIM()" [disabled]="!selectedRiskCategoryId">
+            <button
+              *ngIf="isKonteksActive"
+              class="btn primary"
+              type="button"
+              (click)="openCreateIM()"
+              [disabled]="!selectedRiskCategoryId">
               + Tambah Impact
             </button>
           </div>
@@ -325,8 +372,22 @@
                 <td class="muted">{{ i.description || '-' }}</td>
 
                 <td class="td-actions">
-                  <button type="button" class="icon-btn" (click)="openEditIM(i)" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                  <button type="button" class="icon-btn danger" (click)="deleteIM(i)" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                  <button
+                    *ngIf="isKonteksActive"
+                    type="button"
+                    class="icon-btn"
+                    (click)="openEditIM(i)"
+                    title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button
+                    *ngIf="isKonteksActive"
+                    type="button"
+                    class="icon-btn danger"
+                    (click)="deleteIM(i)"
+                    title="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
                 </td>
               </tr>
 
@@ -358,51 +419,163 @@
 
       <!-- ===================== TAB: RISK MATRIX ===================== -->
       <ng-container *ngIf="activeTab==='RISK_MATRIX'">
-        <div class="risk-matrix">
-          <div class="matrix-header">
-            <div class="matrix-title">Risk Matrix {{ getMatrixSize() }}x{{ getMatrixSize() }}</div>
-            <div class="matrix-legend">
-              <span class="legend-pill low"><i class="fa-solid fa-shield"></i> LOW</span>
-              <span class="legend-pill medium"><i class="fa-solid fa-triangle-exclamation"></i> MEDIUM</span>
-              <span class="legend-pill high"><i class="fa-solid fa-fire"></i> HIGH</span>
-              <span class="legend-pill critical"><i class="fa-solid fa-bolt"></i> CRITICAL</span>
+        <div class="risk-matrix-container">
+          <!-- Loading State -->
+          <div *ngIf="matrixLoading && !matrixDeleting" class="matrix-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Memuat risk matrix...
+          </div>
+
+          <!-- Deleting State -->
+          <div *ngIf="matrixDeleting" class="matrix-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Menghapus risk matrix...
+          </div>
+
+          <!-- Error State -->
+          <div *ngIf="matrixErrorMsg && !matrixLoading" class="matrix-error">
+            <i class="fa-solid fa-exclamation-triangle"></i> {{ matrixErrorMsg }}
+          </div>
+
+          <!-- Empty State: Matrix belum ada -->
+          <div class="matrix-empty-state" *ngIf="!matrixLoading && !matrixErrorMsg && isMatrixEmpty()">
+            <div class="empty-state-content">
+              <div class="empty-state-icon">
+                <i class="fa-solid fa-table-cells-large"></i>
+              </div>
+              <h3>Risk Matrix belum tersedia</h3>
+              <p>Buat matrix untuk menentukan tingkat risiko berdasarkan kombinasi likelihood & impact.</p>
+              <button class="btn primary" type="button" (click)="openMatrixConfigModal()">
+                <i class="fa-solid fa-plus"></i> Buat Matriks
+              </button>
             </div>
           </div>
 
-          <div class="matrix-grid">
-            <div class="matrix-axis y-axis">Impact</div>
+          <!-- Matrix Exists: Show Grid -->
+          <ng-container *ngIf="!matrixLoading && !matrixErrorMsg && !isMatrixEmpty()">
+            <!-- Matrix Header with Actions -->
+            <div class="matrix-toolbar">
+              <div class="toolbar-left">
+                <div class="matrix-info">
+                  <span class="matrix-title-new">
+                    <i class="fa-solid fa-th"></i>
+                    Risk Matrix {{ getMatrixSize() }}x{{ getMatrixSize() }}
+                  </span>
+                  <span class="matrix-status" *ngIf="matrixHasChanges">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Perubahan belum disimpan
+                  </span>
+                </div>
+              </div>
 
-            <div class="matrix-body">
-              <div class="matrix-row" *ngFor="let impact of getMatrixLevels().slice().reverse()">
-                <div class="matrix-label">{{ impact }}</div>
-                <div class="matrix-cells">
-                  <div
-                    class="matrix-cell"
-                    *ngFor="let likelihood of getMatrixLevels()"
-                    [ngClass]="getMatrixCellClass(likelihood, impact)"
-                    (click)="onCellClick(likelihood, impact)">
-                    {{ getCellRiskLevel(likelihood, impact) }}
+              <div class="toolbar-right">
+                <!-- Edit Mode Toggle -->
+                <button
+                  class="btn"
+                  [class.btn-edit-active]="matrixEditMode"
+                  type="button"
+                  (click)="toggleMatrixEditMode()"
+                  [disabled]="matrixLoading || matrixSaving || matrixDeleting">
+                  <i class="fa-solid" [class.fa-pen]="!matrixEditMode" [class.fa-xmark]="matrixEditMode"></i>
+                  {{ matrixEditMode ? 'Batal Edit' : 'Mode Edit' }}
+                </button>
+
+                <!-- Delete Matrix Button -->
+                <button
+                  class="btn btn-danger"
+                  type="button"
+                  (click)="confirmDeleteMatrix()"
+                  [disabled]="matrixLoading || matrixSaving || matrixDeleting || matrixEditMode">
+                  <i class="fa-solid fa-trash"></i>
+                  Hapus Matrix
+                </button>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="matrix-legend-bar">
+              <span class="legend-label">Level Risiko:</span>
+              <div class="legend-items">
+                <span class="legend-pill-new risk-low">
+                  <i class="fa-solid fa-shield"></i> LOW
+                </span>
+                <span class="legend-pill-new risk-medium">
+                  <i class="fa-solid fa-triangle-exclamation"></i> MEDIUM
+                </span>
+                <span class="legend-pill-new risk-high">
+                  <i class="fa-solid fa-fire"></i> HIGH
+                </span>
+                <span class="legend-pill-new risk-critical">
+                  <i class="fa-solid fa-skull-crossbones"></i> CRITICAL
+                </span>
+              </div>
+              <span class="legend-hint" *ngIf="matrixEditMode">
+                <i class="fa-solid fa-info-circle"></i>
+                Klik cell untuk mengubah level risiko
+              </span>
+            </div>
+
+            <!-- Matrix Grid -->
+            <div class="matrix-grid-container">
+              <!-- Y-Axis Label (Likelihood) -->
+              <div class="y-axis-label">
+                <span class="axis-text">Likelihood</span>
+              </div>
+
+              <div class="matrix-wrapper">
+                <!-- Matrix Body -->
+                <div class="matrix-body-new">
+                  <!-- Row for each likelihood level (5 at top, 1 at bottom) -->
+                  <div class="matrix-row-new" *ngFor="let likelihood of getMatrixLevels().slice().reverse()">
+                    <!-- Row Label -->
+                    <div class="row-label">
+                      <span class="level-number">{{ likelihood }}</span>
+                    </div>
+
+                    <!-- Cells for each impact level -->
+                    <div class="matrix-cells-new">
+                      <div
+                        class="matrix-cell-new"
+                        *ngFor="let impact of getMatrixLevels()"
+                        [class.editable]="matrixEditMode"
+                        [ngClass]="getRiskLevelClass(getCellRiskLevel(likelihood, impact))"
+                        (click)="onCellClick(likelihood, impact)"
+                        [title]="'Likelihood: ' + likelihood + ', Impact: ' + impact + ' - ' + getCellRiskLevel(likelihood, impact)">
+                        <!-- Cell Content -->
+                        <span class="cell-level">{{ getCellRiskLevel(likelihood, impact) }}</span>
+
+                        <!-- Edit indicator -->
+                        <span class="cell-edit-hint" *ngIf="matrixEditMode">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </span>
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                <!-- X-Axis Labels (Impact) -->
+                <div class="x-axis-container">
+                  <div class="x-axis-spacer"></div>
+                  <div class="x-axis-labels">
+                    <span class="col-label" *ngFor="let impact of getMatrixLevels()">{{ impact }}</span>
+                  </div>
+                </div>
+
+                <!-- X-Axis Title -->
+                <div class="x-axis-title">
+                  <span class="axis-text">Impact</span>
                 </div>
               </div>
             </div>
 
-            <div class="matrix-axis x-axis">
-              <span>Skor Likelihood</span>
-              <div class="x-labels">
-                <span *ngFor="let likelihood of getMatrixLevels()">{{ likelihood }}</span>
+            <!-- Instructions Panel -->
+            <div class="matrix-instructions" *ngIf="matrixEditMode">
+              <div class="instruction-card">
+                <h4><i class="fa-solid fa-lightbulb"></i> Petunjuk Penggunaan</h4>
+                <ul>
+                  <li><strong>Klik cell</strong> untuk mengubah level risiko (LOW → MEDIUM → HIGH → CRITICAL → LOW)</li>
+                </ul>
               </div>
             </div>
-          </div>
-
-          <div class="matrix-instructions" *ngIf="matrixEditMode">
-            <div class="instruction-card">
-              <h4><i class="fa-solid fa-lightbulb"></i> Petunjuk Penggunaan</h4>
-              <ul>
-                <li><strong>Klik cell</strong> untuk mengubah level risiko (LOW -> MEDIUM -> HIGH -> CRITICAL -> LOW)</li>
-              </ul>
-            </div>
-          </div>
+          </ng-container>
         </div>
       </ng-container>
     </div>
