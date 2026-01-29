@@ -38,7 +38,10 @@ export const routes: Routes = [
       import('./features/settings/settings.routes').then(
         (m) => m.SETTINGS_ROUTES
       ),
-    canActivate: [authGuard, roleGuard(['ADMINISTRATOR', 'PENGELOLA_RISIKO_UKER'])],
+    canActivate: [
+      authGuard,
+      roleGuard(['ADMINISTRATOR', 'PENGELOLA_RISIKO_UKER', 'KOMITE_PUSAT']),
+    ],
   },
   { path: '', redirectTo: 'auth/login', pathMatch: 'full' },
   { path: '**', redirectTo: 'auth/login' },

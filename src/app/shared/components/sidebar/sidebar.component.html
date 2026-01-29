@@ -72,6 +72,26 @@
         <span class="nav-text">Asset Categories</span>
       </a>
     </div>
+
+    <div class="nav-section" *ngIf="isPengelola">
+      <div class="section-label">Asset Management</div>
+      <a class="nav-item" routerLink="/settings/assets" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-boxes-stacked"></i></span>
+        <span class="nav-text">Assets</span>
+      </a>
+      <a class="nav-item" routerLink="/settings/risk-worksheets" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+        <span class="nav-text">Risk Worksheet</span>
+      </a>
+    </div>
+
+    <div class="nav-section" *ngIf="isKomitePusat && !isPengelola">
+      <div class="section-label">Asset Management</div>
+      <a class="nav-item" routerLink="/settings/risk-worksheets" routerLinkActive="active">
+        <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+        <span class="nav-text">Risk Worksheet</span>
+      </a>
+    </div>
   </nav>
 
   <div class="sidebar-footer">

@@ -85,6 +85,11 @@ export type UnitKerjaListParams = {
   limit: number;
 };
 
+export type UnitKerjaDetailResponse = {
+  message: string;
+  data: UnitKerjaItem;
+};
+
 export type UnitKerjaPayload = {
   name: string;
   code: string;
@@ -95,6 +100,7 @@ export type AssetCategoryItem = {
   id: string;
   name: string;
   description?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
   createdAt: string;
   updatedAt?: string;
   _count?: {
@@ -111,11 +117,123 @@ export type AssetCategoryListResponse = {
 export type AssetCategoryListParams = {
   page: number;
   limit: number;
+  status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
 };
 
 export type AssetCategoryPayload = {
   name: string;
   description: string;
+};
+
+export type AssetStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+
+export type AssetItem = {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  owner?: string;
+  status: AssetStatus;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string | null;
+  unitKerja?: {
+    id: string;
+    name: string;
+    code?: string;
+  };
+  category?: {
+    id: string;
+    name: string;
+  };
+};
+
+export type AssetListResponse = {
+  message: string;
+  data: AssetItem[];
+  pagination?: Pagination;
+};
+
+export type AssetDetailResponse = {
+  message: string;
+  data: AssetItem;
+};
+
+export type AssetListParams = {
+  page: number;
+  limit: number;
+  status?: AssetStatus;
+};
+
+export type CreateAssetPayload = {
+  name: string;
+  code: string;
+  description?: string;
+  owner?: string;
+  categoryId: string;
+  status?: AssetStatus;
+};
+
+export type UpdateAssetPayload = {
+  name: string;
+  code: string;
+  description?: string;
+  owner?: string;
+  categoryId: string;
+};
+
+export type RiskWorksheetStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+
+export type RiskWorksheetItem = {
+  id: string;
+  name: string;
+  description?: string;
+  status: RiskWorksheetStatus;
+  ownerId?: string;
+  createdAt: string;
+  updatedAt?: string;
+  unitKerja?: {
+    id: string;
+    name: string;
+    code?: string;
+  };
+  konteks?: {
+    id: string;
+    name: string;
+    code?: string;
+    periodStart?: number;
+    periodEnd?: number;
+  };
+};
+
+export type RiskWorksheetListResponse = {
+  message: string;
+  data: RiskWorksheetItem[];
+  pagination?: Pagination;
+};
+
+export type RiskWorksheetDetailResponse = {
+  message: string;
+  data: RiskWorksheetItem;
+};
+
+export type RiskWorksheetListParams = {
+  page: number;
+  limit: number;
+  status?: RiskWorksheetStatus;
+};
+
+export type CreateRiskWorksheetPayload = {
+  konteksId: string;
+  name: string;
+  description?: string;
+  status?: RiskWorksheetStatus;
+};
+
+export type UpdateRiskWorksheetPayload = {
+  name: string;
+  description?: string;
 };
 
 @Injectable({
@@ -203,6 +321,14 @@ export class UserService {
     );
   }
 
+  getUnitKerjaById(id: string): Observable<UnitKerjaDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.get<UnitKerjaDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${id}`,
+      { headers }
+    );
+  }
+
   updateUnitKerja(id: string, payload: UnitKerjaPayload): Observable<unknown> {
     const headers = this.buildHeaders();
     return this.http.patch(`${this.baseUrl}${this.unitKerjaEndpoint}/${id}`, payload, {
@@ -268,6 +394,186 @@ export class UserService {
     );
   }
 
+  // ===================== ASSETS =====================
+
+  getAssets(
+    unitKerjaId: string,
+    params: AssetListParams
+  ): Observable<AssetListResponse> {
+    const headers = this.buildHeaders();
+    const httpParams = this.buildAssetsParams(params);
+
+    return this.http.get<AssetListResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/assets`,
+      { headers, params: httpParams }
+    );
+  }
+
+  getAssetById(
+    unitKerjaId: string,
+    assetId: string
+  ): Observable<AssetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.get<AssetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/assets/${assetId}`,
+      { headers }
+    );
+  }
+
+  createAsset(
+    unitKerjaId: string,
+    payload: CreateAssetPayload
+  ): Observable<AssetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.post<AssetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/assets`,
+      payload,
+      { headers }
+    );
+  }
+
+  updateAsset(
+    unitKerjaId: string,
+    assetId: string,
+    payload: UpdateAssetPayload
+  ): Observable<AssetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.patch<AssetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/assets/${assetId}`,
+      payload,
+      { headers }
+    );
+  }
+
+  activateAsset(
+    unitKerjaId: string,
+    assetId: string
+  ): Observable<AssetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.patch<AssetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/assets/${assetId}/activate`,
+      null,
+      { headers }
+    );
+  }
+
+  deactivateAsset(
+    unitKerjaId: string,
+    assetId: string
+  ): Observable<AssetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.patch<AssetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/assets/${assetId}/deactivate`,
+      null,
+      { headers }
+    );
+  }
+
+  deleteAsset(
+    unitKerjaId: string,
+    assetId: string,
+    opts?: { suppressToast?: boolean }
+  ): Observable<AssetDetailResponse> {
+    let headers = this.buildHeaders() || new HttpHeaders();
+    if (opts?.suppressToast) {
+      headers = headers.set('X-Skip-Error-Toast', 'true');
+    }
+    return this.http.delete<AssetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/assets/${assetId}`,
+      { headers }
+    );
+  }
+
+  // ===================== RISK WORKSHEETS =====================
+
+  getRiskWorksheets(
+    unitKerjaId: string,
+    params: RiskWorksheetListParams
+  ): Observable<RiskWorksheetListResponse> {
+    const headers = this.buildHeaders();
+    const httpParams = this.buildRiskWorksheetParams(params);
+
+    return this.http.get<RiskWorksheetListResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets`,
+      { headers, params: httpParams }
+    );
+  }
+
+  getRiskWorksheetById(
+    unitKerjaId: string,
+    worksheetId: string
+  ): Observable<RiskWorksheetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.get<RiskWorksheetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}`,
+      { headers }
+    );
+  }
+
+  createRiskWorksheet(
+    unitKerjaId: string,
+    payload: CreateRiskWorksheetPayload
+  ): Observable<RiskWorksheetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.post<RiskWorksheetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets`,
+      payload,
+      { headers }
+    );
+  }
+
+  updateRiskWorksheet(
+    unitKerjaId: string,
+    worksheetId: string,
+    payload: UpdateRiskWorksheetPayload
+  ): Observable<RiskWorksheetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.patch<RiskWorksheetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}`,
+      payload,
+      { headers }
+    );
+  }
+
+  activateRiskWorksheet(
+    unitKerjaId: string,
+    worksheetId: string
+  ): Observable<RiskWorksheetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.patch<RiskWorksheetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/activate`,
+      null,
+      { headers }
+    );
+  }
+
+  deactivateRiskWorksheet(
+    unitKerjaId: string,
+    worksheetId: string
+  ): Observable<RiskWorksheetDetailResponse> {
+    const headers = this.buildHeaders();
+    return this.http.patch<RiskWorksheetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/deactivate`,
+      null,
+      { headers }
+    );
+  }
+
+  deleteRiskWorksheet(
+    unitKerjaId: string,
+    worksheetId: string,
+    opts?: { suppressToast?: boolean }
+  ): Observable<RiskWorksheetDetailResponse> {
+    let headers = this.buildHeaders() || new HttpHeaders();
+    if (opts?.suppressToast) {
+      headers = headers.set('X-Skip-Error-Toast', 'true');
+    }
+    return this.http.delete<RiskWorksheetDetailResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}`,
+      { headers }
+    );
+  }
+
   private buildHeaders(): HttpHeaders | undefined {
     const token =
       localStorage.getItem('accessToken') || localStorage.getItem('access_token');
@@ -327,8 +633,38 @@ export class UserService {
   }
 
   private buildAssetCategoriesParams(params: AssetCategoryListParams): HttpParams {
-    return new HttpParams()
+    let httpParams = new HttpParams()
       .set('page', String(params.page))
       .set('limit', String(params.limit));
+
+    if (params.status) {
+      httpParams = httpParams.set('status', params.status);
+    }
+
+    return httpParams;
+  }
+
+  private buildRiskWorksheetParams(params: RiskWorksheetListParams): HttpParams {
+    let httpParams = new HttpParams()
+      .set('page', String(params.page))
+      .set('limit', String(params.limit));
+
+    if (params.status) {
+      httpParams = httpParams.set('status', params.status);
+    }
+
+    return httpParams;
+  }
+
+  private buildAssetsParams(params: AssetListParams): HttpParams {
+    let httpParams = new HttpParams()
+      .set('page', String(params.page))
+      .set('limit', String(params.limit));
+
+    if (params.status) {
+      httpParams = httpParams.set('status', params.status);
+    }
+
+    return httpParams;
   }
 }

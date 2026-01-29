@@ -26,6 +26,7 @@ export class ErrorInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
       catchError((err: unknown) => {
+        const skipToast = req.headers.get('X-Skip-Error-Toast') === 'true';
         if (err instanceof HttpErrorResponse) {
           // Skip 401 - biarkan AuthInterceptor handle refresh token
           if (err.status === 401) {
@@ -86,7 +87,9 @@ export class ErrorInterceptor implements HttpInterceptor {
           ) {
             msg = 'Profil anda ditolak silahkan buat ulang profill';
           }
-          this.ui.error(String(msg));
+          if (!skipToast) {
+            this.ui.error(String(msg));
+          }
           return throwError(() => err);
         }
 
@@ -112,9 +115,13 @@ export class ErrorInterceptor implements HttpInterceptor {
           ) {
             msg = 'Profil anda ditolak silahkan buat ulang profill';
           }
-          this.ui.error(String(msg));
+          if (!skipToast) {
+            this.ui.error(String(msg));
+          }
         } else {
-          this.ui.error('Terjadi kesalahan tidak terduga');
+          if (!skipToast) {
+            this.ui.error('Terjadi kesalahan tidak terduga');
+          }
         }
         return throwError(() => err);
       })

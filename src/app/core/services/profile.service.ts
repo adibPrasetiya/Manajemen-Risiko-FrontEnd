@@ -111,6 +111,7 @@ export interface GetMyProfileResponse {
       id: string;
       name: string;
       email: string;
+      code?: string;
     };
     nomorHP?: string;
     isVerified: boolean;
