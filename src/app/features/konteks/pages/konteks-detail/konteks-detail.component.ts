@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmModalComponent } from '../../../../shared/components/confirm-modal/confirm-modal.component';
 import { KonteksService } from '../../../../core/services/konteks.service';
 import { UiService } from '../../../../core/services/ui.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import {
   Pagination,
   KonteksItem,
@@ -162,6 +163,7 @@ export class KonteksDetailComponent implements OnInit {
   savedRiskMatrices: RiskMatrixItem[] = [];
   matrixState: Map<string, RiskLevel> = new Map();
   matrixEditMode = false;
+  isKomite = false;
   matrixLoading = false;
   matrixSaving = false;
   matrixHasChanges = false;
@@ -189,14 +191,24 @@ export class KonteksDetailComponent implements OnInit {
     private konteksService: KonteksService,
     private route: ActivatedRoute,
     private router: Router,
-    private ui: UiService
+    private ui: UiService,
+    private authService: AuthService
   ) {}
 
   get isKonteksActive(): boolean {
     return this.konteksDetail?.status === 'ACTIVE';
   }
 
+  get canModifyKonteks(): boolean {
+    return this.isKomite ? !this.isKonteksActive : this.isKonteksActive;
+  }
+
+  get isKonteksLockedForKomite(): boolean {
+    return this.isKomite && this.isKonteksActive;
+  }
+
   ngOnInit(): void {
+    this.isKomite = this.authService.hasRole('KOMITE_PUSAT');
     this.konteksId = this.route.snapshot.paramMap.get('konteksId') || '';
     if (!this.konteksId) {
       this.errorMsg = 'Konteks ID tidak ditemukan.';

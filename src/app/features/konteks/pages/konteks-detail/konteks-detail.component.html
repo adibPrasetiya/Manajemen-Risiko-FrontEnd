@@ -153,7 +153,7 @@
 
           <div class="toolbar-right">
             <button
-              *ngIf="isKonteksActive"
+              *ngIf="canModifyKonteks"
               class="btn primary"
               type="button"
               (click)="openCreateRC()">
@@ -188,19 +188,21 @@
 
                 <td class="td-actions">
                   <button
-                    *ngIf="isKonteksActive"
+                    *ngIf="!isKomite ? isKonteksActive : true"
                     type="button"
                     class="icon-btn"
                     (click)="openEditRC(c)"
-                    title="Edit">
+                    title="Edit"
+                    [disabled]="isKonteksLockedForKomite">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
                   <button
-                    *ngIf="isKonteksActive"
+                    *ngIf="!isKomite ? isKonteksActive : true"
                     type="button"
                     class="icon-btn danger"
                     (click)="deleteRC(c)"
-                    title="Delete">
+                    title="Delete"
+                    [disabled]="isKonteksLockedForKomite">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </td>
@@ -243,7 +245,7 @@
 
           <div class="toolbar-right">
             <button
-              *ngIf="isKonteksActive"
+              *ngIf="canModifyKonteks"
               class="btn primary"
               type="button"
               (click)="openCreateLK()"
@@ -279,19 +281,21 @@
 
                 <td class="td-actions">
                   <button
-                    *ngIf="isKonteksActive"
+                    *ngIf="!isKomite ? isKonteksActive : true"
                     type="button"
                     class="icon-btn"
                     (click)="openEditLK(l)"
-                    title="Edit">
+                    title="Edit"
+                    [disabled]="isKonteksLockedForKomite">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
                   <button
-                    *ngIf="isKonteksActive"
+                    *ngIf="!isKomite ? isKonteksActive : true"
                     type="button"
                     class="icon-btn danger"
                     (click)="deleteLK(l)"
-                    title="Delete">
+                    title="Delete"
+                    [disabled]="isKonteksLockedForKomite">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </td>
@@ -337,7 +341,7 @@
 
           <div class="toolbar-right">
             <button
-              *ngIf="isKonteksActive"
+              *ngIf="canModifyKonteks"
               class="btn primary"
               type="button"
               (click)="openCreateIM()"
@@ -373,19 +377,21 @@
 
                 <td class="td-actions">
                   <button
-                    *ngIf="isKonteksActive"
+                    *ngIf="!isKomite ? isKonteksActive : true"
                     type="button"
                     class="icon-btn"
                     (click)="openEditIM(i)"
-                    title="Edit">
+                    title="Edit"
+                    [disabled]="isKonteksLockedForKomite">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
                   <button
-                    *ngIf="isKonteksActive"
+                    *ngIf="!isKomite ? isKonteksActive : true"
                     type="button"
                     class="icon-btn danger"
                     (click)="deleteIM(i)"
-                    title="Delete">
+                    title="Delete"
+                    [disabled]="isKonteksLockedForKomite">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </td>
@@ -443,7 +449,11 @@
               </div>
               <h3>Risk Matrix belum tersedia</h3>
               <p>Buat matrix untuk menentukan tingkat risiko berdasarkan kombinasi likelihood & impact.</p>
-              <button class="btn primary" type="button" (click)="openMatrixConfigModal()">
+              <button
+                *ngIf="!isKomite || !isKonteksActive"
+                class="btn primary"
+                type="button"
+                (click)="openMatrixConfigModal()">
                 <i class="fa-solid fa-plus"></i> Buat Matriks
               </button>
             </div>
@@ -469,6 +479,7 @@
               <div class="toolbar-right">
                 <!-- Edit Mode Toggle -->
                 <button
+                  *ngIf="!isKomite || !isKonteksActive"
                   class="btn"
                   [class.btn-edit-active]="matrixEditMode"
                   type="button"
@@ -480,6 +491,7 @@
 
                 <!-- Delete Matrix Button -->
                 <button
+                  *ngIf="!isKomite || !isKonteksActive"
                   class="btn btn-danger"
                   type="button"
                   (click)="confirmDeleteMatrix()"
