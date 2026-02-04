@@ -1,0 +1,301 @@
+<div class="risk-create-page">
+  <div class="page-head">
+    <div class="page-title">
+      <div class="title-main">Tambah Risiko</div>
+      <div class="title-sub muted">Lengkapi data risiko berdasarkan tahap.</div>
+    </div>
+    <a class="btn ghost" [routerLink]="['/settings/risk-register']">
+      <i class="fa-solid fa-arrow-left"></i>
+      Kembali
+    </a>
+  </div>
+
+  <div class="stepper">
+    <div class="step" [class.active]="currentStep === 1" [class.done]="currentStep > 1" (click)="goToStep(1)">
+      <div class="dot">1</div>
+      <div class="label">Informasi Halaman</div>
+    </div>
+    <div class="line" [class.done]="currentStep > 1"></div>
+    <div class="step" [class.active]="currentStep === 2" [class.done]="currentStep > 2" (click)="goToStep(2)">
+      <div class="dot">2</div>
+      <div class="label">Inherent Risk</div>
+    </div>
+    <div class="line" [class.done]="currentStep > 2"></div>
+    <div class="step" [class.active]="currentStep === 3" (click)="goToStep(3)">
+      <div class="dot">3</div>
+      <div class="label">Residual Risk</div>
+    </div>
+  </div>
+
+  <div class="hint warn" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+  <!-- STEP 1 -->
+  <div class="step-body" *ngIf="currentStep === 1">
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-head">Informasi Umum</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Nama Risiko</label>
+            <input [(ngModel)]="form.riskName" placeholder="Nama risiko" />
+          </div>
+          <div class="field">
+            <label>Kategori Risiko</label>
+            <select [(ngModel)]="form.riskCategoryId" (ngModelChange)="onCategoryChange()">
+              <option value="">Pilih kategori</option>
+              <option *ngFor="let c of riskCategories" [value]="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Asset</label>
+            <select [(ngModel)]="form.assetId">
+              <option value="">Pilih asset</option>
+              <option *ngFor="let a of assets" [value]="a.id">{{ a.name }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" [class.locked]="!isStep1Card1Valid">
+        <div class="card-head">Deskripsi Risiko</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Deskripsi Kelemahan</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Aplikasi tidak memiliki validasi input pada form login sehingga
+                rentan disusupi.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.weaknessDescription" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label>Deskripsi Ancaman</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Penyerang dapat melakukan brute force untuk menebak password
+                pengguna.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.treatDescription" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label>Deskripsi Dampak</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Kebocoran data menyebabkan kerugian reputasi dan sanksi regulasi.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.impactDescription" rows="4"></textarea>
+          </div>
+        </div>
+        <div class="card-overlay" *ngIf="!isStep1Card1Valid">
+          Lengkapi Informasi Umum terlebih dahulu.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-actions">
+      <button class="btn primary" type="button" (click)="nextStep()" [disabled]="!isStep1Card1Valid || !isStep1Card2Valid">
+        Selanjutnya
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-body" *ngIf="currentStep === 2">
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-head">Inherent Value</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Seberapa sering terjadi</label>
+            <select [(ngModel)]="form.inherentLikelihoodId" (ngModelChange)="onInherentLikelihoodChange()">
+              <option value="">Pilih level</option>
+              <option *ngFor="let l of likelihoodScales" [value]="l.id">
+                {{ l.description }}
+              </option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deskripsi Inherent</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Penyerang dapat mengeksploitasi kerentanan ini untuk mengeksekusi perintah SQL secara arbitrer dan berpotensi memperoleh akses tidak sah ke database.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.inherentLikelihoodDesc" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label>Seberapa Besar Dampak</label>
+            <select [(ngModel)]="form.inherentImpactId" (ngModelChange)="onInherentImpactChange()">
+              <option value="">Pilih level</option>
+              <option *ngFor="let i of impactScales" [value]="i.id">
+                {{ i.description }}
+              </option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deskripsi Dampak</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Penyerang dapat mencuri data sensitif, memodifikasi atau menghapus data, atau bahkan mengeksekusi perintah pada server.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.inherentImpactDesc" rows="4"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" [class.locked]="!isStep2Card1Valid">
+        <div class="card-head">Inherent Kontrol</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Deskripsi Kontrol yang Sudah Ada</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “WAF aktif dan audit akses dilakukan setiap minggu.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.existingControls" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label>Efektivitas Kontrol</label>
+            <select [(ngModel)]="form.controlEffectiveness">
+              <option value="">Pilih efektivitas</option>
+              <option value="EFFECTIVE">EFFECTIVE</option>
+              <option value="PARTIALLY_EFFECTIVE">PARTIALLY_EFFECTIVE</option>
+              <option value="INEFFECTIVE">INEFFECTIVE</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-overlay" *ngIf="!isStep2Card1Valid">
+          Lengkapi Inherent Value terlebih dahulu.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-actions">
+      <button class="btn ghost" type="button" (click)="prevStep()">Sebelumnya</button>
+      <button class="btn primary" type="button" (click)="nextStep()" [disabled]="!isStep2Card1Valid || !isStep2Card2Valid">
+        Selanjutnya
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-body" *ngIf="currentStep === 3">
+    <div class="card-grid three">
+      <div class="card">
+        <div class="card-head">Residual Value</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Seberapa sering terjadi setelah kontrol ditangani</label>
+            <select [(ngModel)]="form.residualLikelihoodId" (ngModelChange)="onResidualLikelihoodChange()">
+              <option value="">Pilih level</option>
+              <option *ngFor="let l of likelihoodScales" [value]="l.id">
+                {{ l.description }}
+              </option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deskripsi</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Frekuensi berkurang setelah penerapan OTP.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.residualLikelihoodDesc" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label>Seberapa besar dampak setelah kontrol ditangani</label>
+            <select [(ngModel)]="form.residualImpactId" (ngModelChange)="onResidualImpactChange()">
+              <option value="">Pilih level</option>
+              <option *ngFor="let i of impactScales" [value]="i.id">
+                {{ i.description }}
+              </option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deskripsi</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Dampak menurun karena ada sistem backup.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.residualImpactDesc" rows="4"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" [class.locked]="!isStep3Card1Valid">
+        <div class="card-head">Perlakuan</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Perlakuan</label>
+            <select [(ngModel)]="form.treatmentOption">
+              <option value="">Pilih perlakuan</option>
+              <option *ngFor="let opt of treatmentOptions" [value]="opt">{{ opt }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Alasan perlakuan</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Mitigasi dipilih karena risiko tinggi dan dapat dikurangi dengan
+                kontrol tambahan.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.treatmentRationale" rows="4"></textarea>
+          </div>
+        </div>
+        <div class="card-overlay" *ngIf="!isStep3Card1Valid">
+          Lengkapi Residual Value terlebih dahulu.
+        </div>
+      </div>
+
+      <div class="card" [class.locked]="!isStep3Card2Valid">
+        <div class="card-head">Additional Informasi</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Prioritas risiko ditangani</label>
+            <select [(ngModel)]="form.riskPriorityRank">
+              <option value="">Pilih prioritas</option>
+              <option value="1">LOW</option>
+              <option value="2">MEDIUM</option>
+              <option value="3">HIGH</option>
+              <option value="4">CRITICAL</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deskripsi</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Prioritas tinggi karena berdampak ke layanan utama.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.additionalDescription" rows="4"></textarea>
+          </div>
+        </div>
+        <div class="card-overlay" *ngIf="!isStep3Card2Valid">
+          Lengkapi Perlakuan terlebih dahulu.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-actions">
+      <button class="btn ghost" type="button" (click)="prevStep()">Sebelumnya</button>
+      <button class="btn primary" type="button" (click)="submit()">Simpan Risiko</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,561 @@
+<div class="risk-mitigate-page">
+  <div class="info-card">
+    <div class="info-header">
+      <div class="page-title">
+        <div class="title-main">Risk Mitigation</div>
+        <div class="title-sub muted" *ngIf="item?.riskName">
+          {{ item?.riskName }} <span *ngIf="item?.riskCode">({{ item?.riskCode }})</span>
+        </div>
+        <div class="title-sub muted" *ngIf="worksheetId || worksheetName">
+          Worksheet: {{ worksheetName || worksheetId }}
+        </div>
+      </div>
+      <div class="header-actions">
+        <a class="btn" [routerLink]="['/settings/risk-register']" [queryParams]="{ worksheetId: worksheetId }">
+          <i class="fa-solid fa-arrow-left"></i>
+          Kembali
+        </a>
+      </div>
+    </div>
+
+    <div class="info-body">
+      <div class="info-title full">RINGKASAN RISIKO</div>
+      <div class="info-col">
+        <div class="info-item">
+          <span class="label">Risk Code:</span>
+          <span class="value">{{ item?.riskCode || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Risk Category ID:</span>
+          <span class="value">{{ item?.riskCategory?.name || item?.riskCategoryName || item?.riskCategoryId || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Asset ID:</span>
+          <span class="value">{{ item?.asset?.name || item?.assetId || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Inherent Level:</span>
+          <span class="badge" [ngClass]="getRiskLevelClass(item?.inherentRiskLevel)">
+            {{ formatRiskLevel(item?.inherentRiskLevel) }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="label">Residual Level:</span>
+          <span class="badge" [ngClass]="getRiskLevelClass(item?.residualRiskLevel)">
+            {{ formatRiskLevel(item?.residualRiskLevel) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="info-col">
+        <div class="info-item">
+          <span class="label">Weakness:</span>
+          <span class="value muted">{{ item?.weaknessDescription || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Threat:</span>
+          <span class="value muted">{{ getThreatDescription() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Impact:</span>
+          <span class="value muted">{{ item?.impactDescription || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Treatment:</span>
+          <span class="value">
+            <span class="status-pill" [ngClass]="getTreatmentClass(item?.treatmentOption)">
+              {{ item?.treatmentOption || '-' }}
+            </span>
+          </span>
+        </div>
+        <div class="info-item" *ngIf="item?.treatmentRationale">
+          <span class="label">Treatment Rationale:</span>
+          <span class="value muted">{{ item?.treatmentRationale }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="header-row">
+    <div></div>
+    <button class="btn primary" type="button" (click)="openCreate()" [disabled]="createSubmitting">
+      <i class="fa-solid fa-plus"></i>
+      Tambah Risiko Mitigasi
+    </button>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showCreateCard">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Tambah Mitigasi</h3>
+        <button type="button" class="icon-close" (click)="closeCreate()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field">
+            <label>Nama Mitigasi</label>
+            <input [(ngModel)]="createModel.name" placeholder="Nama mitigasi" />
+          </div>
+          <div class="field">
+            <label>Prioritas</label>
+            <select [(ngModel)]="createModel.priority">
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>Deskripsi</label>
+            <textarea [(ngModel)]="createModel.description" rows="3"></textarea>
+          </div>
+          <div class="field">
+            <label>Planned Start Date</label>
+            <input type="date" [(ngModel)]="createModel.plannedStartDate" />
+          </div>
+          <div class="field">
+            <label>Planned End Date</label>
+            <input type="date" [(ngModel)]="createModel.plannedEndDate" />
+          </div>
+          <div class="field">
+            <label>Responsible Person</label>
+            <input [(ngModel)]="createModel.responsiblePerson" />
+          </div>
+          <div class="field">
+            <label>Responsible Unit</label>
+            <input [(ngModel)]="createModel.responsibleUnit" />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn" type="button" (click)="closeCreate()" [disabled]="createSubmitting">
+            Batal
+          </button>
+          <button
+            class="btn primary"
+            type="button"
+            (click)="submitCreate()"
+            [disabled]="createSubmitting || !isCreateValid"
+          >
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showEditCard">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Edit Mitigasi</h3>
+        <button type="button" class="icon-close" (click)="closeEdit()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field">
+            <label>Nama Mitigasi</label>
+            <input [(ngModel)]="editModel.name" />
+          </div>
+          <div class="field">
+            <label>Prioritas</label>
+            <select [(ngModel)]="editModel.priority">
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>Deskripsi</label>
+            <textarea [(ngModel)]="editModel.description" rows="3"></textarea>
+          </div>
+          <div class="field">
+            <label>Planned Start Date</label>
+            <input type="date" [(ngModel)]="editModel.plannedStartDate" />
+          </div>
+          <div class="field">
+            <label>Planned End Date</label>
+            <input type="date" [(ngModel)]="editModel.plannedEndDate" />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn" type="button" (click)="closeEdit()" [disabled]="editSubmitting">
+            Batal
+          </button>
+          <button
+            class="btn primary"
+            type="button"
+            (click)="submitEdit()"
+            [disabled]="editSubmitting || !isEditValid"
+          >
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showProgressCard">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Update Progress</h3>
+        <button type="button" class="icon-close" (click)="closeProgress()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field">
+            <label>Actual Start Date</label>
+            <input type="date" [(ngModel)]="progressModel.actualStartDate" />
+          </div>
+          <div class="field">
+            <label>Actual End Date</label>
+            <input type="date" [(ngModel)]="progressModel.actualEndDate" />
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select [(ngModel)]="progressModel.status">
+              <option value="PLANNED">PLANNED</option>
+              <option value="IN_PROGRESS">IN_PROGRESS</option>
+              <option value="COMPLETED">COMPLETED</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Progress (%)</label>
+            <input type="number" min="0" max="100" [(ngModel)]="progressModel.progressPercentage" />
+          </div>
+          <div class="field full">
+            <label>Progress Notes</label>
+            <textarea [(ngModel)]="progressModel.progressNotes" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn" type="button" (click)="closeProgress()" [disabled]="progressSubmitting">
+            Batal
+          </button>
+          <button
+            class="btn primary"
+            type="button"
+            (click)="submitProgress()"
+            [disabled]="progressSubmitting || !isProgressValid"
+          >
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showDeleteModal">
+    <div class="modal modal-sm">
+      <div class="modal-head">
+        <h3>Hapus Mitigasi</h3>
+        <button type="button" class="icon-close" (click)="closeDelete()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="confirm">
+          Yakin ingin menghapus mitigasi:
+          <b>{{ deleteTarget?.name || deleteTarget?.code || '-' }}</b>?
+        </p>
+
+        <small class="error" *ngIf="deleteError">{{ deleteError }}</small>
+
+        <div class="modal-actions">
+          <button class="btn" type="button" (click)="closeDelete()" [disabled]="deleteSubmitting">
+            Batal
+          </button>
+          <button
+            class="btn danger"
+            type="button"
+            (click)="confirmDelete()"
+            [disabled]="deleteSubmitting"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showValidationModal">
+    <div class="modal modal-sm">
+      <div class="modal-head">
+        <h3>{{ validationMode === 'VALIDATE' ? 'Validasi Mitigasi' : 'Tolak Mitigasi' }}</h3>
+        <button type="button" class="icon-close" (click)="closeValidation()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label>Catatan Validasi</label>
+          <textarea [(ngModel)]="validationNotes" rows="3"></textarea>
+        </div>
+
+        <small class="error" *ngIf="validationError">{{ validationError }}</small>
+
+        <div class="modal-actions">
+          <button class="btn" type="button" (click)="closeValidation()" [disabled]="validationSubmitting">
+            Batal
+          </button>
+          <button
+            class="btn"
+            [class.primary]="validationMode === 'VALIDATE'"
+            [class.danger]="validationMode === 'REJECT'"
+            type="button"
+            (click)="submitValidation()"
+            [disabled]="validationSubmitting"
+          >
+            {{ validationMode === 'VALIDATE' ? 'Validasi' : 'Tolak' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="head-left">
+        <span class="head-ico"><i class="fa-solid fa-shield"></i></span>
+        <span class="head-title">Daftar Mitigasi</span>
+      </div>
+
+      <div class="filters-primary">
+        <div class="filters-left">
+          <div class="filter-field">
+            <select [(ngModel)]="fPriority" (ngModelChange)="applyFilters()">
+              <option value="ALL">Semua Prioritas</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <select [(ngModel)]="fStatus" (ngModelChange)="applyFilters()">
+              <option value="ALL">Semua Status</option>
+              <option value="PLANNED">Planned</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="DONE">Done</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <select [(ngModel)]="fValidated" (ngModelChange)="applyFilters()">
+              <option value="ALL">Semua Validasi</option>
+              <option value="PENDING">Pending</option>
+              <option value="VALIDATED">Validated</option>
+              <option value="NOT_VALIDATED">Not Validated</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-right">
+          <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input [(ngModel)]="q" placeholder="Search" (keyup.enter)="applyFilters()" />
+          </div>
+          <button class="btn primary" type="button" (click)="applyFilters()" [disabled]="loading">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search
+          </button>
+          <button class="btn" type="button" (click)="resetFilters()" [disabled]="loading">
+            <i class="fa-solid fa-rotate-right"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint" *ngIf="loading">Loading...</div>
+    <div class="hint warn" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+    <div class="table-wrap" *ngIf="filteredMitigations.length > 0">
+      <table class="mitigate-table">
+        <thead>
+          <tr>
+            <th>KODE</th>
+            <th>NAMA</th>
+            <th>DESKRIPSI</th>
+            <th>PRIORITAS</th>
+            <th>RENCANA</th>
+            <th>AKTUAL</th>
+            <th>PENANGGUNG JAWAB</th>
+            <th>STATUS</th>
+            <th>PROGRESS</th>
+            <th>VALIDASI</th>
+            <th>UPDATED</th>
+            <th class="th-actions">AKSI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of filteredMitigations">
+            <td class="code">{{ m.code || '-' }}</td>
+            <td>
+              <div class="cell-stack">
+              <div class="primary text-normal">{{ m.name || '-' }}</div>
+              </div>
+            </td>
+            <td class="cell-text">{{ m.description || '-' }}</td>
+            <td>
+              <span class="status-pill" [ngClass]="getPriorityClass(m.priority)">
+                {{ m.priority || '-' }}
+              </span>
+            </td>
+            <td class="cell-wide">
+              <div class="cell-stack">
+                <div class="sub muted">Start: {{ m.plannedStartDate ? (m.plannedStartDate | date: 'd MMM y') : '-' }}</div>
+                <div class="sub muted">End: {{ m.plannedEndDate ? (m.plannedEndDate | date: 'd MMM y') : '-' }}</div>
+              </div>
+            </td>
+            <td class="cell-wide">
+              <div class="cell-stack">
+                <div class="sub muted">Start: {{ m.actualStartDate ? (m.actualStartDate | date: 'd MMM y') : '-' }}</div>
+                <div class="sub muted">End: {{ m.actualEndDate ? (m.actualEndDate | date: 'd MMM y') : '-' }}</div>
+              </div>
+            </td>
+            <td class="cell-wide">
+              <div class="cell-stack">
+                <div class="primary">{{ m.responsiblePerson || '-' }}</div>
+                <div class="sub muted">{{ m.responsibleUnit || '-' }}</div>
+              </div>
+            </td>
+            <td>
+              <span class="status-pill" [ngClass]="getStatusClass(m.status)">
+                {{ m.status || '-' }}
+              </span>
+            </td>
+            <td>
+              <div class="progress-pill">
+                <div class="progress-track">
+                  <div
+                    class="progress-fill"
+                    [style.width.%]="m.progressPercentage ?? 0"
+                  ></div>
+                </div>
+                <span class="progress-text">{{ m.progressPercentage ?? 0 }}%</span>
+              </div>
+            </td>
+            <td>
+              <span class="status-pill" [ngClass]="getValidationClass(m)">
+                {{ getValidationLabel(m) }}
+              </span>
+            </td>
+            <td class="muted">
+              {{ m.updatedAt ? (m.updatedAt | date: 'd MMM y, HH.mm') : '-' }}
+            </td>
+            <td class="td-actions">
+              <ng-container *ngIf="!isKomite">
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="openEdit(m)"
+                  title="Edit"
+                  [disabled]="getValidationStatus(m) === 'VALIDATED'"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button
+                  type="button"
+                  class="icon-btn"
+                  (click)="openProgress(m)"
+                  title="Update Progress"
+                  [disabled]="getValidationStatus(m) === 'VALIDATED'"
+                >
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+                <button
+                  type="button"
+                  class="icon-btn danger"
+                  (click)="openDelete(m)"
+                  title="Hapus"
+                  [disabled]="getValidationStatus(m) === 'VALIDATED'"
+                >
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </ng-container>
+              <ng-container *ngIf="isKomite">
+                <button type="button" class="icon-btn action-validate" (click)="openValidation(m, 'VALIDATE')" title="Validate">
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button type="button" class="icon-btn action-reject" (click)="openValidation(m, 'REJECT')" title="Reject">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty" *ngIf="!loading && filteredMitigations.length === 0">
+      Data mitigasi tidak ditemukan.
+    </div>
+
+    <div class="pagination" *ngIf="pagination && pagination.totalPages > 0">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> - <strong>{{ getShowingEnd() }}</strong>
+          of <strong>{{ pagination.totalItems }}</strong> data
+        </span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || !pagination.hasPrevPage"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || !pagination.hasNextPage"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

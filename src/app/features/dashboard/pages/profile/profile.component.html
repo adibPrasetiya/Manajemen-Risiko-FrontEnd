@@ -115,6 +115,20 @@
           <h3 class="section-title">Keamanan</h3>
           <div class="security-section">
             <p class="security-desc">Ubah password akun Anda untuk keamanan.</p>
+            <div class="security-meta" *ngIf="passwordChangedAtDate">
+              <div class="meta-row">
+                <span class="meta-label">Terakhir diubah</span>
+                <span class="meta-value">{{ formatDateShort(passwordChangedAtDate) }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Wajib ganti pada</span>
+                <span class="meta-value">{{ formatDateShort(passwordNextChangeDate) }}</span>
+              </div>
+            </div>
+            <div class="security-hint">
+              <i class="fa-solid fa-circle-info"></i>
+              Password akan di reset setiap 30 hari.
+            </div>
             <button class="btn secondary" (click)="openPasswordModal()">
               <i class="fa-solid fa-key"></i>
               Ubah Password

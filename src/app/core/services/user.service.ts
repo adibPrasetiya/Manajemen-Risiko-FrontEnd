@@ -183,7 +183,7 @@ export type UpdateAssetPayload = {
   categoryId: string;
 };
 
-export type RiskWorksheetStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type RiskWorksheetStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'ARCHIVED';
 
 export type RiskWorksheetItem = {
   id: string;
@@ -191,6 +191,11 @@ export type RiskWorksheetItem = {
   description?: string;
   status: RiskWorksheetStatus;
   ownerId?: string;
+  ownerName?: string;
+  owner?: {
+    id?: string;
+    name?: string;
+  };
   createdAt: string;
   updatedAt?: string;
   unitKerja?: {
@@ -204,6 +209,8 @@ export type RiskWorksheetItem = {
     code?: string;
     periodStart?: number;
     periodEnd?: number;
+    riskAppetiteLevel?: string;
+    riskAppetiteDescription?: string;
   };
 };
 
@@ -234,6 +241,170 @@ export type CreateRiskWorksheetPayload = {
 export type UpdateRiskWorksheetPayload = {
   name: string;
   description?: string;
+};
+
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export type RiskTreatmentOption = 'MITIGATE' | 'ACCEPT' | 'TRANSFER' | 'AVOID' | string;
+
+export type RiskAssessmentItem = {
+  id: string;
+  worksheetId: string;
+  riskCode?: string;
+  riskName: string;
+  assetId?: string | null;
+  asset?: {
+    id?: string;
+    name?: string;
+    code?: string;
+  } | null;
+  riskCategoryId?: string | null;
+  riskCategoryName?: string | null;
+  riskCategory?: {
+    id?: string;
+    name?: string;
+  } | null;
+  weaknessDescription?: string | null;
+  threatDescription?: string | null;
+  treatDescription?: string | null;
+  impactDescription?: string | null;
+  inherentLikelihood?: number | null;
+  inherentImpact?: number | null;
+  inherentLikelihoodDescription?: string | null;
+  inherentImpactDescription?: string | null;
+  inherentRiskLevel?: RiskLevel | null;
+  existingControls?: string | null;
+  controlEffectiveness?: string | null;
+  residualLikelihood?: number | null;
+  residualImpact?: number | null;
+  residualLikelihoodDescription?: string | null;
+  residualImpactDescription?: string | null;
+  residualRiskLevel?: RiskLevel | null;
+  treatmentOption?: RiskTreatmentOption | null;
+  treatmentRationale?: string | null;
+  riskPriorityRank?: number | null;
+  order?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type RiskAssessmentListResponse = {
+  message: string;
+  data: RiskAssessmentItem[];
+  pagination?: Pagination;
+};
+
+export type RiskAssessmentListParams = {
+  page: number;
+  limit: number;
+};
+
+export type RiskMitigationItem = {
+  id: string;
+  itemId: string;
+  code?: string | null;
+  name?: string | null;
+  description?: string | null;
+  priority?: string | null;
+  plannedStartDate?: string | null;
+  plannedEndDate?: string | null;
+  actualStartDate?: string | null;
+  actualEndDate?: string | null;
+  responsiblePerson?: string | null;
+  responsibleUnit?: string | null;
+  status?: string | null;
+  progressPercentage?: number | null;
+  progressNotes?: string | null;
+  validatedAt?: string | null;
+  validatedBy?: string | null;
+  validationNotes?: string | null;
+  validationStatus?: string | null;
+  isValidated?: boolean | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+};
+
+export type RiskMitigationListResponse = {
+  message: string;
+  data: RiskMitigationItem[];
+  pagination?: Pagination;
+};
+
+export type RiskMitigationListParams = {
+  page: number;
+  limit: number;
+};
+
+export type CreateRiskMitigationPayload = {
+  name: string;
+  description: string;
+  priority: string;
+  plannedStartDate: string;
+  plannedEndDate: string;
+  responsiblePerson: string;
+  responsibleUnit: string;
+};
+
+export type UpdateRiskMitigationPayload = {
+  name?: string;
+  description?: string;
+  priority?: string;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualStartDate?: string | null;
+  actualEndDate?: string | null;
+  status?: string;
+  progressPercentage?: number;
+  progressNotes?: string;
+};
+
+export type CreateRiskAssessmentPayload = {
+  riskName: string;
+  assetId: string;
+  riskCategoryId: string;
+  weaknessDescription: string;
+  treatDescription: string;
+  impactDescription: string;
+  inherentLikelihood: number;
+  inherentImpact: number;
+  inherentLikelihoodDescription: string;
+  inherentImpactDescription: string;
+  existingControls: string;
+  controlEffectiveness: string;
+  residualLikelihood: number;
+  residualImpact: number;
+  residualLikelihoodDescription: string;
+  residualImpactDescription: string;
+  treatmentOption: RiskTreatmentOption;
+  treatmentRationale: string;
+  riskPriorityRank: number;
+  order?: number;
+};
+
+export type UpdateRiskAssessmentPayload = {
+  riskName?: string;
+  assetId?: string;
+  riskCategoryId?: string;
+  weaknessDescription?: string;
+  treatDescription?: string;
+  impactDescription?: string;
+  inherentLikelihood?: number;
+  inherentImpact?: number;
+  inherentLikelihoodDescription?: string;
+  inherentImpactDescription?: string;
+  existingControls?: string;
+  controlEffectiveness?: string;
+  residualLikelihood?: number;
+  residualImpact?: number;
+  residualLikelihoodDescription?: string;
+  residualImpactDescription?: string;
+  treatmentOption?: RiskTreatmentOption;
+  treatmentOptionDescription?: string;
+  treatmentRationale?: string;
+  riskPriorityRank?: number;
+  order?: number;
 };
 
 @Injectable({
@@ -574,6 +745,196 @@ export class UserService {
     );
   }
 
+  // ===================== RISK ASSESSMENTS =====================
+
+  getRiskAssessmentItems(
+    unitKerjaId: string,
+    worksheetId: string,
+    params: RiskAssessmentListParams
+  ): Observable<RiskAssessmentListResponse> {
+    const headers = this.buildHeaders();
+    const httpParams = this.buildRiskAssessmentParams(params);
+
+    return this.http.get<RiskAssessmentListResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items`,
+      { headers, params: httpParams }
+    );
+  }
+
+  getRiskAssessmentItem(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string
+  ): Observable<{ message: string; data: RiskAssessmentItem }> {
+    const headers = this.buildHeaders();
+    return this.http.get<{ message: string; data: RiskAssessmentItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}`,
+      { headers }
+    );
+  }
+
+  getRiskMitigations(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    params: RiskMitigationListParams
+  ): Observable<RiskMitigationListResponse> {
+    const headers = this.buildHeaders();
+    const httpParams = this.buildRiskMitigationParams(params);
+    return this.http.get<RiskMitigationListResponse>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations`,
+      { headers, params: httpParams }
+    );
+  }
+
+  createRiskMitigation(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    payload: CreateRiskMitigationPayload
+  ): Observable<{ message: string; data: RiskMitigationItem }> {
+    const headers = this.buildHeaders();
+    return this.http.post<{ message: string; data: RiskMitigationItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations`,
+      payload,
+      { headers }
+    );
+  }
+
+  updateRiskMitigation(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    mitigationId: string,
+    payload: UpdateRiskMitigationPayload
+  ): Observable<{ message: string; data: RiskMitigationItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data: RiskMitigationItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations/${mitigationId}`,
+      payload,
+      { headers }
+    );
+  }
+
+  validateRiskMitigation(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    mitigationId: string,
+    payload: { validationNotes?: string }
+  ): Observable<{ message: string; data: RiskMitigationItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data: RiskMitigationItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations/${mitigationId}/validate`,
+      payload,
+      { headers }
+    );
+  }
+
+  rejectRiskMitigation(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    mitigationId: string,
+    payload: { validationNotes?: string }
+  ): Observable<{ message: string; data: RiskMitigationItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data: RiskMitigationItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations/${mitigationId}/reject`,
+      payload,
+      { headers }
+    );
+  }
+
+  deleteRiskMitigation(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    mitigationId: string
+  ): Observable<{ message: string }> {
+    const headers = this.buildHeaders();
+    return this.http.delete<{ message: string }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations/${mitigationId}`,
+      { headers }
+    );
+  }
+
+  createRiskAssessmentItem(
+    unitKerjaId: string,
+    worksheetId: string,
+    payload: CreateRiskAssessmentPayload
+  ): Observable<{ message: string; data: RiskAssessmentItem }> {
+    const headers = this.buildHeaders();
+    return this.http.post<{ message: string; data: RiskAssessmentItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items`,
+      payload,
+      { headers }
+    );
+  }
+
+  updateRiskAssessmentItem(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    payload: UpdateRiskAssessmentPayload
+  ): Observable<{ message: string; data: RiskAssessmentItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data: RiskAssessmentItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}`,
+      payload,
+      { headers }
+    );
+  }
+
+  deleteRiskAssessmentItem(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string
+  ): Observable<{ message: string }> {
+    const headers = this.buildHeaders();
+    return this.http.delete<{ message: string }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}`,
+      { headers }
+    );
+  }
+
+  submitRiskWorksheet(
+    unitKerjaId: string,
+    worksheetId: string
+  ): Observable<{ message: string; data?: RiskWorksheetItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data?: RiskWorksheetItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/submit`,
+      null,
+      { headers }
+    );
+  }
+
+  approveRiskWorksheet(
+    unitKerjaId: string,
+    worksheetId: string
+  ): Observable<{ message: string; data?: RiskWorksheetItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data?: RiskWorksheetItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/approve`,
+      null,
+      { headers }
+    );
+  }
+
+  rejectRiskWorksheet(
+    unitKerjaId: string,
+    worksheetId: string,
+    payload?: { rejectionReason?: string }
+  ): Observable<{ message: string; data?: RiskWorksheetItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data?: RiskWorksheetItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/reject`,
+      payload ?? null,
+      { headers }
+    );
+  }
+
   private buildHeaders(): HttpHeaders | undefined {
     const token =
       localStorage.getItem('accessToken') || localStorage.getItem('access_token');
@@ -654,6 +1015,18 @@ export class UserService {
     }
 
     return httpParams;
+  }
+
+  private buildRiskAssessmentParams(params: RiskAssessmentListParams): HttpParams {
+    return new HttpParams()
+      .set('page', String(params.page))
+      .set('limit', String(params.limit));
+  }
+
+  private buildRiskMitigationParams(params: RiskMitigationListParams): HttpParams {
+    return new HttpParams()
+      .set('page', String(params.page))
+      .set('limit', String(params.limit));
   }
 
   private buildAssetsParams(params: AssetListParams): HttpParams {

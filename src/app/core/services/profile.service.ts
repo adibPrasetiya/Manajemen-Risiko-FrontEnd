@@ -116,6 +116,7 @@ export interface GetMyProfileResponse {
     nomorHP?: string;
     isVerified: boolean;
     verifiedAt?: string;
+    passwordChangedAt?: string;
   };
 }
 

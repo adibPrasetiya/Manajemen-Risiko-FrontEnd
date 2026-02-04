@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -32,6 +32,16 @@ export class KonteksService {
   private baseUrl = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) {}
+
+  private buildHeaders(): HttpHeaders | undefined {
+    const token =
+      localStorage.getItem('accessToken') || localStorage.getItem('access_token');
+    if (!token) return undefined;
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
+  }
 
   // ===================== KONTEKS =====================
 
@@ -89,13 +99,14 @@ export class KonteksService {
     konteksId: string,
     params?: { page?: number; limit?: number }
   ): Observable<RiskCategoryListResponse> {
+    const headers = this.buildHeaders();
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', String(params.page));
     if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
 
     return this.http.get<RiskCategoryListResponse>(
       `${this.baseUrl}/konteks/${konteksId}/risk-categories`,
-      { params: httpParams, withCredentials: true }
+      { params: httpParams, withCredentials: true, headers }
     );
   }
 
@@ -136,13 +147,14 @@ export class KonteksService {
     categoryId: string,
     params?: { page?: number; limit?: number }
   ): Observable<LikelihoodScaleListResponse> {
+    const headers = this.buildHeaders();
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', String(params.page));
     if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
 
     return this.http.get<LikelihoodScaleListResponse>(
       `${this.baseUrl}/konteks/${konteksId}/risk-categories/${categoryId}/likelihood-scales`,
-      { params: httpParams, withCredentials: true }
+      { params: httpParams, withCredentials: true, headers }
     );
   }
 
@@ -190,13 +202,14 @@ export class KonteksService {
     categoryId: string,
     params?: { page?: number; limit?: number }
   ): Observable<ImpactScaleListResponse> {
+    const headers = this.buildHeaders();
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', String(params.page));
     if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
 
     return this.http.get<ImpactScaleListResponse>(
       `${this.baseUrl}/konteks/${konteksId}/risk-categories/${categoryId}/impact-scales`,
-      { params: httpParams, withCredentials: true }
+      { params: httpParams, withCredentials: true, headers }
     );
   }
 
@@ -242,13 +255,14 @@ export class KonteksService {
     konteksId: string,
     params?: { page?: number; limit?: number }
   ): Observable<RiskMatrixListResponse> {
+    const headers = this.buildHeaders();
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', String(params.page));
     if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
 
     return this.http.get<RiskMatrixListResponse>(
       `${this.baseUrl}/konteks/${konteksId}/risk-matrices`,
-      { params: httpParams, withCredentials: true }
+      { params: httpParams, withCredentials: true, headers }
     );
   }
 

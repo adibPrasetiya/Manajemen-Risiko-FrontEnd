@@ -24,23 +24,33 @@
       </div>
     </div>
 
-    <div class="stat-card stat-active">
+    <div class="stat-card stat-draft">
       <div class="stat-icon">
         <i class="fa-solid fa-circle-check"></i>
       </div>
       <div class="stat-content">
-        <div class="stat-value">{{ totalActive }}</div>
-        <div class="stat-label">Active</div>
+        <div class="stat-value">{{ totalDraft }}</div>
+        <div class="stat-label">Draft</div>
       </div>
     </div>
 
-    <div class="stat-card stat-inactive">
+    <div class="stat-card stat-submitted">
       <div class="stat-icon">
         <i class="fa-solid fa-circle-xmark"></i>
       </div>
       <div class="stat-content">
-        <div class="stat-value">{{ totalInactive }}</div>
-        <div class="stat-label">Inactive</div>
+        <div class="stat-value">{{ totalSubmitted }}</div>
+        <div class="stat-label">Submitted</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-approved">
+      <div class="stat-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalApproved }}</div>
+        <div class="stat-label">Approved</div>
       </div>
     </div>
 
@@ -52,6 +62,18 @@
         <div class="stat-value">{{ totalArchived }}</div>
         <div class="stat-label">Archived</div>
       </div>
+    </div>
+  </div>
+
+  <div class="unit-filter-row" *ngIf="isKomite">
+    <div class="unit-filter-label">Filter Unit Kerja</div>
+    <div class="search-field unit-filter">
+      <i class="fa-solid fa-building-user search-icon"></i>
+      <select [(ngModel)]="selectedUnitKerjaId" (ngModelChange)="onUnitKerjaChange()">
+        <option *ngFor="let u of unitKerjaOptions" [value]="u.id">
+          {{ u.name }}{{ u.code ? ' (' + u.code + ')' : '' }}
+        </option>
+      </select>
     </div>
   </div>
 
@@ -76,8 +98,9 @@
             <i class="fa-solid fa-circle-dot search-icon"></i>
             <select [(ngModel)]="fStatus" (ngModelChange)="applySearch()">
               <option value="ALL">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
+              <option value="DRAFT">Draft</option>
+              <option value="SUBMITTED">Submitted</option>
+              <option value="APPROVED">Approved</option>
               <option value="ARCHIVED">Archived</option>
             </select>
           </div>
@@ -136,28 +159,17 @@
             <td class="muted">{{ item.createdAt | date: 'd MMM y, HH.mm' }}</td>
 
             <td class="td-actions">
+              <a
+                class="icon-btn"
+                [routerLink]="['/settings/risk-register']"
+                [queryParams]="{ worksheetId: item.id }"
+                title="Lihat"
+              >
+                <i class="fa-solid fa-eye"></i>
+              </a>
+
               <button type="button" class="icon-btn" (click)="openEdit(item)" title="Edit">
                 <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-
-              <button
-                *ngIf="item.status === 'ACTIVE'"
-                type="button"
-                class="icon-btn"
-                (click)="setInactive(item)"
-                title="Nonaktifkan"
-              >
-                <i class="fa-solid fa-toggle-off"></i>
-              </button>
-
-              <button
-                *ngIf="item.status === 'INACTIVE'"
-                type="button"
-                class="icon-btn"
-                (click)="setActive(item)"
-                title="Aktifkan"
-              >
-                <i class="fa-solid fa-toggle-on"></i>
               </button>
 
               <button
@@ -269,8 +281,9 @@
         <div class="field">
           <label>Status</label>
           <select [(ngModel)]="createModel.status" name="createStatus">
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="DRAFT">Draft</option>
+            <option value="SUBMITTED">Submitted</option>
+            <option value="APPROVED">Approved</option>
           </select>
         </div>
       </div>

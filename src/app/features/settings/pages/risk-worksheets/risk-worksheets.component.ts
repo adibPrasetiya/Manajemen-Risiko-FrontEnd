@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { KonteksService } from '../../../../core/services/konteks.service';
 import { ProfileService } from '../../../../core/services/profile.service';
 import { UiService } from '../../../../core/services/ui.service';
@@ -10,6 +11,7 @@ import {
   RiskWorksheetItem,
   RiskWorksheetListParams,
   RiskWorksheetStatus,
+  UnitKerjaItem,
   UpdateRiskWorksheetPayload,
   UserService,
 } from '../../../../core/services/user.service';
@@ -26,7 +28,7 @@ type WorksheetFormErrors = {
 @Component({
   selector: 'app-risk-worksheets',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './risk-worksheets.component.html',
   styleUrl: './risk-worksheets.component.scss',
 })
@@ -37,6 +39,10 @@ export class RiskWorksheetsComponent implements OnInit {
   unitKerjaId = '';
   unitKerjaName = '';
   unitKerjaCode = '';
+  roles: string[] = [];
+  isKomite = false;
+  unitKerjaOptions: UnitKerjaItem[] = [];
+  selectedUnitKerjaId = '';
 
   items: RiskWorksheetItem[] = [];
   allItems: RiskWorksheetItem[] = [];
@@ -48,8 +54,9 @@ export class RiskWorksheetsComponent implements OnInit {
   fStatus: 'ALL' | RiskWorksheetStatus = 'ALL';
 
   totalWorksheets = 0;
-  totalActive = 0;
-  totalInactive = 0;
+  totalDraft = 0;
+  totalSubmitted = 0;
+  totalApproved = 0;
   totalArchived = 0;
 
   page = 1;
@@ -67,7 +74,7 @@ export class RiskWorksheetsComponent implements OnInit {
     konteksId: '',
     name: '',
     description: '',
-    status: 'ACTIVE',
+    status: 'DRAFT',
   };
 
   showEditModal = false;
@@ -85,7 +92,7 @@ export class RiskWorksheetsComponent implements OnInit {
     konteksLabel: '',
     name: '',
     description: '',
-    status: 'INACTIVE',
+    status: 'DRAFT',
   };
 
   showDeleteModal = false;
@@ -110,11 +117,13 @@ export class RiskWorksheetsComponent implements OnInit {
     this.profileService.getMyProfile().subscribe({
       next: (res) => {
         const unitKerja = res?.data?.unitKerja;
+        this.roles = res?.data?.roles ?? [];
+        this.isKomite = this.roles.includes('KOMITE_PUSAT');
         this.unitKerjaId = unitKerja?.id || '';
         this.unitKerjaName = unitKerja?.name || '';
         this.unitKerjaCode = unitKerja?.code || '';
 
-        if (!this.unitKerjaId) {
+        if (!this.unitKerjaId && !this.isKomite) {
           this.loading = false;
           this.errorMsg = 'Unit kerja tidak ditemukan pada profil.';
           this.ui.error(this.errorMsg);
@@ -122,7 +131,11 @@ export class RiskWorksheetsComponent implements OnInit {
         }
 
         this.fetchKonteksOptions();
-        this.fetchWorksheets(true);
+        if (this.isKomite) {
+          this.fetchUnitKerjaOptions();
+        } else {
+          this.fetchWorksheets(true);
+        }
       },
       error: (err) => {
         this.loading = false;
@@ -177,13 +190,14 @@ export class RiskWorksheetsComponent implements OnInit {
   private refreshStatsClient(list: RiskWorksheetItem[]): void {
     const total = this.pagination?.totalItems ?? list.length;
     this.totalWorksheets = total;
-    this.totalActive = list.filter((x) => x.status === 'ACTIVE').length;
-    this.totalInactive = list.filter((x) => x.status === 'INACTIVE').length;
+    this.totalDraft = list.filter((x) => x.status === 'DRAFT').length;
+    this.totalSubmitted = list.filter((x) => x.status === 'SUBMITTED').length;
+    this.totalApproved = list.filter((x) => x.status === 'APPROVED').length;
     this.totalArchived = list.filter((x) => x.status === 'ARCHIVED').length;
   }
 
   private fetchKonteksOptions(): void {
-    this.konteksService.getKonteksList({ page: 1, limit: 200 }).subscribe({
+    this.konteksService.getKonteksList({ page: 1, limit: 100 }).subscribe({
       next: (res) => {
         this.konteksOptions = res.data ?? [];
       },
@@ -191,6 +205,59 @@ export class RiskWorksheetsComponent implements OnInit {
         this.konteksOptions = [];
       },
     });
+  }
+
+  private fetchUnitKerjaOptions(): void {
+    this.userService.getUnitKerjaList({ page: 1, limit: 100 }).subscribe({
+      next: (res) => {
+        this.unitKerjaOptions = res.data ?? [];
+        if (!this.selectedUnitKerjaId) {
+          const preferred = this.unitKerjaId
+            ? this.unitKerjaOptions.find((u) => u.id === this.unitKerjaId)?.id
+            : undefined;
+          this.selectedUnitKerjaId = preferred || this.unitKerjaOptions[0]?.id || '';
+        }
+        this.setActiveUnitKerja(this.selectedUnitKerjaId);
+      },
+      error: (err) => {
+        this.unitKerjaOptions = [];
+        if (err?.status === 401) {
+          this.errorMsg =
+            'HTTP 401: Token tidak ada/invalid. Pastikan accessToken tersedia di localStorage.';
+          this.ui.error(this.errorMsg);
+          this.loading = false;
+          return;
+        }
+        this.errorMsg =
+          extractErrorMessage(err) ||
+          `Gagal fetch unit kerja (HTTP ${err?.status || 'unknown'}).`;
+        this.ui.error(this.errorMsg);
+        this.loading = false;
+      },
+    });
+  }
+
+  onUnitKerjaChange(): void {
+    this.setActiveUnitKerja(this.selectedUnitKerjaId);
+  }
+
+  private setActiveUnitKerja(unitKerjaId: string): void {
+    if (!unitKerjaId) {
+      this.unitKerjaId = '';
+      this.unitKerjaName = '';
+      this.unitKerjaCode = '';
+      this.items = [];
+      this.allItems = [];
+      this.pagination = null;
+      this.loading = false;
+      return;
+    }
+
+    const picked = this.unitKerjaOptions.find((u) => u.id === unitKerjaId);
+    this.unitKerjaId = picked?.id || unitKerjaId;
+    this.unitKerjaName = picked?.name || this.unitKerjaName;
+    this.unitKerjaCode = picked?.code || '';
+    this.fetchWorksheets(true);
   }
 
   fetchWorksheets(resetPage: boolean): void {
@@ -299,7 +366,7 @@ export class RiskWorksheetsComponent implements OnInit {
       konteksId: '',
       name: '',
       description: '',
-      status: 'ACTIVE',
+      status: 'DRAFT',
     };
     this.showCreateModal = true;
   }
@@ -361,7 +428,7 @@ export class RiskWorksheetsComponent implements OnInit {
       konteksLabel,
       name: item.name ?? '',
       description: item.description ?? '',
-      status: item.status ?? 'INACTIVE',
+      status: item.status ?? 'DRAFT',
     };
     this.showEditModal = true;
   }
@@ -404,46 +471,6 @@ export class RiskWorksheetsComponent implements OnInit {
   }
 
   // ===================== ACTIONS =====================
-  setActive(item: RiskWorksheetItem): void {
-    if (item.status !== 'INACTIVE') return;
-    this.loading = true;
-
-    this.userService.activateRiskWorksheet(this.unitKerjaId, item.id).subscribe({
-      next: () => {
-        this.loading = false;
-        this.allItems = this.allItems.map((x) =>
-          x.id === item.id ? { ...x, status: 'ACTIVE' } : x
-        );
-        this.renderList();
-        this.ui.success('Kertas kerja risiko berhasil diaktifkan.');
-      },
-      error: (e) => {
-        this.loading = false;
-        this.ui.error(extractErrorMessage(e) || 'Gagal mengaktifkan kertas kerja risiko.');
-      },
-    });
-  }
-
-  setInactive(item: RiskWorksheetItem): void {
-    if (item.status !== 'ACTIVE') return;
-    this.loading = true;
-
-    this.userService.deactivateRiskWorksheet(this.unitKerjaId, item.id).subscribe({
-      next: () => {
-        this.loading = false;
-        this.allItems = this.allItems.map((x) =>
-          x.id === item.id ? { ...x, status: 'INACTIVE' } : x
-        );
-        this.renderList();
-        this.ui.success('Kertas kerja risiko berhasil dinonaktifkan.');
-      },
-      error: (e) => {
-        this.loading = false;
-        this.ui.error(extractErrorMessage(e) || 'Gagal menonaktifkan kertas kerja risiko.');
-      },
-    });
-  }
-
   openDelete(item: RiskWorksheetItem): void {
     this.deleteError = '';
     this.deleteTarget = item;
@@ -482,14 +509,16 @@ export class RiskWorksheetsComponent implements OnInit {
   }
 
   getStatusLabel(status: RiskWorksheetStatus): string {
-    if (status === 'ACTIVE') return 'Active';
-    if (status === 'INACTIVE') return 'Inactive';
+    if (status === 'DRAFT') return 'Draft';
+    if (status === 'SUBMITTED') return 'Submitted';
+    if (status === 'APPROVED') return 'Approved';
     return 'Archived';
   }
 
   getStatusClass(status: RiskWorksheetStatus): string {
-    if (status === 'ACTIVE') return 'green';
-    if (status === 'INACTIVE') return 'gray';
+    if (status === 'DRAFT') return 'draft';
+    if (status === 'SUBMITTED') return 'submitted';
+    if (status === 'APPROVED') return 'approved';
     return 'archived';
   }
 }

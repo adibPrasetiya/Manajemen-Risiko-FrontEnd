@@ -106,6 +106,7 @@ export class ProfileComponent implements OnInit {
   });
   passError = '';
   savingPassword = false;
+  readonly passwordExpiryDays = 30;
 
   constructor(
     private fb: FormBuilder,
@@ -571,6 +572,30 @@ export class ProfileComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  formatDateShort(date: Date | null): string {
+    if (!date) return '-';
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
+  get passwordChangedAtDate(): Date | null {
+    const raw = this.profile?.passwordChangedAt;
+    if (!raw) return null;
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  get passwordNextChangeDate(): Date | null {
+    const changed = this.passwordChangedAtDate;
+    if (!changed) return null;
+    const next = new Date(changed);
+    next.setDate(next.getDate() + this.passwordExpiryDays);
+    return next;
   }
 
   trackById(_: number, item: MyProfileRequest): string {

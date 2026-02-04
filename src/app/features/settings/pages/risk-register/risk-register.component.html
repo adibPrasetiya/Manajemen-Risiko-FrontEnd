@@ -1,0 +1,816 @@
+<div class="risk-register-page">
+  <div class="info-card">
+    <div class="info-header">
+      <div class="page-title">
+        <div class="title-main">Kertas Kerja</div>
+        <div class="title-sub muted" *ngIf="konteksName">
+          Konteks Risiko {{ konteksName }}
+          <span *ngIf="periodStart && periodEnd">({{ periodStart }} - {{ periodEnd }})</span>
+        </div>
+        <div class="title-sub muted" *ngIf="unitKerjaName">
+          {{ unitKerjaName }} <span *ngIf="unitKerjaCode">({{ unitKerjaCode }})</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button
+          *ngIf="isPengelola && selectedWorksheet?.status === 'DRAFT'"
+          class="btn primary"
+          type="button"
+          (click)="submitWorksheet()"
+          [disabled]="submittingWorksheet || !selectedWorksheetId"
+          title="Submit worksheet"
+        >
+          <i class="fa-solid fa-paper-plane"></i>
+          Submit
+        </button>
+        <button
+          *ngIf="isKomite"
+          class="btn primary"
+          type="button"
+          (click)="approveWorksheet()"
+          [disabled]="approvingWorksheet || selectedWorksheet?.status !== 'SUBMITTED'"
+          title="Approve worksheet"
+        >
+          <i class="fa-solid fa-circle-check"></i>
+          Approve
+        </button>
+        <button
+          *ngIf="isKomite"
+          class="btn danger"
+          type="button"
+          (click)="openReject()"
+          [disabled]="rejectingWorksheet || selectedWorksheet?.status !== 'SUBMITTED'"
+          title="Reject worksheet"
+        >
+          <i class="fa-solid fa-circle-xmark"></i>
+          Reject
+        </button>
+      </div>
+    </div>
+
+    <div class="info-body">
+      <div class="info-title full">INFORMASI DASAR</div>
+      <div class="info-col">
+        <div class="info-item">
+          <span class="label">Nama:</span>
+          <span class="value">{{ selectedWorksheet?.name || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Owner:</span>
+          <span class="value">
+            {{ selectedWorksheet?.ownerName || selectedWorksheet?.owner?.name || selectedWorksheet?.ownerId || '-' }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="label">Konteks:</span>
+          <span class="value">{{ selectedWorksheet?.konteks?.name || '-' }}</span>
+        </div>
+        <div class="info-item" *ngIf="periodStart || periodEnd">
+          <span class="label">Periode:</span>
+          <span class="value">
+            {{ periodStart && periodEnd ? (periodStart + ' - ' + periodEnd) : '-' }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="label">Status:</span>
+          <span class="status-pill" [ngClass]="selectedWorksheet?.status?.toLowerCase()">
+            {{ selectedWorksheet?.status || '-' }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="label">Risk Categories:</span>
+          <span class="value">{{ categoryOptions.length }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Total Risiko:</span>
+          <span class="value">{{ totalRisiko }}</span>
+        </div>
+      </div>
+
+      <div class="info-col">
+        <div class="info-item">
+          <span class="label">Risk Appetite:</span>
+          <span class="value">
+            <span
+              class="appetite-pill"
+              [ngClass]="getRiskAppetiteClass(selectedWorksheet?.konteks?.riskAppetiteLevel)"
+            >
+              {{ selectedWorksheet?.konteks?.riskAppetiteLevel || '-' }}
+            </span>
+          </span>
+          <span class="value muted" *ngIf="selectedWorksheet?.konteks?.riskAppetiteDescription">
+            {{ selectedWorksheet?.konteks?.riskAppetiteDescription }}
+          </span>
+        </div>
+        <div class="info-item" *ngIf="selectedWorksheet?.description">
+          <span class="label">Deskripsi:</span>
+          <span class="value muted">{{ selectedWorksheet?.description }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Created At:</span>
+          <span class="value">
+            {{ selectedWorksheet?.createdAt ? (selectedWorksheet?.createdAt | date: 'd MMM y, HH.mm') : '-' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="after-info-actions" *ngIf="!isKomite">
+    <button
+      class="btn primary"
+      type="button"
+      [routerLink]="['/settings/risk-register/create']"
+      [queryParams]="{ worksheetId: selectedWorksheetId, konteksId: konteksId }"
+      [disabled]="!selectedWorksheetId"
+    >
+      <i class="fa-solid fa-plus"></i>
+      Tambah Risiko
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card highlight">
+      <div class="stat-icon">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalRisiko }}</div>
+        <div class="stat-label">Total Risiko</div>
+      </div>
+    </div>
+
+    <div class="stat-card danger">
+      <div class="stat-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalHighResidual }}</div>
+        <div class="stat-label">High Residual Risk</div>
+      </div>
+    </div>
+
+    <div class="stat-card danger">
+      <div class="stat-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalCriticalResidual }}</div>
+        <div class="stat-label">Critical Residual Risk</div>
+      </div>
+    </div>
+
+    <div class="stat-card warning">
+      <div class="stat-icon">
+        <i class="fa-solid fa-shield"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalMitigated }}</div>
+        <div class="stat-label">Mitigated</div>
+      </div>
+    </div>
+
+    <div class="stat-card success">
+      <div class="stat-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalAccepted }}</div>
+        <div class="stat-label">Accepted</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="head-left">
+        <span class="head-ico"><i class="fa-solid fa-clipboard-check"></i></span>
+        <span class="head-title">Daftar Risiko</span>
+      </div>
+
+      <div class="filters-primary">
+        <div class="filters-left">
+          <div class="filter-field">
+            <select [(ngModel)]="fAssetId" (ngModelChange)="applySearch()">
+              <option value="ALL">Semua Aset</option>
+              <option *ngFor="let a of assets" [value]="a.id">{{ a.name }}</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <select [(ngModel)]="fCategoryId" (ngModelChange)="applySearch()">
+              <option value="ALL">Semua Kategori Risiko</option>
+              <option *ngFor="let c of categoryOptions" [value]="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <select [(ngModel)]="fTreatment" (ngModelChange)="applySearch()">
+              <option value="ALL">Semua Status Risiko</option>
+              <option value="MITIGATE">Mitigate</option>
+              <option value="ACCEPT">Accepted</option>
+              <option value="TRANSFER">Transfer</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <select [(ngModel)]="fInherentLevel" (ngModelChange)="applySearch()">
+              <option value="ALL">Semua Level Risiko (Inherent)</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <select [(ngModel)]="fResidualLevel" (ngModelChange)="applySearch()">
+              <option value="ALL">Semua Level Risiko (Residual)</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filters-right">
+          <div class="search-field">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+              [(ngModel)]="q"
+              placeholder="Search"
+              (keyup.enter)="applySearch()"
+            />
+          </div>
+          <button class="btn primary" type="button" (click)="applySearch()" [disabled]="loading">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Search
+          </button>
+          <button class="btn" type="button" (click)="resetFilters()" [disabled]="loading">
+            <i class="fa-solid fa-rotate-right"></i>
+            Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint" *ngIf="loading">Loading...</div>
+    <div class="hint warn" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+    <div class="groups" *ngIf="groupedItems.length > 0">
+      <div class="group" *ngFor="let group of groupedItems">
+        <div class="group-head">
+          <div class="group-title">
+            ASET: {{ group.assetName }}
+            <span class="group-sub" *ngIf="group.assetCategory">
+              (Kategori: {{ group.assetCategory }})
+            </span>
+          </div>
+          <div class="group-meta">{{ group.items.length }} risiko</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="risk-table">
+            <thead>
+              <tr>
+                <th rowspan="2">DESKRIPSI RISIKO</th>
+                <th rowspan="2">KATEGORI RISIKO (KODE RISIKO)</th>
+                <th rowspan="2">KELEMAHAN</th>
+                <th rowspan="2">ANCAMAN</th>
+                <th rowspan="2">DAMPAK</th>
+                <th class="th-group" colspan="3">INHERENT</th>
+                <th rowspan="2">KONTROL YANG ADA</th>
+                <th rowspan="2">EFEKTIVITAS KONTROL</th>
+                <th class="th-group" colspan="3">RESIDUAL</th>
+                <th rowspan="2">PERLAKUAN</th>
+                <th rowspan="2">ALASAN PERLAKUAN</th>
+                <th rowspan="2">PRIORITAS</th>
+                <th class="th-actions" rowspan="2">AKSI</th>
+              </tr>
+              <tr>
+                <th class="th-sub">LIKELIHOOD</th>
+                <th class="th-sub">IMPACT</th>
+                <th class="th-sub">NILAI RISIKO</th>
+                <th class="th-sub">LIKELIHOOD</th>
+                <th class="th-sub">IMPACT</th>
+                <th class="th-sub">NILAI RISIKO</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let item of group.items">
+                <td>
+                  <div class="cell-stack">
+                    <div class="primary">{{ item.riskName }}</div>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="cell-stack">
+                    <div class="primary">
+                      {{ item.riskCategoryName || item.riskCategory?.name || '-' }}
+                    </div>
+                    <div class="sub muted">{{ item.riskCode || '-' }}</div>
+                  </div>
+                </td>
+
+                <td class="cell-text">{{ item.weaknessDescription || '-' }}</td>
+
+                <td class="cell-text">{{ item.treatDescription || '-' }}</td>
+
+                <td class="cell-text">{{ item.impactDescription || '-' }}</td>
+
+                <td class="cell-wide">
+                  <div class="cell-stack">
+                    <span
+                      class="score-pill"
+                      [ngClass]="getScoreClass(item.inherentLikelihood)"
+                    >
+                      Skor: {{ item.inherentLikelihood ?? '-' }}
+                    </span>
+                    <div class="cell-desc">
+                      {{ item.inherentLikelihoodDescription || '-' }}
+                    </div>
+                  </div>
+                </td>
+
+                <td class="cell-wide">
+                  <div class="cell-stack">
+                    <span
+                      class="score-pill"
+                      [ngClass]="getScoreClass(item.inherentImpact)"
+                    >
+                      Skor: {{ item.inherentImpact ?? '-' }}
+                    </span>
+                    <div class="cell-desc">
+                      {{ item.inherentImpactDescription || '-' }}
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="badge" [ngClass]="getRiskLevelClass(item.inherentRiskLevel)">
+                    {{ formatRiskLevel(item.inherentRiskLevel) }}
+                  </span>
+                </td>
+
+                <td class="cell-text">{{ item.existingControls || '-' }}</td>
+
+                <td>
+                  <span
+                    class="effectiveness-pill"
+                    [ngClass]="getEffectivenessClass(item.controlEffectiveness)"
+                  >
+                    {{ item.controlEffectiveness || '-' }}
+                  </span>
+                </td>
+
+                <td class="cell-wide">
+                  <div class="cell-stack">
+                    <span
+                      class="score-pill"
+                      [ngClass]="getScoreClass(item.residualLikelihood)"
+                    >
+                      Skor: {{ item.residualLikelihood ?? '-' }}
+                    </span>
+                    <div class="cell-desc">
+                      {{ item.residualLikelihoodDescription || '-' }}
+                    </div>
+                  </div>
+                </td>
+
+                <td class="cell-wide">
+                  <div class="cell-stack">
+                    <span
+                      class="score-pill"
+                      [ngClass]="getScoreClass(item.residualImpact)"
+                    >
+                      Skor: {{ item.residualImpact ?? '-' }}
+                    </span>
+                    <div class="cell-desc">
+                      {{ item.residualImpactDescription || '-' }}
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="badge" [ngClass]="getRiskLevelClass(item.residualRiskLevel)">
+                    {{ formatRiskLevel(item.residualRiskLevel) }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="status-pill" [ngClass]="getTreatmentClass(item.treatmentOption)">
+                    {{ formatTreatment(item.treatmentOption) }}
+                  </span>
+                </td>
+
+                <td class="cell-text">{{ item.treatmentRationale || '-' }}</td>
+
+                <td class="muted">{{ item.riskPriorityRank ?? '-' }}</td>
+
+                <td class="td-actions">
+                  <button
+                    *ngIf="!isKomite"
+                    type="button"
+                    class="icon-btn"
+                    (click)="openEdit(item)"
+                    title="Edit"
+                  >
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <a
+                    *ngIf="isKomite"
+                    class="icon-btn"
+                    [routerLink]="['/settings/risk-mitigate']"
+                    [queryParams]="{ riskId: item.id, worksheetId: selectedWorksheetId }"
+                    title="View"
+                  >
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <a
+                    *ngIf="!isKomite"
+                    class="icon-btn"
+                    [routerLink]="['/settings/risk-mitigate']"
+                    [queryParams]="{ riskId: item.id, worksheetId: selectedWorksheetId }"
+                    title="Mitigate"
+                  >
+                    <i class="fa-solid fa-plus"></i>
+                  </a>
+                  <button
+                    *ngIf="!isKomite"
+                    type="button"
+                    class="icon-btn danger"
+                    (click)="openDelete(item)"
+                    title="Hapus"
+                  >
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty" *ngIf="!loading && groupedItems.length === 0">
+      Data risiko tidak ditemukan.
+    </div>
+
+    <div class="pagination" *ngIf="pagination && pagination.totalPages > 0">
+      <div class="pagination-info">
+        <span class="showing-text">
+          Showing <strong>{{ getShowingStart() }}</strong> - <strong>{{ getShowingEnd() }}</strong>
+          of <strong>{{ pagination.totalItems }}</strong> data
+        </span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="per-page">
+          <label>Rows:</label>
+          <select [(ngModel)]="limit" (ngModelChange)="onLimitChange()">
+            <option *ngFor="let opt of limitOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+
+        <div class="page-nav">
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="prevPage()"
+            [disabled]="loading || !pagination.hasPrevPage"
+            title="Previous page"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <div class="page-numbers">
+            <ng-container *ngFor="let p of getPageNumbers()">
+              <span class="ellipsis" *ngIf="p === -1">...</span>
+              <button
+                *ngIf="p !== -1"
+                class="page-btn"
+                type="button"
+                [class.active]="p === pagination.page"
+                (click)="goToPage(p)"
+                [disabled]="loading"
+              >
+                {{ p }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button
+            class="nav-btn"
+            type="button"
+            (click)="nextPage()"
+            [disabled]="loading || !pagination.hasNextPage"
+            title="Next page"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: REJECT ===================== -->
+<div class="modal-backdrop" *ngIf="showRejectModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Tolak Kertas Kerja Risiko</h3>
+      <button type="button" class="icon-close" (click)="closeReject()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="field">
+        <label>Alasan Penolakan</label>
+        <textarea [(ngModel)]="rejectReason" rows="4"></textarea>
+        <small class="error" *ngIf="rejectError">{{ rejectError }}</small>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeReject()" [disabled]="rejectingWorksheet">
+          Batal
+        </button>
+        <button type="button" class="btn danger" (click)="confirmReject()" [disabled]="rejectingWorksheet">
+          Tolak
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: DELETE ===================== -->
+<div class="modal-backdrop" *ngIf="showDeleteModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Hapus Risiko</h3>
+      <button type="button" class="icon-close" (click)="closeDelete()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="confirm">
+        Yakin ingin menghapus risiko:
+        <b>{{ deleteTarget?.riskName }}</b>?
+      </p>
+
+      <small class="error" *ngIf="deleteError">{{ deleteError }}</small>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeDelete()" [disabled]="loading">
+          Batal
+        </button>
+        <button type="button" class="btn danger" (click)="confirmDelete()" [disabled]="loading">
+          Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: EDIT ===================== -->
+<div class="modal-backdrop" *ngIf="showEditModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Ubah Risiko</h3>
+      <button type="button" class="icon-close" (click)="closeEdit()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="edit-stepper">
+        <div
+          class="step"
+          [class.active]="editStep === 1"
+          [class.done]="editStep > 1"
+          (click)="editGoToStep(1)"
+        >
+          <div class="dot">1</div>
+          <div class="label">Informasi Halaman</div>
+        </div>
+        <div class="line" [class.done]="editStep > 1"></div>
+        <div
+          class="step"
+          [class.active]="editStep === 2"
+          [class.done]="editStep > 2"
+          (click)="editGoToStep(2)"
+        >
+          <div class="dot">2</div>
+          <div class="label">Inherent Risk</div>
+        </div>
+        <div class="line" [class.done]="editStep > 2"></div>
+        <div class="step" [class.active]="editStep === 3" (click)="editGoToStep(3)">
+          <div class="dot">3</div>
+          <div class="label">Residual Risk</div>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="edit-step" *ngIf="editStep === 1">
+        <div class="edit-card-grid">
+          <div class="edit-card">
+            <div class="card-head">Informasi Umum</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Nama Risiko</label>
+                <input [(ngModel)]="editModel.riskName" />
+              </div>
+              <div class="field">
+                <label>Kategori Risiko</label>
+                <select [(ngModel)]="editModel.riskCategoryId" (ngModelChange)="onEditCategoryChange()">
+                  <option value="">Pilih kategori</option>
+                  <option *ngFor="let c of categoryOptions" [value]="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Asset</label>
+                <select [(ngModel)]="editModel.assetId" disabled>
+                  <option value="">Pilih asset</option>
+                  <option *ngFor="let a of assets" [value]="a.id">{{ a.name }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="edit-card" [class.locked]="!isEditStep1Valid">
+            <div class="card-head">Deskripsi Risiko</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Deskripsi Kelemahan</label>
+                <textarea [(ngModel)]="editModel.weaknessDescription"></textarea>
+              </div>
+              <div class="field">
+                <label>Deskripsi Ancaman</label>
+                <textarea [(ngModel)]="editModel.treatDescription"></textarea>
+              </div>
+              <div class="field">
+                <label>Deskripsi Dampak</label>
+                <textarea [(ngModel)]="editModel.impactDescription"></textarea>
+              </div>
+            </div>
+            <div class="card-overlay" *ngIf="!isEditStep1Valid">
+              Lengkapi Informasi Umum terlebih dahulu.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn primary" (click)="editNext()" [disabled]="!isEditStep1Valid">
+            Selanjutnya
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="edit-step" *ngIf="editStep === 2">
+        <div class="edit-card-grid">
+          <div class="edit-card">
+            <div class="card-head">Inherent Value</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Seberapa sering terjadi</label>
+                <select [(ngModel)]="editModel.inherentLikelihoodId" (ngModelChange)="onEditInherentLikelihoodChange()">
+                  <option value="">Pilih level</option>
+                  <option *ngFor="let l of likelihoodScales" [value]="l.id">{{ l.description }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Deskripsi Inherent</label>
+                <textarea [(ngModel)]="editModel.inherentLikelihoodDescription"></textarea>
+              </div>
+              <div class="field">
+                <label>Seberapa Besar Dampak</label>
+                <select [(ngModel)]="editModel.inherentImpactId" (ngModelChange)="onEditInherentImpactChange()">
+                  <option value="">Pilih level</option>
+                  <option *ngFor="let i of impactScales" [value]="i.id">{{ i.description }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Deskripsi Dampak</label>
+                <textarea [(ngModel)]="editModel.inherentImpactDescription"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="edit-card" [class.locked]="!isEditStep2Valid">
+            <div class="card-head">Inherent Kontrol</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Deskripsi Kontrol yang Sudah Ada</label>
+                <textarea [(ngModel)]="editModel.existingControls"></textarea>
+              </div>
+              <div class="field">
+                <label>Efektivitas Kontrol</label>
+                <select [(ngModel)]="editModel.controlEffectiveness">
+                  <option value="">Pilih efektivitas</option>
+                  <option value="EFFECTIVE">EFFECTIVE</option>
+                  <option value="PARTIALLY_EFFECTIVE">PARTIALLY_EFFECTIVE</option>
+                  <option value="INEFFECTIVE">INEFFECTIVE</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-overlay" *ngIf="!isEditStep2Valid">
+              Lengkapi Inherent Value terlebih dahulu.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn secondary" (click)="editPrev()">Sebelumnya</button>
+          <button type="button" class="btn primary" (click)="editNext()" [disabled]="!isEditStep2Valid">
+            Selanjutnya
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="edit-step" *ngIf="editStep === 3">
+        <div class="edit-card-grid three">
+          <div class="edit-card">
+            <div class="card-head">Residual Value</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Seberapa sering terjadi setelah kontrol ditangani</label>
+                <select [(ngModel)]="editModel.residualLikelihoodId" (ngModelChange)="onEditResidualLikelihoodChange()">
+                  <option value="">Pilih level</option>
+                  <option *ngFor="let l of likelihoodScales" [value]="l.id">{{ l.description }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Deskripsi</label>
+                <textarea [(ngModel)]="editModel.residualLikelihoodDescription"></textarea>
+              </div>
+              <div class="field">
+                <label>Seberapa besar dampak setelah kontrol ditangani</label>
+                <select [(ngModel)]="editModel.residualImpactId" (ngModelChange)="onEditResidualImpactChange()">
+                  <option value="">Pilih level</option>
+                  <option *ngFor="let i of impactScales" [value]="i.id">{{ i.description }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Deskripsi</label>
+                <textarea [(ngModel)]="editModel.residualImpactDescription"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="edit-card" [class.locked]="!isEditStep3Valid">
+            <div class="card-head">Perlakuan</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Perlakuan</label>
+                <select [(ngModel)]="editModel.treatmentOption">
+                  <option value="">Pilih perlakuan</option>
+                  <option value="MITIGATE">MITIGATE</option>
+                  <option value="ACCEPT">ACCEPT</option>
+                  <option value="TRANSFER">TRANSFER</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Alasan perlakuan</label>
+                <textarea [(ngModel)]="editModel.treatmentRationale"></textarea>
+              </div>
+            </div>
+            <div class="card-overlay" *ngIf="!isEditStep3Valid">
+              Lengkapi Residual Value terlebih dahulu.
+            </div>
+          </div>
+
+          <div class="edit-card" [class.locked]="!isEditStep3Valid">
+            <div class="card-head">Additional Informasi</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Prioritas Risiko</label>
+                <input type="number" [(ngModel)]="editModel.riskPriorityRank" />
+              </div>
+              <div class="field">
+                <label>Order</label>
+                <input type="number" [(ngModel)]="editModel.order" />
+              </div>
+            </div>
+            <div class="card-overlay" *ngIf="!isEditStep3Valid">
+              Lengkapi Perlakuan terlebih dahulu.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn secondary" (click)="editPrev()">Sebelumnya</button>
+          <button type="button" class="btn primary" (click)="saveEdit()" [disabled]="loading">
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
