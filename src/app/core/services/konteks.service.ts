@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   KonteksDetailResponse,
   KonteksListResponse,
+  KonteksStatus,
   CreateKonteksPayload,
   UpdateKonteksPayload,
   RiskCategoryListResponse,
@@ -55,11 +56,14 @@ export class KonteksService {
     page?: number;
     limit?: number;
     isActive?: boolean;
+    status?: KonteksStatus;
   }): Observable<KonteksListResponse> {
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', String(params.page));
     if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
-    if (typeof params?.isActive === 'boolean') {
+    if (params?.status) {
+      httpParams = httpParams.set('status', String(params.status));
+    } else if (typeof params?.isActive === 'boolean') {
       httpParams = httpParams.set('isActive', String(params.isActive));
     }
 

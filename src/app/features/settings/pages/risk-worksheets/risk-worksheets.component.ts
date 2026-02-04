@@ -193,7 +193,9 @@ export class RiskWorksheetsComponent implements OnInit {
   }
 
   private fetchKonteksOptions(): void {
-    this.konteksService.getKonteksList({ page: 1, limit: 100 }).subscribe({
+    this.konteksService
+      .getKonteksList({ page: 1, limit: 100, status: 'ACTIVE' })
+      .subscribe({
       next: (res) => {
         this.konteksOptions = res.data ?? [];
       },

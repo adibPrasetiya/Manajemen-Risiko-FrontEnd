@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <button class="btn primary" type="button" (click)="openCreate()">
+    <button *ngIf="!isKomite" class="btn primary" type="button" (click)="openCreate()">
       <i class="fa-solid fa-plus"></i>
       Tambah Risk Worksheet
     </button>
@@ -168,7 +168,13 @@
                 <i class="fa-solid fa-eye"></i>
               </a>
 
-              <button type="button" class="icon-btn" (click)="openEdit(item)" title="Edit">
+              <button
+                *ngIf="!isKomite"
+                type="button"
+                class="icon-btn"
+                (click)="openEdit(item)"
+                title="Edit"
+              >
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
 
@@ -310,7 +316,7 @@
     <div class="modal-body">
       <div class="field">
         <label>Konteks</label>
-        <input class="input-blur" [value]="editModel.konteksLabel" disabled />
+        <input [value]="editModel.konteksLabel" disabled />
       </div>
 
       <div class="grid-2 spaced">

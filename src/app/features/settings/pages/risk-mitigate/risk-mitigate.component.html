@@ -78,7 +78,13 @@
 
   <div class="header-row">
     <div></div>
-    <button class="btn primary" type="button" (click)="openCreate()" [disabled]="createSubmitting">
+    <button
+      *ngIf="!isKomite"
+      class="btn primary"
+      type="button"
+      (click)="openCreate()"
+      [disabled]="createSubmitting"
+    >
       <i class="fa-solid fa-plus"></i>
       Tambah Risiko Mitigasi
     </button>
@@ -455,7 +461,7 @@
               {{ m.updatedAt ? (m.updatedAt | date: 'd MMM y, HH.mm') : '-' }}
             </td>
             <td class="td-actions">
-              <ng-container *ngIf="!isKomite">
+              <ng-container *ngIf="!isKomite && getValidationStatus(m) === 'PENDING'">
                 <button
                   type="button"
                   class="icon-btn"
@@ -484,7 +490,7 @@
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
               </ng-container>
-              <ng-container *ngIf="isKomite">
+              <ng-container *ngIf="isKomite && getValidationStatus(m) === 'PENDING'">
                 <button type="button" class="icon-btn action-validate" (click)="openValidation(m, 'VALIDATE')" title="Validate">
                   <i class="fa-solid fa-check"></i>
                 </button>

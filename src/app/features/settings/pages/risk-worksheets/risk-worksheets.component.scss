@@ -736,16 +736,20 @@ table td:last-child {
   resize: vertical;
 }
 
-.field .input-blur {
-  filter: blur(1px);
-  opacity: 1.5;
-}
-
 .field input:focus,
 .field textarea:focus,
 .field select:focus {
   border-color: var(--sidebar-accent, #4c6ef5);
   box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.12);
+}
+
+.field input:disabled,
+.field textarea:disabled,
+.field select:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
 }
 
 .error {

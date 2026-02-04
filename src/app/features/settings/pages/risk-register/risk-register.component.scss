@@ -4,6 +4,11 @@
   gap: 20px;
 }
 
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .header-row {
   display: flex;
   align-items: flex-start;
@@ -1180,9 +1185,20 @@ tbody tr:hover {
 }
 
 .btn:disabled {
-  opacity: 0.6;
-  filter: blur(0.6px);
+  opacity: 0.7;
   cursor: not-allowed;
+}
+
+.header-actions.status-locked .btn.primary:disabled {
+  background: #a9bdfc;
+  border-color: #a9bdfc;
+  color: #ffffff;
+}
+
+.header-actions.status-locked .btn.danger:disabled {
+  background: #f8a5a5;
+  border-color: #f8a5a5;
+  color: #ffffff;
 }
 
 @media (max-width: 1024px) {

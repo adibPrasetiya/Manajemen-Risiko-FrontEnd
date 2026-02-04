@@ -138,6 +138,10 @@ export class RiskRegisterComponent implements OnInit {
     this.loadProfile();
   }
 
+  goBack(): void {
+    window.history.back();
+  }
+
   private loadProfile(): void {
     this.loading = true;
     this.errorMsg = '';

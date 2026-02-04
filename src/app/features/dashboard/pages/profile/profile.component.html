@@ -113,22 +113,20 @@
 
         <div class="info-card">
           <h3 class="section-title">Keamanan</h3>
+                      <div class="security-hint" *ngIf="passwordExpiryRemainingDays !== null; else passwordHintFallback">
+              <i class="fa-solid fa-circle-info"></i>
+              Password Anda akan kedaluwarsa dalam
+              {{ passwordExpiryRemainingDays }} hari. Ganti password sebelum tanggal
+              {{ formatDateShort(passwordNextChangeDate) }}.
+            </div>
+            <ng-template #passwordHintFallback>
+              <div class="security-hint">
+                <i class="fa-solid fa-circle-info"></i>
+                Password akan di reset setiap 30 hari.
+              </div>
+            </ng-template>
           <div class="security-section">
             <p class="security-desc">Ubah password akun Anda untuk keamanan.</p>
-            <div class="security-meta" *ngIf="passwordChangedAtDate">
-              <div class="meta-row">
-                <span class="meta-label">Terakhir diubah</span>
-                <span class="meta-value">{{ formatDateShort(passwordChangedAtDate) }}</span>
-              </div>
-              <div class="meta-row">
-                <span class="meta-label">Wajib ganti pada</span>
-                <span class="meta-value">{{ formatDateShort(passwordNextChangeDate) }}</span>
-              </div>
-            </div>
-            <div class="security-hint">
-              <i class="fa-solid fa-circle-info"></i>
-              Password akan di reset setiap 30 hari.
-            </div>
             <button class="btn secondary" (click)="openPasswordModal()">
               <i class="fa-solid fa-key"></i>
               Ubah Password
@@ -144,116 +142,27 @@
           <h3 class="section-title">Edit Nomor HP</h3>
           <p class="section-desc">Perubahan nomor HP dapat dilakukan langsung tanpa persetujuan administrator.</p>
 
-          <form [formGroup]="phoneForm" (ngSubmit)="savePhone()" class="inline-form">
-            <div class="field">
-              <label>Nomor HP</label>
-              <input
-                type="text"
-                formControlName="nomorHP"
-                placeholder="Contoh: 08123456789"
-                inputmode="numeric"
-              />
-              <small class="hint">Format: 08xxx atau 62xxx (10-15 digit)</small>
-              <small
-                class="error"
-                *ngIf="phoneForm.controls.nomorHP.touched && phoneForm.controls.nomorHP.invalid"
-              >
-                Format nomor HP tidak valid.
-              </small>
-            </div>
-            <button
-              type="submit"
-              class="btn primary"
-              [disabled]="savingPhone || phoneForm.invalid"
-            >
-              {{ savingPhone ? 'Menyimpan...' : 'Simpan Nomor HP' }}
-            </button>
-          </form>
+          <button type="button" class="btn secondary" (click)="openPhoneModal()">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Edit Nomor HP
+          </button>
         </div>
 
         <!-- Section 2: Request Perubahan Jabatan/Unit Kerja -->
         <div class="edit-card">
-          <h3 class="section-title">Ajukan Perubahan Data</h3>
+          <h3 class="section-title">Edit Jabatan dan Unit Kerja</h3>
+                    <div class="security-hint">
+            <i class="fa-solid fa-info-circle"></i>
+            Pengajuan perubahan jabatan dan unit kerja Anda memerlukan verifikasi Admin. Selama proses peninjauan berlangsung, akun Anda tidak dapat digunakan hingga verifikasi selesai.
+          </div>
           <p class="section-desc">
             Perubahan jabatan atau unit kerja memerlukan persetujuan administrator.
           </p>
 
-          <!-- Pending Request Warning -->
-          <div class="pending-warning" *ngIf="pendingRequest">
-            <i class="fa-solid fa-hourglass-half"></i>
-            <div class="warning-content">
-              <strong>Permintaan Sedang Diproses</strong>
-              <p>Anda memiliki permintaan yang sedang menunggu persetujuan. Silakan tunggu hingga diproses.</p>
-              <div class="pending-details">
-                <span *ngIf="pendingRequest.jabatan">Jabatan: {{ pendingRequest.jabatan }}</span>
-                <span *ngIf="pendingRequest.unitKerja">Unit Kerja: {{ pendingRequest.unitKerja.name }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Change Request Form -->
-          <form
-            [formGroup]="changeRequestForm"
-            (ngSubmit)="submitChangeRequest()"
-            class="change-form"
-            *ngIf="!pendingRequest"
-          >
-            <div class="form-info">
-              <i class="fa-solid fa-info-circle"></i>
-              Isi minimal satu field yang ingin diubah.
-            </div>
-
-            <div class="field">
-              <label>Jabatan Baru</label>
-              <input
-                type="text"
-                formControlName="jabatan"
-                placeholder="Masukkan jabatan baru (opsional)"
-              />
-              <small class="hint">3-255 karakter</small>
-            </div>
-
-            <div class="field unit-wrapper">
-              <label>Unit Kerja Baru</label>
-              <input
-                #unitInput
-                type="text"
-                formControlName="unitKerja"
-                placeholder="Ketik untuk mencari unit kerja..."
-                (focus)="onUnitFocus()"
-                (input)="onUnitInput()"
-                autocomplete="off"
-              />
-              <div class="dropdown" *ngIf="showUnitDropdown">
-                <button
-                  type="button"
-                  class="option"
-                  *ngFor="let u of filteredUnitKerja"
-                  (click)="pickUnit(u)"
-                >
-                  {{ u.name }} ({{ u.code }})
-                </button>
-                <div class="empty" *ngIf="filteredUnitKerja.length === 0">
-                  Tidak ada yang cocok.
-                </div>
-              </div>
-              <small class="hint">Pilih dari daftar (opsional)</small>
-            </div>
-
-            <div class="error-msg" *ngIf="requestError">
-              <i class="fa-solid fa-exclamation-circle"></i>
-              {{ requestError }}
-            </div>
-
-            <button
-              type="submit"
-              class="btn primary"
-              [disabled]="submittingRequest"
-            >
-              <i class="fa-solid fa-paper-plane" *ngIf="!submittingRequest"></i>
-              {{ submittingRequest ? 'Mengirim...' : 'Ajukan Perubahan' }}
-            </button>
-          </form>
+          <button type="button" class="btn secondary" (click)="openChangeRequestModal()">
+            <i class="fa-solid fa-pen-to-square"></i>
+            Edit Jabatan dan Unit Kerja
+          </button>
         </div>
       </div>
 
@@ -370,6 +279,126 @@
   </ng-container>
 </div>
 
+<!-- Edit Nomor HP Modal -->
+<div class="modal-backdrop" *ngIf="showPhoneModal" (click)="closePhoneModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Edit Nomor HP</h3>
+      <button class="btn-close" (click)="closePhoneModal()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="phoneForm" (ngSubmit)="savePhone()" class="modal-body">
+      <div class="field">
+        <label>Nomor HP</label>
+        <input
+          type="text"
+          formControlName="nomorHP"
+          placeholder="Contoh: 08123456789"
+          inputmode="numeric"
+        />
+        <small class="hint">Format: 08xxx atau 62xxx (10-15 digit)</small>
+        <small
+          class="error"
+          *ngIf="phoneForm.controls.nomorHP.touched && phoneForm.controls.nomorHP.invalid"
+        >
+          Format nomor HP tidak valid.
+        </small>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn secondary" (click)="closePhoneModal()">Batal</button>
+        <button type="submit" class="btn primary" [disabled]="savingPhone || phoneForm.invalid">
+          {{ savingPhone ? 'Menyimpan...' : 'Edit Nomor HP' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Jabatan & Unit Kerja Modal -->
+<div class="modal-backdrop" *ngIf="showChangeRequestModal" (click)="closeChangeRequestModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Edit Jabatan dan Unit Kerja</h3>
+      <button class="btn-close" (click)="closeChangeRequestModal()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+
+    <form
+      [formGroup]="changeRequestForm"
+      (ngSubmit)="submitChangeRequest()"
+      class="modal-body change-form"
+    >
+      <!-- Pending Request Warning -->
+      <div class="pending-warning" *ngIf="pendingRequest">
+        <i class="fa-solid fa-hourglass-half"></i>
+        <div class="warning-content">
+          <strong>Permintaan Sedang Diproses</strong>
+          <p>Anda memiliki permintaan yang sedang menunggu persetujuan. Silakan tunggu hingga diproses.</p>
+          <div class="pending-details">
+            <span *ngIf="pendingRequest.jabatan">Jabatan: {{ pendingRequest.jabatan }}</span>
+            <span *ngIf="pendingRequest.unitKerja">Unit Kerja: {{ pendingRequest.unitKerja.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <ng-container *ngIf="!pendingRequest">
+        <div class="field">
+          <label>Jabatan Baru</label>
+          <input
+            type="text"
+            formControlName="jabatan"
+            placeholder="Masukkan jabatan baru (opsional)"
+          />
+          <small class="hint">3-255 karakter</small>
+        </div>
+
+        <div class="field unit-wrapper">
+          <label>Unit Kerja Baru</label>
+          <input
+            #unitInput
+            type="text"
+            formControlName="unitKerja"
+            placeholder="Ketik untuk mencari unit kerja..."
+            (focus)="onUnitFocus()"
+            (input)="onUnitInput()"
+            autocomplete="off"
+          />
+          <div class="dropdown" *ngIf="showUnitDropdown">
+            <button
+              type="button"
+              class="option"
+              *ngFor="let u of filteredUnitKerja"
+              (click)="pickUnit(u)"
+            >
+              {{ u.name }} ({{ u.code }})
+            </button>
+            <div class="empty" *ngIf="filteredUnitKerja.length === 0">
+              Tidak ada yang cocok.
+            </div>
+          </div>
+          <small class="hint">Pilih dari daftar (opsional)</small>
+        </div>
+
+        <div class="error-msg" *ngIf="requestError">
+          <i class="fa-solid fa-exclamation-circle"></i>
+          {{ requestError }}
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn secondary" (click)="closeChangeRequestModal()">Batal</button>
+          <button type="submit" class="btn primary" [disabled]="submittingRequest">
+            <i class="fa-solid fa-paper-plane" *ngIf="!submittingRequest"></i>
+            {{ submittingRequest ? 'Mengirim...' : 'Edit Jabatan dan Unit Kerja' }}
+          </button>
+        </div>
+      </ng-container>
+    </form>
+  </div>
+</div>
 <!-- Detail Modal -->
 <div class="modal-backdrop" *ngIf="showDetailModal" (click)="closeDetailModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
@@ -478,7 +507,11 @@
 
       <div class="modal-footer">
         <button type="button" class="btn secondary" (click)="closePasswordModal()">Batal</button>
-        <button type="submit" class="btn primary" [disabled]="savingPassword">
+        <button
+          type="submit"
+          class="btn primary"
+          [disabled]="savingPassword || passwordForm.invalid"
+        >
           {{ savingPassword ? 'Menyimpan...' : 'Ubah Password' }}
         </button>
       </div>

@@ -1,4 +1,11 @@
 <div class="risk-register-page">
+  <div class="page-actions">
+    <button class="btn secondary" type="button" (click)="goBack()">
+      <i class="fa-solid fa-arrow-left"></i>
+      Kembali
+    </button>
+  </div>
+
   <div class="info-card">
     <div class="info-header">
       <div class="page-title">
@@ -11,7 +18,12 @@
           {{ unitKerjaName }} <span *ngIf="unitKerjaCode">({{ unitKerjaCode }})</span>
         </div>
       </div>
-      <div class="header-actions">
+      <div
+        class="header-actions"
+        [class.status-locked]="
+          selectedWorksheet?.status === 'APPROVED' || selectedWorksheet?.status === 'ARCHIVED'
+        "
+      >
         <button
           *ngIf="isPengelola && selectedWorksheet?.status === 'DRAFT'"
           class="btn primary"

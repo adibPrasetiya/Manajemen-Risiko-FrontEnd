@@ -95,6 +95,8 @@ export class ProfileComponent implements OnInit {
 
   // Modals
   showPasswordModal = false;
+  showPhoneModal = false;
+  showChangeRequestModal = false;
   showDetailModal = false;
   selectedRequest: MyProfileRequest | null = null;
 
@@ -204,13 +206,14 @@ export class ProfileComponent implements OnInit {
     this.profileService
       .updateProfile({ nomorHP: nomorHP || undefined })
       .subscribe({
-        next: (res) => {
-          this.savingPhone = false;
-          if (this.profile) {
-            this.profile = { ...this.profile, nomorHP: res.data.nomorHP };
-          }
-          this.ui.success('Nomor HP berhasil diperbarui.', 'Berhasil');
-        },
+      next: (res) => {
+        this.savingPhone = false;
+        if (this.profile) {
+          this.profile = { ...this.profile, nomorHP: res.data.nomorHP };
+        }
+        this.ui.success('Nomor HP berhasil diperbarui.', 'Berhasil');
+        this.closePhoneModal();
+      },
         error: (err) => {
           this.savingPhone = false;
           this.ui.error(
@@ -294,6 +297,7 @@ export class ProfileComponent implements OnInit {
         this.selectedUnitKerjaId = '';
         this.ui.success('Permintaan perubahan berhasil diajukan.', 'Berhasil');
         this.checkPendingRequest();
+        this.closeChangeRequestModal();
 
         // Refresh history if on history tab
         if (this.activeTab === 'history') {
@@ -423,6 +427,25 @@ export class ProfileComponent implements OnInit {
     this.passError = '';
   }
 
+  openPhoneModal(): void {
+    this.showPhoneModal = true;
+  }
+
+  closePhoneModal(): void {
+    this.showPhoneModal = false;
+  }
+
+  openChangeRequestModal(): void {
+    this.requestError = '';
+    this.showChangeRequestModal = true;
+  }
+
+  closeChangeRequestModal(): void {
+    this.showChangeRequestModal = false;
+    this.requestError = '';
+    this.showUnitDropdown = false;
+  }
+
   changePassword(): void {
     this.passError = '';
 
@@ -448,9 +471,19 @@ export class ProfileComponent implements OnInit {
         this.passwordForm.reset();
         this.closePasswordModal();
         this.ui.success('Password berhasil diubah.', 'Berhasil');
+        this.authService.logout().subscribe({
+          next: () => this.router.navigate(['/auth/login']),
+          error: () => this.router.navigate(['/auth/login']),
+        });
       },
       error: (e) => {
         this.savingPassword = false;
+
+        const detailMsg = this.getPasswordValidationDetail(e);
+        if (detailMsg) {
+          this.passError = detailMsg;
+          return;
+        }
 
         const rawMsg = (e?.error?.errors || e?.error?.message || '')
           .toString()
@@ -475,6 +508,13 @@ export class ProfileComponent implements OnInit {
   }
 
   // ============ HELPERS ============
+  private getPasswordValidationDetail(e: unknown): string {
+    const details = (e as { error?: { details?: Array<{ path?: string; detail?: string }> } })
+      ?.error?.details;
+    if (!Array.isArray(details)) return '';
+    const hit = details.find((d) => d?.path === 'newPassword' && d?.detail);
+    return hit?.detail ?? '';
+  }
 
   getInitials(name: string): string {
     if (!name) return '?';
@@ -596,6 +636,17 @@ export class ProfileComponent implements OnInit {
     const next = new Date(changed);
     next.setDate(next.getDate() + this.passwordExpiryDays);
     return next;
+  }
+
+  get passwordExpiryRemainingDays(): number | null {
+    const next = this.passwordNextChangeDate;
+    if (!next) return null;
+    const today = new Date();
+    const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startNext = new Date(next.getFullYear(), next.getMonth(), next.getDate());
+    const diffMs = startNext.getTime() - startToday.getTime();
+    const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+    return Math.max(0, diffDays);
   }
 
   trackById(_: number, item: MyProfileRequest): string {
