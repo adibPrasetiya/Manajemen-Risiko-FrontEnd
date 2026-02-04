@@ -272,19 +272,10 @@
       </div>
 
       <div class="grid-2">
-        <div class="field">
+        <div class="field span-2">
           <label>Nama</label>
           <input [(ngModel)]="createModel.name" name="createName" />
           <small class="error" *ngIf="createErrors.name">{{ createErrors.name }}</small>
-        </div>
-
-        <div class="field">
-          <label>Status</label>
-          <select [(ngModel)]="createModel.status" name="createStatus">
-            <option value="DRAFT">Draft</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="APPROVED">Approved</option>
-          </select>
         </div>
       </div>
 
@@ -319,19 +310,14 @@
     <div class="modal-body">
       <div class="field">
         <label>Konteks</label>
-        <input [value]="editModel.konteksLabel" disabled />
+        <input class="input-blur" [value]="editModel.konteksLabel" disabled />
       </div>
 
       <div class="grid-2 spaced">
-        <div class="field">
+        <div class="field span-2">
           <label>Nama</label>
           <input [(ngModel)]="editModel.name" name="editName" />
           <small class="error" *ngIf="editErrors.name">{{ editErrors.name }}</small>
-        </div>
-
-        <div class="field">
-          <label>Status</label>
-          <input [value]="getStatusLabel(editModel.status)" disabled />
         </div>
       </div>
 

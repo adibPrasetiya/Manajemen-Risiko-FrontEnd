@@ -69,12 +69,10 @@ export class RiskWorksheetsComponent implements OnInit {
     konteksId: string;
     name: string;
     description: string;
-    status: RiskWorksheetStatus;
   } = {
     konteksId: '',
     name: '',
     description: '',
-    status: 'DRAFT',
   };
 
   showEditModal = false;
@@ -85,14 +83,12 @@ export class RiskWorksheetsComponent implements OnInit {
     konteksLabel: string;
     name: string;
     description: string;
-    status: RiskWorksheetStatus;
   } = {
     id: '',
     konteksId: '',
     konteksLabel: '',
     name: '',
     description: '',
-    status: 'DRAFT',
   };
 
   showDeleteModal = false;
@@ -366,7 +362,6 @@ export class RiskWorksheetsComponent implements OnInit {
       konteksId: '',
       name: '',
       description: '',
-      status: 'DRAFT',
     };
     this.showCreateModal = true;
   }
@@ -396,7 +391,6 @@ export class RiskWorksheetsComponent implements OnInit {
       konteksId: this.createModel.konteksId,
       name: this.createModel.name.trim(),
       description: this.createModel.description.trim(),
-      status: this.createModel.status,
     };
 
     this.loading = true;
@@ -428,7 +422,6 @@ export class RiskWorksheetsComponent implements OnInit {
       konteksLabel,
       name: item.name ?? '',
       description: item.description ?? '',
-      status: item.status ?? 'DRAFT',
     };
     this.showEditModal = true;
   }
