@@ -290,10 +290,19 @@
 
         <div class="field">
           <label>Kategori</label>
-          <select [(ngModel)]="createModel.categoryId" name="createCategory">
-            <option value="">Pilih kategori</option>
+          <select
+            [(ngModel)]="createModel.categoryId"
+            name="createCategory"
+            [disabled]="categoriesLoading"
+          >
+            <option value="">
+              {{ categoriesLoading ? 'Memuat kategori...' : 'Pilih kategori' }}
+            </option>
             <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
           </select>
+          <small class="muted" *ngIf="!categoriesLoading && categories.length === 0">
+            Kategori belum tersedia.
+          </small>
           <small class="error" *ngIf="createErrors.categoryId">{{ createErrors.categoryId }}</small>
         </div>
       </div>
@@ -349,10 +358,19 @@
 
         <div class="field">
           <label>Kategori</label>
-          <select [(ngModel)]="editModel.categoryId" name="editCategory">
-            <option value="">Pilih kategori</option>
+          <select
+            [(ngModel)]="editModel.categoryId"
+            name="editCategory"
+            [disabled]="categoriesLoading"
+          >
+            <option value="">
+              {{ categoriesLoading ? 'Memuat kategori...' : 'Pilih kategori' }}
+            </option>
             <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
           </select>
+          <small class="muted" *ngIf="!categoriesLoading && categories.length === 0">
+            Kategori belum tersedia.
+          </small>
           <small class="error" *ngIf="editErrors.categoryId">{{ editErrors.categoryId }}</small>
         </div>
       </div>

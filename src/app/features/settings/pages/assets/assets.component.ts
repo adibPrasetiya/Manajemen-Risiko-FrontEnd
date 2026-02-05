@@ -43,6 +43,7 @@ export class AssetsComponent implements OnInit {
   items: AssetItem[] = [];
   allItems: AssetItem[] = [];
   categories: AssetCategoryItem[] = [];
+  categoriesLoading = false;
 
   pagination: Pagination | null = null;
 
@@ -235,14 +236,22 @@ export class AssetsComponent implements OnInit {
   }
 
   fetchCategories(): void {
-    this.userService.getAssetCategories({ page: 1, limit: 1000 }).subscribe({
-      next: (res) => {
-        this.categories = res.data ?? [];
-      },
-      error: () => {
-        this.categories = [];
-      },
-    });
+    this.categoriesLoading = true;
+    this.userService
+      .getAssetCategories({ page: 1, limit: 100 })
+      .subscribe({
+        next: (res) => {
+          this.categories = res.data ?? [];
+          this.categoriesLoading = false;
+        },
+        error: (err) => {
+          this.categories = [];
+          this.categoriesLoading = false;
+          this.ui.error(
+            extractErrorMessage(err) || 'Gagal memuat kategori aset.'
+          );
+        },
+      });
   }
 
   fetchAssets(resetPage: boolean): void {
