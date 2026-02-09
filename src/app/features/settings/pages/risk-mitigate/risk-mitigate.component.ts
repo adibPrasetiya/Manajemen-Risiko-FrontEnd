@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProfileService } from '../../../../core/services/profile.service';
+import { KonteksService } from '../../../../core/services/konteks.service';
 import { UiService } from '../../../../core/services/ui.service';
 import {
   CreateRiskMitigationPayload,
@@ -14,6 +15,7 @@ import {
   UpdateRiskMitigationPayload,
   UserService,
 } from '../../../../core/services/user.service';
+import { RiskMatrixItem } from '../../../../core/models/konteks.model';
 import { extractErrorMessage } from '../../../../core/utils/error-utils';
 
 @Component({
@@ -31,6 +33,7 @@ export class RiskMitigateComponent implements OnInit {
   worksheetId = '';
   worksheetName = '';
   riskId = '';
+  konteksId = '';
   roles: string[] = [];
   isKomite = false;
   private profileLoaded = false;
@@ -39,6 +42,7 @@ export class RiskMitigateComponent implements OnInit {
   mitigations: RiskMitigationItem[] = [];
   filteredMitigations: RiskMitigationItem[] = [];
   pagination: Pagination | null = null;
+  riskMatrices: RiskMatrixItem[] = [];
 
   q = '';
   fPriority = 'ALL';
@@ -56,6 +60,10 @@ export class RiskMitigateComponent implements OnInit {
     plannedEndDate: '',
     responsiblePerson: '',
     responsibleUnit: '',
+    proposedResidualLikelihood: '',
+    proposedResidualImpact: '',
+    proposedResidualImpactDescription: '',
+    proposedResidualLikelihoodDescription: '',
   };
 
   showEditCard = false;
@@ -67,6 +75,12 @@ export class RiskMitigateComponent implements OnInit {
     priority: '',
     plannedStartDate: '',
     plannedEndDate: '',
+    responsiblePerson: '',
+    responsibleUnit: '',
+    proposedResidualLikelihood: '',
+    proposedResidualImpact: '',
+    proposedResidualImpactDescription: '',
+    proposedResidualLikelihoodDescription: '',
   };
 
   showProgressCard = false;
@@ -100,7 +114,8 @@ export class RiskMitigateComponent implements OnInit {
     private profileService: ProfileService,
     private userService: UserService,
     private route: ActivatedRoute,
-    private ui: UiService
+    private ui: UiService,
+    private konteksService: KonteksService
   ) {}
 
   ngOnInit(): void {
@@ -160,9 +175,22 @@ export class RiskMitigateComponent implements OnInit {
     this.userService.getRiskWorksheetById(this.unitKerjaId, this.worksheetId).subscribe({
       next: (res) => {
         this.worksheetName = res?.data?.name || '';
+        this.konteksId = res?.data?.konteks?.id || '';
+        if (this.konteksId) this.fetchRiskMatrices(this.konteksId);
       },
       error: () => {
         this.worksheetName = '';
+      },
+    });
+  }
+
+  private fetchRiskMatrices(konteksId: string): void {
+    this.konteksService.getRiskMatrices(konteksId, { page: 1, limit: 100 }).subscribe({
+      next: (res) => {
+        this.riskMatrices = res.data ?? [];
+      },
+      error: () => {
+        this.riskMatrices = [];
       },
     });
   }
@@ -281,6 +309,12 @@ export class RiskMitigateComponent implements OnInit {
       priority: item.priority || '',
       plannedStartDate: this.normalizeDateInput(item.plannedStartDate),
       plannedEndDate: this.normalizeDateInput(item.plannedEndDate),
+      responsiblePerson: item.responsiblePerson || '',
+      responsibleUnit: item.responsibleUnit || '',
+      proposedResidualLikelihood: String(item.proposedResidualLikelihood ?? ''),
+      proposedResidualImpact: String(item.proposedResidualImpact ?? ''),
+      proposedResidualImpactDescription: item.proposedResidualImpactDescription || '',
+      proposedResidualLikelihoodDescription: item.proposedResidualLikelihoodDescription || '',
     };
     this.showEditCard = true;
   }
@@ -296,7 +330,13 @@ export class RiskMitigateComponent implements OnInit {
       !!String(this.editModel.description ?? '').trim() &&
       !!String(this.editModel.priority ?? '').trim() &&
       !!String(this.editModel.plannedStartDate ?? '').trim() &&
-      !!String(this.editModel.plannedEndDate ?? '').trim()
+      !!String(this.editModel.plannedEndDate ?? '').trim() &&
+      !!String(this.editModel.responsiblePerson ?? '').trim() &&
+      !!String(this.editModel.responsibleUnit ?? '').trim() &&
+      !!String(this.editModel.proposedResidualLikelihood ?? '').trim() &&
+      !!String(this.editModel.proposedResidualImpact ?? '').trim() &&
+      !!String(this.editModel.proposedResidualImpactDescription ?? '').trim() &&
+      !!String(this.editModel.proposedResidualLikelihoodDescription ?? '').trim()
     );
   }
 
@@ -313,6 +353,16 @@ export class RiskMitigateComponent implements OnInit {
       priority: String(this.editModel.priority ?? '').trim(),
       plannedStartDate: String(this.editModel.plannedStartDate ?? '').trim(),
       plannedEndDate: String(this.editModel.plannedEndDate ?? '').trim(),
+      responsiblePerson: String(this.editModel.responsiblePerson ?? '').trim(),
+      responsibleUnit: String(this.editModel.responsibleUnit ?? '').trim(),
+      proposedResidualLikelihood: String(this.editModel.proposedResidualLikelihood ?? '').trim(),
+      proposedResidualImpact: String(this.editModel.proposedResidualImpact ?? '').trim(),
+      proposedResidualImpactDescription: String(
+        this.editModel.proposedResidualImpactDescription ?? ''
+      ).trim(),
+      proposedResidualLikelihoodDescription: String(
+        this.editModel.proposedResidualLikelihoodDescription ?? ''
+      ).trim(),
     };
 
     this.editSubmitting = true;
@@ -540,6 +590,22 @@ export class RiskMitigateComponent implements OnInit {
     this.createErrors = {};
   }
 
+  private resetCreateForm(): void {
+    this.createModel = {
+      name: '',
+      description: '',
+      priority: 'HIGH',
+      plannedStartDate: '',
+      plannedEndDate: '',
+      responsiblePerson: '',
+      responsibleUnit: '',
+      proposedResidualLikelihood: '',
+      proposedResidualImpact: '',
+      proposedResidualImpactDescription: '',
+      proposedResidualLikelihoodDescription: '',
+    };
+  }
+
   get isCreateValid(): boolean {
     return (
       !!this.createModel.name.trim() &&
@@ -548,7 +614,11 @@ export class RiskMitigateComponent implements OnInit {
       !!this.createModel.plannedStartDate &&
       !!this.createModel.plannedEndDate &&
       !!this.createModel.responsiblePerson.trim() &&
-      !!this.createModel.responsibleUnit.trim()
+      !!this.createModel.responsibleUnit.trim() &&
+      !!String(this.createModel.proposedResidualLikelihood ?? '').trim() &&
+      !!String(this.createModel.proposedResidualImpact ?? '').trim() &&
+      !!this.createModel.proposedResidualImpactDescription.trim() &&
+      !!this.createModel.proposedResidualLikelihoodDescription.trim()
     );
   }
 
@@ -568,6 +638,10 @@ export class RiskMitigateComponent implements OnInit {
       plannedEndDate: this.createModel.plannedEndDate,
       responsiblePerson: this.createModel.responsiblePerson.trim(),
       responsibleUnit: this.createModel.responsibleUnit.trim(),
+      proposedResidualLikelihood: String(this.createModel.proposedResidualLikelihood ?? '').trim(),
+      proposedResidualImpact: String(this.createModel.proposedResidualImpact ?? '').trim(),
+      proposedResidualImpactDescription: this.createModel.proposedResidualImpactDescription.trim(),
+      proposedResidualLikelihoodDescription: this.createModel.proposedResidualLikelihoodDescription.trim(),
     };
 
     this.userService
@@ -581,6 +655,7 @@ export class RiskMitigateComponent implements OnInit {
             this.applyFilters();
           }
           this.ui.success('Mitigasi risiko berhasil ditambahkan.');
+          this.resetCreateForm();
           this.closeCreate();
           this.fetchMitigations(true);
         },
@@ -717,6 +792,51 @@ export class RiskMitigateComponent implements OnInit {
     if (status === 'VALIDATED') return 'status-validated';
     if (status === 'NOT_VALIDATED') return 'status-rejected';
     return 'status-neutral';
+  }
+
+  getEditResidualRiskLevel(): RiskLevel | null {
+    const likelihood = Number(this.editModel.proposedResidualLikelihood ?? 0);
+    const impact = Number(this.editModel.proposedResidualImpact ?? 0);
+    return this.resolveRiskLevel(likelihood, impact);
+  }
+
+  getCreateResidualRiskLevel(): RiskLevel | null {
+    const likelihood = Number(this.createModel.proposedResidualLikelihood ?? 0);
+    const impact = Number(this.createModel.proposedResidualImpact ?? 0);
+    return this.resolveRiskLevel(likelihood, impact);
+  }
+
+  private resolveRiskLevel(like: number, impact: number): RiskLevel | null {
+    if (!like || !impact) return null;
+    const hit = this.riskMatrices.find(
+      (x) => x.likelihoodLevel === like && x.impactLevel === impact
+    );
+    return hit?.riskLevel ?? null;
+  }
+
+  canResubmit(item?: RiskMitigationItem | null): boolean {
+    return !this.isKomite && this.getValidationStatus(item) === 'NOT_VALIDATED';
+  }
+
+  resubmitMitigation(item: RiskMitigationItem): void {
+    if (!this.unitKerjaId || !this.worksheetId || !this.riskId) return;
+    this.userService
+      .resubmitRiskMitigation(this.unitKerjaId, this.worksheetId, this.riskId, item.id)
+      .subscribe({
+        next: (res) => {
+          const updated = res?.data;
+          if (updated) {
+            this.mitigations = this.mitigations.map((x) =>
+              x.id === updated.id ? updated : x
+            );
+            this.applyFilters();
+          }
+          this.ui.success('Mitigasi berhasil dikirim ulang.');
+        },
+        error: (err) => {
+          this.ui.error(extractErrorMessage(err) || 'Gagal mengirim ulang mitigasi.');
+        },
+      });
   }
 
   private normalizeDateInput(value?: string | null): string {

@@ -140,7 +140,7 @@
           </div>
 
           <div class="field">
-            <label>Risk Appetite</label>
+            <label>Risk Tolerance</label>
             <select [(ngModel)]="fRiskAppetite">
               <option *ngFor="let a of appetiteOptions" [value]="a">
                 {{ a === 'ALL' ? 'All Levels' : a }}
@@ -180,7 +180,7 @@
             <th>NAMA / KODE</th>
             <th>PERIODE</th>
             <th>MATRIX SIZE</th>
-            <th>RISK APPETITE</th>
+            <th>RISK TOLERANCE</th>
             <th>STATUS</th>
             <th class="th-actions">ACTIONS</th>
           </tr>
@@ -410,7 +410,7 @@
         </div>
 
         <div class="field">
-          <label>Risk Appetite Level</label>
+          <label>Risk Tolerance Level</label>
           <div class="dropdown" [class.open]="isDropdownOpen('create-appetite')">
             <button
               type="button"
@@ -437,7 +437,7 @@
       </div>
 
       <div class="field">
-        <label>Risk Appetite Description</label>
+        <label>Risk Tolerance Description</label>
         <textarea
           class="textarea-large"
           [(ngModel)]="createModel.riskAppetiteDescription"
@@ -570,7 +570,7 @@
         </div>
 
         <div class="field">
-          <label>Risk Appetite Level</label>
+          <label>Risk Tolerance Level</label>
           <select [(ngModel)]="editModel.riskAppetiteLevel" name="editAppetite">
             <option value="LOW">LOW</option>
             <option value="MEDIUM">MEDIUM</option>
@@ -582,12 +582,12 @@
       </div>
 
       <div class="field">
-        <label>Risk Appetite Description</label>
+        <label>Risk Tolerance Description</label>
         <textarea
           class="textarea-large"
           [(ngModel)]="editModel.riskAppetiteDescription"
           name="editAppetiteDesc"
-          placeholder="Keterangan risk appetite"
+          placeholder="Keterangan risk tolerance"
         ></textarea>
         <small class="error" *ngIf="editErrors.riskAppetiteDescription">{{ editErrors.riskAppetiteDescription }}</small>
       </div>

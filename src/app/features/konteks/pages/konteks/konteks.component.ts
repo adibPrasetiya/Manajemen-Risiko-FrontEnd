@@ -193,7 +193,7 @@ export class KonteksComponent implements OnInit {
   }
 
   formatRiskAppetiteLabel(value: string): string {
-    return value ? value : 'Pilih risk appetite level';
+    return value ? value : 'Pilih risk tolerance level';
   }
 
   getRiskAppetiteCreateOptions(): string[] {
@@ -489,7 +489,7 @@ export class KonteksComponent implements OnInit {
 
     if (!this.createModel.riskAppetiteLevel) {
       this.createErrors.riskAppetiteLevel =
-        'Risk appetite level wajib dipilih.';
+        'Risk tolerance level wajib dipilih.';
       return;
     }
 
@@ -501,10 +501,11 @@ export class KonteksComponent implements OnInit {
       periodEnd: pe,
       matrixSize: Number(this.createModel.matrixSize),
       riskAppetiteLevel: String(this.createModel.riskAppetiteLevel),
-      riskAppetiteDescription: (
-        this.createModel.riskAppetiteDescription ?? ''
-      ).trim(),
     };
+    const appetiteDesc = (this.createModel.riskAppetiteDescription ?? '').trim();
+    if (appetiteDesc) {
+      payload.riskAppetiteDescription = appetiteDesc;
+    }
 
     this.createLoading = true;
 
@@ -584,7 +585,7 @@ export class KonteksComponent implements OnInit {
       return;
     }
     if (!this.editModel.riskAppetiteLevel) {
-      this.editErrors.riskAppetiteLevel = 'Risk appetite level wajib dipilih.';
+      this.editErrors.riskAppetiteLevel = 'Risk tolerance level wajib dipilih.';
       return;
     }
     const payload: UpdateKonteksPayload = {
@@ -595,9 +596,12 @@ export class KonteksComponent implements OnInit {
       periodEnd: pe,
       matrixSize: Number(this.editModel.matrixSize),
       riskAppetiteLevel: String(this.editModel.riskAppetiteLevel),
-      riskAppetiteDescription: (this.editModel.riskAppetiteDescription ?? '').trim(),
       status: this.editModel.status,
     };
+    const editAppetiteDesc = (this.editModel.riskAppetiteDescription ?? '').trim();
+    if (editAppetiteDesc) {
+      payload.riskAppetiteDescription = editAppetiteDesc;
+    }
     this.loading = true;
     this.konteksService.updateKonteks(this.editModel.id, payload).subscribe({
       next: () => {

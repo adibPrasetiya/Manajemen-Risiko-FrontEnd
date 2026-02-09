@@ -49,7 +49,7 @@
 
       <div class="info-col">
         <div class="info-item">
-          <span class="label">Weakness:</span>
+          <span class="label">Kerentanan:</span>
           <span class="value muted">{{ item?.weaknessDescription || '-' }}</span>
         </div>
         <div class="info-item">
@@ -133,6 +133,28 @@
             <label>Responsible Unit</label>
             <input [(ngModel)]="createModel.responsibleUnit" />
           </div>
+          <div class="field">
+            <label>Proposed Residual Likelihood</label>
+            <input type="number" min="0" [(ngModel)]="createModel.proposedResidualLikelihood" />
+          </div>
+          <div class="field">
+            <label>Proposed Residual Impact</label>
+            <input type="number" min="0" [(ngModel)]="createModel.proposedResidualImpact" />
+          </div>
+          <div class="field full">
+            <label>Nilai Risiko</label>
+            <div class="risk-level-display" [ngClass]="getRiskLevelClass(getCreateResidualRiskLevel())">
+              {{ getCreateResidualRiskLevel() || '-' }}
+            </div>
+          </div>
+          <div class="field full">
+            <label>Proposed Residual Impact Description</label>
+            <textarea [(ngModel)]="createModel.proposedResidualImpactDescription" rows="3"></textarea>
+          </div>
+          <div class="field full">
+            <label>Proposed Residual Likelihood Description</label>
+            <textarea [(ngModel)]="createModel.proposedResidualLikelihoodDescription" rows="3"></textarea>
+          </div>
         </div>
 
         <div class="modal-actions">
@@ -187,6 +209,36 @@
           <div class="field">
             <label>Planned End Date</label>
             <input type="date" [(ngModel)]="editModel.plannedEndDate" />
+          </div>
+          <div class="field">
+            <label>Responsible Person</label>
+            <input [(ngModel)]="editModel.responsiblePerson" />
+          </div>
+          <div class="field">
+            <label>Responsible Unit</label>
+            <input [(ngModel)]="editModel.responsibleUnit" />
+          </div>
+          <div class="field">
+            <label>Proposed Residual Likelihood</label>
+            <input type="number" min="0" [(ngModel)]="editModel.proposedResidualLikelihood" />
+          </div>
+          <div class="field">
+            <label>Proposed Residual Impact</label>
+            <input type="number" min="0" [(ngModel)]="editModel.proposedResidualImpact" />
+          </div>
+          <div class="field full">
+            <label>Nilai Risiko</label>
+            <div class="risk-level-display" [ngClass]="getRiskLevelClass(getEditResidualRiskLevel())">
+              {{ getEditResidualRiskLevel() || '-' }}
+            </div>
+          </div>
+          <div class="field full">
+            <label>Proposed Residual Impact Description</label>
+            <textarea [(ngModel)]="editModel.proposedResidualImpactDescription" rows="3"></textarea>
+          </div>
+          <div class="field full">
+            <label>Proposed Residual Likelihood Description</label>
+            <textarea [(ngModel)]="editModel.proposedResidualLikelihoodDescription" rows="3"></textarea>
           </div>
         </div>
 
@@ -461,12 +513,12 @@
               {{ m.updatedAt ? (m.updatedAt | date: 'd MMM y, HH.mm') : '-' }}
             </td>
             <td class="td-actions">
-              <ng-container *ngIf="!isKomite && getValidationStatus(m) === 'PENDING'">
-                <button
-                  type="button"
-                  class="icon-btn"
-                  (click)="openEdit(m)"
-                  title="Edit"
+          <ng-container *ngIf="!isKomite && getValidationStatus(m) === 'PENDING'">
+            <button
+              type="button"
+              class="icon-btn"
+              (click)="openEdit(m)"
+              title="Edit"
                   [disabled]="getValidationStatus(m) === 'VALIDATED'"
                 >
                   <i class="fa-solid fa-pen-to-square"></i>
@@ -489,7 +541,17 @@
                 >
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
-              </ng-container>
+          </ng-container>
+          <ng-container *ngIf="canResubmit(m)">
+            <button
+              type="button"
+              class="icon-btn action-validate"
+              (click)="resubmitMitigation(m)"
+              title="Resubmit"
+            >
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+          </ng-container>
               <ng-container *ngIf="isKomite && getValidationStatus(m) === 'PENDING'">
                 <button type="button" class="icon-btn action-validate" (click)="openValidation(m, 'VALIDATE')" title="Validate">
                   <i class="fa-solid fa-check"></i>

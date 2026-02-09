@@ -1,4 +1,28 @@
 <div class="konteks-detail-page">
+  <div class="card konteks-toolbar-card">
+    <div class="card-body konteks-toolbar-body">
+      <div class="toolbar-left">
+        <div class="konteks-picker">
+          <label>Pilih Konteks</label>
+          <select [(ngModel)]="selectedKonteksId" (ngModelChange)="onKonteksSelectChange($event)">
+            <option value="">Pilih konteks</option>
+            <option *ngFor="let k of konteksOptions" [value]="k.id">
+              {{ k.name }}{{ k.code ? ' (' + k.code + ')' : '' }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button
+          class="btn secondary"
+          type="button"
+          (click)="goToKonteksList()">
+          <i class="fa-solid fa-list"></i> Lihat Daftar Konteks
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- HEADER -->
   <div class="card">
     <div class="card-head">
@@ -14,6 +38,10 @@
       </div>
 
       <div class="head-actions">
+        <button class="btn primary" type="button" (click)="openCreateModal()">
+          <i class="fa-solid fa-plus"></i>
+          Buat Konteks Baru dari Template ini
+        </button>
         <button
           *ngIf="konteksDetail && konteksDetail.status !== 'ACTIVE'"
           class="btn btn-activate"
@@ -37,9 +65,6 @@
           (click)="openEditKonteks()"
           [disabled]="loading">
           <i class="fa-solid fa-pen-to-square"></i> Edit Konteks
-        </button>
-        <button class="btn secondary" type="button" (click)="back()">
-          <i class="fa-solid fa-arrow-left"></i> Back
         </button>
       </div>
     </div>
@@ -79,9 +104,9 @@
           </div>
         </div>
 
-        <!-- Risk Appetite -->
+        <!-- Risk Tolerance -->
         <div class="info-section">
-          <div class="section-label">Risk Appetite</div>
+          <div class="section-label">Risk Tolerance</div>
           <div class="info-row">
             <span class="info-label">Level:</span>
             <span class="info-value">
@@ -607,6 +632,150 @@
   (cancel)="closeConfirmModal()"
 ></app-confirm-modal>
 
+<!-- ===================== MODAL: CREATE KONTEKS ===================== -->
+<div class="modal-backdrop" *ngIf="showCreateModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Tambah Konteks</h3>
+      <button type="button" class="icon-close" (click)="closeCreateModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama</label>
+          <input [(ngModel)]="createModel.name" name="createName" placeholder="Konteks Risiko 2026" />
+          <small class="error" *ngIf="createErrors.name">{{ createErrors.name }}</small>
+        </div>
+
+        <div class="field">
+          <label>Kode</label>
+          <input
+            class="input-clip"
+            [(ngModel)]="createModel.code"
+            name="createCode"
+            placeholder="RISK_2026"
+          />
+          <small class="error" *ngIf="createErrors.code">{{ createErrors.code }}</small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Deskripsi</label>
+        <input
+          [(ngModel)]="createModel.description"
+          name="createDesc"
+          placeholder="Konteks manajemen risiko tahun 2026"
+        />
+        <small class="error" *ngIf="createErrors.description">{{ createErrors.description }}</small>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Periode</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Periode Mulai</label>
+          <div class="dropdown" [class.open]="isDropdownOpen('create-start')">
+            <button
+              type="button"
+              class="dropdown-toggle"
+              (click)="toggleDropdown('create-start')"
+            >
+              <span>{{ formatYearLabel(createModel.periodStart) }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <button
+                *ngFor="let y of yearOptions"
+                type="button"
+                class="dropdown-item"
+                [class.active]="createModel.periodStart === y"
+                (click)="selectCreatePeriodStart(y)"
+              >
+                {{ y }}
+              </button>
+            </div>
+          </div>
+          <small class="error" *ngIf="createErrors.periodStart">{{ createErrors.periodStart }}</small>
+        </div>
+
+        <div class="field">
+          <label>Periode Akhir</label>
+          <div class="dropdown" [class.open]="isDropdownOpen('create-end')">
+            <button
+              type="button"
+              class="dropdown-toggle"
+              (click)="toggleDropdown('create-end')"
+            >
+              <span>{{ formatYearLabel(createModel.periodEnd) }}</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <button
+                *ngFor="let y of yearOptions"
+                type="button"
+                class="dropdown-item"
+                [class.active]="createModel.periodEnd === y"
+                (click)="selectCreatePeriodEnd(y)"
+              >
+                {{ y }}
+              </button>
+            </div>
+          </div>
+          <small class="error" *ngIf="createErrors.periodEnd">{{ createErrors.periodEnd }}</small>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">Risk Settings</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Ukuran Matriks</label>
+          <select [(ngModel)]="createModel.matrixSize" name="createMatrix">
+            <option [ngValue]="3">3x3</option>
+            <option [ngValue]="4">4x4</option>
+            <option [ngValue]="5">5x5</option>
+          </select>
+          <small class="error" *ngIf="createErrors.matrixSize">{{ createErrors.matrixSize }}</small>
+        </div>
+
+        <div class="field">
+          <label>Risk Tolerance Level</label>
+          <select [(ngModel)]="createModel.riskAppetiteLevel" name="createAppetite">
+            <option value="">Pilih risk tolerance level</option>
+            <option *ngFor="let a of appetiteOptions" [value]="a">{{ a }}</option>
+          </select>
+          <small class="error" *ngIf="createErrors.riskAppetiteLevel">{{ createErrors.riskAppetiteLevel }}</small>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Risk Tolerance Description</label>
+        <textarea
+          class="textarea-large"
+          [(ngModel)]="createModel.riskAppetiteDescription"
+          name="createAppetiteDesc"
+          placeholder="Organisasi menerima risiko dengan dampak menengah"
+        ></textarea>
+        <small class="error" *ngIf="createErrors.riskAppetiteDescription">{{ createErrors.riskAppetiteDescription }}</small>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" (click)="closeCreateModal()" [disabled]="createLoading">
+          Batal
+        </button>
+        <button type="button" class="btn primary" (click)="createKonteks()" [disabled]="createLoading">
+          {{ createLoading ? 'Menyimpan...' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== MODAL: RISK CATEGORY ===================== -->
 <div class="modal-backdrop" *ngIf="showRCModal">
   <div class="modal">
@@ -744,7 +913,7 @@
 
       <div class="divider"></div>
 
-      <div class="section-title">Risk Appetite</div>
+      <div class="section-title">Risk Tolerance</div>
 
       <div class="field">
         <label>Level</label>
@@ -755,8 +924,8 @@
       </div>
 
       <div class="field">
-        <label>Deskripsi Risk Appetite <span class="char-hint">(maks. 500 karakter)</span></label>
-        <textarea [(ngModel)]="konteksForm.riskAppetiteDescription" placeholder="Tingkat selera risiko..." rows="3" maxlength="500"></textarea>
+        <label>Deskripsi Risk Tolerance <span class="char-hint">(maks. 500 karakter)</span></label>
+        <textarea [(ngModel)]="konteksForm.riskAppetiteDescription" placeholder="Tingkat toleransi risiko..." rows="3" maxlength="500"></textarea>
         <small class="error" *ngIf="konteksModalErrors.riskAppetiteDescription">{{ konteksModalErrors.riskAppetiteDescription }}</small>
       </div>
 

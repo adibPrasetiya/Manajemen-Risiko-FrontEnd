@@ -1031,6 +1031,10 @@ tbody tr:hover {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.edit-card-grid.single {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 900px) {
   .edit-card-grid,
   .edit-card-grid.three {
@@ -1131,6 +1135,50 @@ tbody tr:hover {
   min-height: 96px;
   padding: 10px 14px;
   resize: vertical;
+}
+
+.risk-level-display {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: center;
+}
+
+.risk-level-display.level-low {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.risk-level-display.level-medium {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.risk-level-display.level-high {
+  background: #ffedd5;
+  border-color: #fdba74;
+  color: #c2410c;
+}
+
+.risk-level-display.level-critical {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.risk-level-display.level-empty {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #6b7280;
 }
 
 .field input:focus,

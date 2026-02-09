@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmModalComponent } from '../../../../shared/components/confirm-modal/confirm-modal.component';
@@ -20,6 +20,7 @@ import {
   RiskLevelConfig,
   KonteksFormModel,
   UpdateKonteksPayload,
+  CreateKonteksPayload,
   CreateRiskCategoryPayload,
   UpdateRiskCategoryPayload,
   CreateLikelihoodPayload,
@@ -47,6 +48,8 @@ export class KonteksDetailComponent implements OnInit {
   errorMsg = '';
 
   konteksId = '';
+  konteksOptions: KonteksItem[] = [];
+  selectedKonteksId = '';
 
   // header konteks
   konteksName = '';
@@ -158,6 +161,32 @@ export class KonteksDetailComponent implements OnInit {
 
   appetiteOptions = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
+  // ===================== MODAL: Create Konteks =====================
+  showCreateModal = false;
+  createLoading = false;
+  createErrors: {
+    name?: string;
+    code?: string;
+    description?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    matrixSize?: string;
+    riskAppetiteLevel?: string;
+    riskAppetiteDescription?: string;
+  } = {};
+  createModel = {
+    name: '',
+    code: '',
+    description: '',
+    periodStart: null as number | null,
+    periodEnd: null as number | null,
+    matrixSize: 5,
+    riskAppetiteLevel: '',
+    riskAppetiteDescription: '',
+  };
+  yearOptions: number[] = Array.from({ length: 21 }, (_, i) => 2016 + i);
+  openDropdown: string | null = null;
+
   // ===================== RISK MATRIX STATE =====================
   riskLevelOptions: RiskLevel[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
   savedRiskMatrices: RiskMatrixItem[] = [];
@@ -209,18 +238,61 @@ export class KonteksDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.isKomite = this.authService.hasRole('KOMITE_PUSAT');
-    this.konteksId = this.route.snapshot.paramMap.get('konteksId') || '';
-    if (!this.konteksId) {
-      this.errorMsg = 'Konteks ID tidak ditemukan.';
-      return;
-    }
+    this.fetchKonteksOptions();
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('konteksId') || '';
+      if (id) {
+        this.konteksId = id;
+        this.selectedKonteksId = id;
+        this.fetchRiskCategories(true);
+        this.fetchKonteksDetail();
+      } else {
+        this.fetchDefaultKonteks();
+      }
+    });
+  }
 
-    this.fetchRiskCategories(true);
-    this.fetchKonteksDetail();
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown')) {
+      this.openDropdown = null;
+    }
   }
 
   back(): void {
     this.router.navigate(['/konteks-management']);
+  }
+
+  goToKonteksList(): void {
+    this.router.navigate(['/konteks-management/list']);
+  }
+
+  toggleDropdown(id: string): void {
+    this.openDropdown = this.openDropdown === id ? null : id;
+  }
+
+  isDropdownOpen(id: string): boolean {
+    return this.openDropdown === id;
+  }
+
+  formatYearLabel(value: number | null): string {
+    return value ? String(value) : 'Pilih tahun';
+  }
+
+  selectCreatePeriodStart(y: number): void {
+    this.createModel.periodStart = y;
+    this.openDropdown = null;
+  }
+
+  selectCreatePeriodEnd(y: number): void {
+    this.createModel.periodEnd = y;
+    this.openDropdown = null;
+  }
+
+  onKonteksSelectChange(konteksId: string): void {
+    if (!konteksId || konteksId === this.konteksId) return;
+    this.router.navigate(['/konteks-management', konteksId]);
   }
 
   // ===================== Helpers =====================
@@ -244,6 +316,47 @@ export class KonteksDetailComponent implements OnInit {
       return normalized as KonteksStatus;
     }
     return isActive ? 'ACTIVE' : 'INACTIVE';
+  }
+
+  private fetchKonteksOptions(): void {
+    this.konteksService
+      .getKonteksList({ page: 1, limit: 100 })
+      .subscribe({
+        next: (res) => {
+          this.konteksOptions = res.data ?? [];
+          if (this.konteksId) {
+            this.selectedKonteksId = this.konteksId;
+          }
+        },
+        error: () => {
+          this.konteksOptions = [];
+        },
+      });
+  }
+
+  private fetchDefaultKonteks(): void {
+    this.loading = true;
+    this.errorMsg = '';
+
+    this.konteksService
+      .getKonteksList({ page: 1, limit: 1, isSystemDefault: true })
+      .subscribe({
+        next: (res) => {
+          const pick = res?.data?.[0];
+          if (pick?.id) {
+            this.loading = false;
+            this.router.navigate(['/konteks-management', pick.id], { replaceUrl: true });
+            return;
+          }
+          this.loading = false;
+          this.errorMsg = 'Konteks default tidak ditemukan.';
+        },
+        error: (err) => {
+          this.loading = false;
+          this.errorMsg =
+            extractErrorMessage(err) || 'Gagal memuat konteks default.';
+        },
+      });
   }
 
   private ensureSelectedCategoryValid(): void {
@@ -299,6 +412,7 @@ export class KonteksDetailComponent implements OnInit {
         if (this.konteksDetail) {
           this.konteksName = this.konteksDetail.name ?? this.konteksName;
           this.konteksCode = this.konteksDetail.code ?? this.konteksCode;
+          this.selectedKonteksId = this.konteksDetail.id;
           this.periodStart = this.konteksDetail.periodStart;
           this.periodEnd = this.konteksDetail.periodEnd;
 
@@ -376,8 +490,11 @@ export class KonteksDetailComponent implements OnInit {
       name: this.konteksForm.name.trim(),
       description: (this.konteksForm.description ?? '').trim(),
       riskAppetiteLevel: this.konteksForm.riskAppetiteLevel,
-      riskAppetiteDescription: (this.konteksForm.riskAppetiteDescription ?? '').trim(),
     };
+    const appetiteDesc = (this.konteksForm.riskAppetiteDescription ?? '').trim();
+    if (appetiteDesc) {
+      payload.riskAppetiteDescription = appetiteDesc;
+    }
 
     this.loading = true;
 
@@ -395,6 +512,130 @@ export class KonteksDetailComponent implements OnInit {
           this.konteksModalErrors = fieldErrors;
         }
         this.ui.error(extractErrorMessage(e) || 'Gagal menyimpan perubahan konteks.');
+      },
+    });
+  }
+
+  // ===================== KONTEKS: CREATE MODAL =====================
+  openCreateModal(): void {
+    this.resetCreateModel();
+    this.prefillCreateFromTemplate();
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal(): void {
+    this.showCreateModal = false;
+    this.createErrors = {};
+    this.createLoading = false;
+  }
+
+  private resetCreateModel(): void {
+    this.createErrors = {};
+    this.createModel = {
+      name: '',
+      code: '',
+      description: '',
+      periodStart: null,
+      periodEnd: null,
+      matrixSize: 5,
+      riskAppetiteLevel: '',
+      riskAppetiteDescription: '',
+    };
+  }
+
+  private prefillCreateFromTemplate(): void {
+    const k = this.konteksDetail;
+    if (!k) return;
+
+    this.createModel = {
+      name: k.name ?? this.createModel.name,
+      code: k.code ?? this.createModel.code,
+      description: k.description ?? this.createModel.description,
+      periodStart: typeof k.periodStart === 'number' ? k.periodStart : this.createModel.periodStart,
+      periodEnd: typeof k.periodEnd === 'number' ? k.periodEnd : this.createModel.periodEnd,
+      matrixSize: k.matrixSize ?? this.createModel.matrixSize,
+      riskAppetiteLevel: k.riskAppetiteLevel ?? this.createModel.riskAppetiteLevel,
+      riskAppetiteDescription: k.riskAppetiteDescription ?? this.createModel.riskAppetiteDescription,
+    };
+  }
+
+  private isValidCode(v: string): boolean {
+    return /^[A-Z0-9_]+$/.test(v.trim());
+  }
+
+  createKonteks(): void {
+    this.createErrors = {};
+
+    if (!this.createModel.name.trim()) {
+      this.createErrors.name = 'Nama konteks wajib diisi.';
+      return;
+    }
+    if (!this.createModel.code.trim()) {
+      this.createErrors.code = 'Kode konteks wajib diisi.';
+      return;
+    }
+    if (!this.isValidCode(this.createModel.code)) {
+      this.createErrors.code =
+        'Kode hanya boleh huruf besar, angka, dan underscore. Contoh: RISK_2026';
+      return;
+    }
+
+    const ps = Number(this.createModel.periodStart);
+    const pe = Number(this.createModel.periodEnd);
+    if (!ps || !pe) {
+      if (!ps) this.createErrors.periodStart = 'Periode mulai wajib diisi.';
+      if (!pe) this.createErrors.periodEnd = 'Periode akhir wajib diisi.';
+      return;
+    }
+    if (ps > pe) {
+      this.createErrors.periodEnd =
+        'Periode akhir tidak boleh lebih kecil dari periode mulai.';
+      return;
+    }
+    if (![3, 4, 5].includes(Number(this.createModel.matrixSize))) {
+      this.createErrors.matrixSize =
+        'Ukuran matriks hanya mendukung 3, 4, atau 5.';
+      return;
+    }
+    if (!this.createModel.riskAppetiteLevel) {
+      this.createErrors.riskAppetiteLevel =
+        'Risk tolerance level wajib dipilih.';
+      return;
+    }
+
+    const payload: CreateKonteksPayload = {
+      name: this.createModel.name.trim(),
+      code: this.createModel.code.trim(),
+      description: (this.createModel.description ?? '').trim(),
+      periodStart: ps,
+      periodEnd: pe,
+      matrixSize: Number(this.createModel.matrixSize),
+      riskAppetiteLevel: String(this.createModel.riskAppetiteLevel),
+    };
+    const appetiteDesc = (this.createModel.riskAppetiteDescription ?? '').trim();
+    if (appetiteDesc) {
+      payload.riskAppetiteDescription = appetiteDesc;
+    }
+
+    this.createLoading = true;
+    this.konteksService.createKonteks(payload).subscribe({
+      next: (res) => {
+        this.createLoading = false;
+        this.closeCreateModal();
+        this.ui.success('Berhasil menambah konteks.');
+        this.fetchKonteksOptions();
+        const newId = res?.data?.id;
+        if (newId) {
+          this.router.navigate(['/konteks-management', newId]);
+        }
+      },
+      error: (e) => {
+        this.createLoading = false;
+        const fieldErrors = extractFieldErrors(e);
+        if (Object.keys(fieldErrors).length) {
+          this.createErrors = fieldErrors;
+        }
+        this.ui.error(extractErrorMessage(e) || 'Gagal menambah konteks.');
       },
     });
   }

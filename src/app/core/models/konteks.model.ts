@@ -58,7 +58,7 @@ export interface KonteksFormModel {
   name: string;
   description: string;
   riskAppetiteLevel: string;
-  riskAppetiteDescription: string;
+  riskAppetiteDescription?: string;
 }
 
 export interface CreateKonteksPayload {
@@ -69,7 +69,7 @@ export interface CreateKonteksPayload {
   periodEnd: number;
   matrixSize: number;
   riskAppetiteLevel: string;
-  riskAppetiteDescription: string;
+  riskAppetiteDescription?: string;
 }
 
 export interface EditKonteksModel {

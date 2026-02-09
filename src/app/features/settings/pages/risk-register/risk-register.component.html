@@ -101,7 +101,7 @@
 
       <div class="info-col">
         <div class="info-item">
-          <span class="label">Risk Appetite:</span>
+          <span class="label">Risk Tolerance:</span>
           <span class="value">
             <span
               class="appetite-pill"
@@ -289,7 +289,7 @@
               <tr>
                 <th rowspan="2">DESKRIPSI RISIKO</th>
                 <th rowspan="2">KATEGORI RISIKO (KODE RISIKO)</th>
-                <th rowspan="2">KELEMAHAN</th>
+                <th rowspan="2">KERENTANAN</th>
                 <th rowspan="2">ANCAMAN</th>
                 <th rowspan="2">DAMPAK</th>
                 <th class="th-group" colspan="3">INHERENT</th>
@@ -618,7 +618,7 @@
           (click)="editGoToStep(2)"
         >
           <div class="dot">2</div>
-          <div class="label">Inherent Risk</div>
+          <div class="label">Risk Assessment</div>
         </div>
         <div class="line" [class.done]="editStep > 2"></div>
         <div class="step" [class.active]="editStep === 3" (click)="editGoToStep(3)">
@@ -629,26 +629,22 @@
 
       <!-- STEP 1 -->
       <div class="edit-step" *ngIf="editStep === 1">
-        <div class="edit-card-grid">
+        <div class="edit-card-grid single">
           <div class="edit-card">
             <div class="card-head">Informasi Umum</div>
             <div class="card-body">
               <div class="field">
-                <label>Nama Risiko</label>
-                <input [(ngModel)]="editModel.riskName" />
+                <label>Asset</label>
+                <select [(ngModel)]="editModel.assetId" disabled>
+                  <option value="">Pilih asset</option>
+                  <option *ngFor="let a of assets" [value]="a.id">{{ a.name }}</option>
+                </select>
               </div>
               <div class="field">
                 <label>Kategori Risiko</label>
                 <select [(ngModel)]="editModel.riskCategoryId" (ngModelChange)="onEditCategoryChange()">
                   <option value="">Pilih kategori</option>
                   <option *ngFor="let c of categoryOptions" [value]="c.id">{{ c.name }}</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Asset</label>
-                <select [(ngModel)]="editModel.assetId" disabled>
-                  <option value="">Pilih asset</option>
-                  <option *ngFor="let a of assets" [value]="a.id">{{ a.name }}</option>
                 </select>
               </div>
             </div>
@@ -658,12 +654,22 @@
             <div class="card-head">Deskripsi Risiko</div>
             <div class="card-body">
               <div class="field">
-                <label>Deskripsi Kelemahan</label>
+                <label>Deskripsi Kerentanan</label>
                 <textarea [(ngModel)]="editModel.weaknessDescription"></textarea>
               </div>
               <div class="field">
                 <label>Deskripsi Ancaman</label>
                 <textarea [(ngModel)]="editModel.treatDescription"></textarea>
+              </div>
+              <div class="field">
+                <label>Nama Risiko</label>
+                <div class="hint-box">
+                  <i class="fa-solid fa-circle-info"></i>
+                  <div>
+                    Contoh pengisian: “Layanan loket berhenti beroperasi akibat gangguan sistem.”
+                  </div>
+                </div>
+                <textarea [(ngModel)]="editModel.riskName"></textarea>
               </div>
               <div class="field">
                 <label>Deskripsi Dampak</label>
@@ -677,7 +683,7 @@
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn primary" (click)="editNext()" [disabled]="!isEditStep1Valid">
+          <button type="button" class="btn primary" (click)="editNext()" [disabled]="!isEditStep1Valid || !isEditStep1DescValid">
             Selanjutnya
           </button>
         </div>
@@ -687,7 +693,26 @@
       <div class="edit-step" *ngIf="editStep === 2">
         <div class="edit-card-grid">
           <div class="edit-card">
-            <div class="card-head">Inherent Value</div>
+            <div class="card-head">Kontrol Bawaan</div>
+            <div class="card-body">
+              <div class="field">
+                <label>Deskripsi Kontrol Bawaan</label>
+                <textarea [(ngModel)]="editModel.existingControls"></textarea>
+              </div>
+              <div class="field">
+                <label>Efektivitas Kontrol Bawaan</label>
+                <select [(ngModel)]="editModel.controlEffectiveness">
+                  <option value="">Pilih efektivitas</option>
+                  <option value="EFFECTIVE">EFFECTIVE</option>
+                  <option value="PARTIALLY_EFFECTIVE">PARTIALLY_EFFECTIVE</option>
+                  <option value="INEFFECTIVE">INEFFECTIVE</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="edit-card" [class.locked]="!isEditControlValid">
+            <div class="card-head">Penilaian Risiko Bawaan</div>
             <div class="card-body">
               <div class="field">
                 <label>Seberapa sering terjadi</label>
@@ -697,7 +722,7 @@
                 </select>
               </div>
               <div class="field">
-                <label>Deskripsi Inherent</label>
+                <label>Deskripsi Kemungkinan Risiko</label>
                 <textarea [(ngModel)]="editModel.inherentLikelihoodDescription"></textarea>
               </div>
               <div class="field">
@@ -708,31 +733,18 @@
                 </select>
               </div>
               <div class="field">
-                <label>Deskripsi Dampak</label>
+                <label>Deskripsi Dampak Risiko</label>
                 <textarea [(ngModel)]="editModel.inherentImpactDescription"></textarea>
               </div>
-            </div>
-          </div>
-
-          <div class="edit-card" [class.locked]="!isEditStep2Valid">
-            <div class="card-head">Inherent Kontrol</div>
-            <div class="card-body">
               <div class="field">
-                <label>Deskripsi Kontrol yang Sudah Ada</label>
-                <textarea [(ngModel)]="editModel.existingControls"></textarea>
-              </div>
-              <div class="field">
-                <label>Efektivitas Kontrol</label>
-                <select [(ngModel)]="editModel.controlEffectiveness">
-                  <option value="">Pilih efektivitas</option>
-                  <option value="EFFECTIVE">EFFECTIVE</option>
-                  <option value="PARTIALLY_EFFECTIVE">PARTIALLY_EFFECTIVE</option>
-                  <option value="INEFFECTIVE">INEFFECTIVE</option>
-                </select>
+                <label>Risk Level</label>
+                <div class="risk-level-display" [ngClass]="getRiskLevelClass(editTarget?.inherentRiskLevel)">
+                  {{ editTarget?.inherentRiskLevel || '-' }}
+                </div>
               </div>
             </div>
-            <div class="card-overlay" *ngIf="!isEditStep2Valid">
-              Lengkapi Inherent Value terlebih dahulu.
+            <div class="card-overlay" *ngIf="!isEditControlValid">
+              Lengkapi Kontrol Bawaan terlebih dahulu.
             </div>
           </div>
         </div>
@@ -747,71 +759,21 @@
 
       <!-- STEP 3 -->
       <div class="edit-step" *ngIf="editStep === 3">
-        <div class="edit-card-grid three">
+        <div class="edit-card-grid">
           <div class="edit-card">
-            <div class="card-head">Residual Value</div>
-            <div class="card-body">
-              <div class="field">
-                <label>Seberapa sering terjadi setelah kontrol ditangani</label>
-                <select [(ngModel)]="editModel.residualLikelihoodId" (ngModelChange)="onEditResidualLikelihoodChange()">
-                  <option value="">Pilih level</option>
-                  <option *ngFor="let l of likelihoodScales" [value]="l.id">{{ l.description }}</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Deskripsi</label>
-                <textarea [(ngModel)]="editModel.residualLikelihoodDescription"></textarea>
-              </div>
-              <div class="field">
-                <label>Seberapa besar dampak setelah kontrol ditangani</label>
-                <select [(ngModel)]="editModel.residualImpactId" (ngModelChange)="onEditResidualImpactChange()">
-                  <option value="">Pilih level</option>
-                  <option *ngFor="let i of impactScales" [value]="i.id">{{ i.description }}</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Deskripsi</label>
-                <textarea [(ngModel)]="editModel.residualImpactDescription"></textarea>
-              </div>
-            </div>
-          </div>
-
-          <div class="edit-card" [class.locked]="!isEditStep3Valid">
-            <div class="card-head">Perlakuan</div>
+            <div class="card-head">Perlakuan Risiko Bawaan</div>
             <div class="card-body">
               <div class="field">
                 <label>Perlakuan</label>
                 <select [(ngModel)]="editModel.treatmentOption">
                   <option value="">Pilih perlakuan</option>
-                  <option value="MITIGATE">MITIGATE</option>
-                  <option value="ACCEPT">ACCEPT</option>
-                  <option value="TRANSFER">TRANSFER</option>
+                  <option *ngFor="let opt of editTreatmentOptions" [value]="opt">{{ opt }}</option>
                 </select>
               </div>
               <div class="field">
                 <label>Alasan perlakuan</label>
                 <textarea [(ngModel)]="editModel.treatmentRationale"></textarea>
               </div>
-            </div>
-            <div class="card-overlay" *ngIf="!isEditStep3Valid">
-              Lengkapi Residual Value terlebih dahulu.
-            </div>
-          </div>
-
-          <div class="edit-card" [class.locked]="!isEditStep3Valid">
-            <div class="card-head">Additional Informasi</div>
-            <div class="card-body">
-              <div class="field">
-                <label>Prioritas Risiko</label>
-                <input type="number" [(ngModel)]="editModel.riskPriorityRank" />
-              </div>
-              <div class="field">
-                <label>Order</label>
-                <input type="number" [(ngModel)]="editModel.order" />
-              </div>
-            </div>
-            <div class="card-overlay" *ngIf="!isEditStep3Valid">
-              Lengkapi Perlakuan terlebih dahulu.
             </div>
           </div>
         </div>

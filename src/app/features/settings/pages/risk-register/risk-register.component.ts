@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { KonteksService } from '../../../../core/services/konteks.service';
 import { ProfileService } from '../../../../core/services/profile.service';
 import { UiService } from '../../../../core/services/ui.service';
@@ -130,6 +130,7 @@ export class RiskRegisterComponent implements OnInit {
     private profileService: ProfileService,
     private konteksService: KonteksService,
     private route: ActivatedRoute,
+    private router: Router,
     private ui: UiService
   ) {}
 
@@ -139,7 +140,7 @@ export class RiskRegisterComponent implements OnInit {
   }
 
   goBack(): void {
-    window.history.back();
+    this.router.navigate(['/settings/risk-worksheets']);
   }
 
   private loadProfile(): void {
@@ -455,6 +456,13 @@ export class RiskRegisterComponent implements OnInit {
 
   get isEditStep1Valid(): boolean {
     return (
+      !!this.editModel.assetId &&
+      !!this.editModel.riskCategoryId
+    );
+  }
+
+  get isEditStep1DescValid(): boolean {
+    return (
       !!this.editModel.riskName.trim() &&
       !!this.editModel.weaknessDescription.trim() &&
       !!this.editModel.treatDescription.trim() &&
@@ -463,26 +471,38 @@ export class RiskRegisterComponent implements OnInit {
   }
 
   get isEditStep2Valid(): boolean {
+    return this.isEditControlValid && this.isEditAssessmentValid;
+  }
+
+  get isEditControlValid(): boolean {
     return (
-      !!this.editModel.inherentLikelihoodId &&
-      !!this.editModel.inherentImpactId &&
-      !!this.editModel.inherentLikelihoodDescription.trim() &&
-      !!this.editModel.inherentImpactDescription.trim() &&
       !!this.editModel.existingControls.trim() &&
       !!this.editModel.controlEffectiveness
     );
   }
 
+  get isEditAssessmentValid(): boolean {
+    return (
+      !!this.editModel.inherentLikelihoodId &&
+      !!this.editModel.inherentImpactId &&
+      !!this.editModel.inherentLikelihoodDescription.trim() &&
+      !!this.editModel.inherentImpactDescription.trim()
+    );
+  }
+
   get isEditStep3Valid(): boolean {
     return (
-      !!this.editModel.residualLikelihoodId &&
-      !!this.editModel.residualImpactId &&
-      !!this.editModel.residualLikelihoodDescription.trim() &&
-      !!this.editModel.residualImpactDescription.trim() &&
       !!this.editModel.treatmentOption &&
-      !!this.editModel.treatmentRationale.trim() &&
-      !!this.editModel.riskPriorityRank
+      !!this.editModel.treatmentRationale.trim()
     );
+  }
+
+  get editTreatmentOptions(): RiskTreatmentOption[] {
+    const level = this.editTarget?.inherentRiskLevel;
+    if (level === 'HIGH' || level === 'CRITICAL') {
+      return ['MITIGATE', 'TRANSFER'];
+    }
+    return ['MITIGATE', 'ACCEPT', 'TRANSFER'];
   }
 
   editGoToStep(step: 1 | 2 | 3): void {
@@ -598,7 +618,10 @@ export class RiskRegisterComponent implements OnInit {
       residualImpactDescription: this.editModel.residualImpactDescription.trim(),
       treatmentOption: this.editModel.treatmentOption as RiskTreatmentOption,
       treatmentRationale: this.editModel.treatmentRationale.trim(),
-      riskPriorityRank: Number(this.editModel.riskPriorityRank) || 1,
+      riskPriorityRank:
+        Number(this.editModel.riskPriorityRank) ||
+        this.editTarget?.riskPriorityRank ||
+        1,
       order: Number(this.editModel.order) || 1,
     };
 

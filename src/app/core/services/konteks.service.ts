@@ -57,7 +57,9 @@ export class KonteksService {
     limit?: number;
     isActive?: boolean;
     status?: KonteksStatus;
+    isSystemDefault?: boolean;
   }): Observable<KonteksListResponse> {
+    const headers = this.buildHeaders();
     let httpParams = new HttpParams();
     if (params?.page) httpParams = httpParams.set('page', String(params.page));
     if (params?.limit) httpParams = httpParams.set('limit', String(params.limit));
@@ -66,10 +68,14 @@ export class KonteksService {
     } else if (typeof params?.isActive === 'boolean') {
       httpParams = httpParams.set('isActive', String(params.isActive));
     }
+    if (typeof params?.isSystemDefault === 'boolean') {
+      httpParams = httpParams.set('isSystemDefault', String(params.isSystemDefault));
+    }
 
     return this.http.get<KonteksListResponse>(`${this.baseUrl}/konteks`, {
       params: httpParams,
       withCredentials: true,
+      headers,
     });
   }
 

@@ -312,6 +312,10 @@ export type RiskMitigationItem = {
   actualEndDate?: string | null;
   responsiblePerson?: string | null;
   responsibleUnit?: string | null;
+  proposedResidualLikelihood?: string | number | null;
+  proposedResidualImpact?: string | number | null;
+  proposedResidualImpactDescription?: string | null;
+  proposedResidualLikelihoodDescription?: string | null;
   status?: string | null;
   progressPercentage?: number | null;
   progressNotes?: string | null;
@@ -345,6 +349,10 @@ export type CreateRiskMitigationPayload = {
   plannedEndDate: string;
   responsiblePerson: string;
   responsibleUnit: string;
+  proposedResidualLikelihood: string;
+  proposedResidualImpact: string;
+  proposedResidualImpactDescription: string;
+  proposedResidualLikelihoodDescription: string;
 };
 
 export type UpdateRiskMitigationPayload = {
@@ -353,6 +361,12 @@ export type UpdateRiskMitigationPayload = {
   priority?: string;
   plannedStartDate?: string;
   plannedEndDate?: string;
+  responsiblePerson?: string;
+  responsibleUnit?: string;
+  proposedResidualLikelihood?: string;
+  proposedResidualImpact?: string;
+  proposedResidualImpactDescription?: string;
+  proposedResidualLikelihoodDescription?: string;
   actualStartDate?: string | null;
   actualEndDate?: string | null;
   status?: string;
@@ -373,10 +387,10 @@ export type CreateRiskAssessmentPayload = {
   inherentImpactDescription: string;
   existingControls: string;
   controlEffectiveness: string;
-  residualLikelihood: number;
-  residualImpact: number;
-  residualLikelihoodDescription: string;
-  residualImpactDescription: string;
+  residualLikelihood?: number;
+  residualImpact?: number;
+  residualLikelihoodDescription?: string;
+  residualImpactDescription?: string;
   treatmentOption: RiskTreatmentOption;
   treatmentRationale: string;
   riskPriorityRank: number;
@@ -812,6 +826,20 @@ export class UserService {
     return this.http.patch<{ message: string; data: RiskMitigationItem }>(
       `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations/${mitigationId}`,
       payload,
+      { headers }
+    );
+  }
+
+  resubmitRiskMitigation(
+    unitKerjaId: string,
+    worksheetId: string,
+    itemId: string,
+    mitigationId: string
+  ): Observable<{ message: string; data: RiskMitigationItem }> {
+    const headers = this.buildHeaders();
+    return this.http.patch<{ message: string; data: RiskMitigationItem }>(
+      `${this.baseUrl}${this.unitKerjaEndpoint}/${unitKerjaId}/risk-worksheets/${worksheetId}/items/${itemId}/mitigations/${mitigationId}/resubmit`,
+      null,
       { headers }
     );
   }

@@ -331,8 +331,16 @@ export class RiskRegisterCreateComponent implements OnInit {
     return hit?.riskLevel ?? null;
   }
 
+  getRiskLevelClass(level?: RiskLevel | null): string {
+    if (level === 'LOW') return 'level-low';
+    if (level === 'MEDIUM') return 'level-medium';
+    if (level === 'HIGH') return 'level-high';
+    if (level === 'CRITICAL') return 'level-critical';
+    return 'level-empty';
+  }
+
   get treatmentOptions(): RiskTreatmentOption[] {
-    const level = this.residualRiskLevel;
+    const level = this.inherentRiskLevel;
     if (level === 'HIGH' || level === 'CRITICAL') {
       return ['MITIGATE', 'TRANSFER'];
     }
@@ -341,7 +349,6 @@ export class RiskRegisterCreateComponent implements OnInit {
 
   get isStep1Card1Valid(): boolean {
     return (
-      !!this.form.riskName.trim() &&
       !!this.form.riskCategoryId &&
       !!this.form.assetId
     );
@@ -349,6 +356,7 @@ export class RiskRegisterCreateComponent implements OnInit {
 
   get isStep1Card2Valid(): boolean {
     return (
+      !!this.form.riskName.trim() &&
       !!this.form.weaknessDescription.trim() &&
       !!this.form.treatDescription.trim() &&
       !!this.form.impactDescription.trim()
@@ -357,6 +365,13 @@ export class RiskRegisterCreateComponent implements OnInit {
 
   get isStep2Card1Valid(): boolean {
     return (
+      !!this.form.existingControls.trim() &&
+      !!this.form.controlEffectiveness
+    );
+  }
+
+  get isStep2Card2Valid(): boolean {
+    return (
       !!this.form.inherentLikelihoodId &&
       !!this.form.inherentLikelihoodDesc.trim() &&
       !!this.form.inherentImpactId &&
@@ -364,28 +379,8 @@ export class RiskRegisterCreateComponent implements OnInit {
     );
   }
 
-  get isStep2Card2Valid(): boolean {
-    return (
-      !!this.form.existingControls.trim() &&
-      !!this.form.controlEffectiveness
-    );
-  }
-
   get isStep3Card1Valid(): boolean {
-    return (
-      !!this.form.residualLikelihoodId &&
-      !!this.form.residualLikelihoodDesc.trim() &&
-      !!this.form.residualImpactId &&
-      !!this.form.residualImpactDesc.trim()
-    );
-  }
-
-  get isStep3Card2Valid(): boolean {
     return !!this.form.treatmentOption && !!this.form.treatmentRationale.trim();
-  }
-
-  get isStep3Card3Valid(): boolean {
-    return !!this.form.riskPriorityRank && !!this.form.additionalDescription.trim();
   }
 
   goToStep(step: StepKey): void {
@@ -428,9 +423,7 @@ export class RiskRegisterCreateComponent implements OnInit {
       !this.isStep1Card2Valid ||
       !this.isStep2Card1Valid ||
       !this.isStep2Card2Valid ||
-      !this.isStep3Card1Valid ||
-      !this.isStep3Card2Valid ||
-      !this.isStep3Card3Valid
+      !this.isStep3Card1Valid
     ) {
       this.ui.error('Lengkapi semua data sebelum menyimpan.');
       return;
@@ -454,13 +447,9 @@ export class RiskRegisterCreateComponent implements OnInit {
       inherentImpactDescription: this.form.inherentImpactDesc.trim(),
       existingControls: this.form.existingControls.trim(),
       controlEffectiveness: this.form.controlEffectiveness,
-      residualLikelihood: this.form.residualLikelihoodLevel,
-      residualImpact: this.form.residualImpactLevel,
-      residualLikelihoodDescription: this.form.residualLikelihoodDesc.trim(),
-      residualImpactDescription: this.form.residualImpactDesc.trim(),
       treatmentOption: this.form.treatmentOption as RiskTreatmentOption,
       treatmentRationale: this.form.treatmentRationale.trim(),
-      riskPriorityRank: Number(this.form.riskPriorityRank),
+      riskPriorityRank: Number(this.form.riskPriorityRank) || 1,
     };
 
     this.loading = true;

@@ -8,7 +8,8 @@ export const KONTEKS_MANAGEMENT_ROUTES: Routes = [
     path: '',
     component: DashboardLayoutComponent,
     children: [
-      { path: '', component: KonteksComponent },
+      { path: '', component: KonteksDetailComponent },
+      { path: 'list', component: KonteksComponent },
       { path: ':konteksId', component: KonteksDetailComponent },
     ],
   },
