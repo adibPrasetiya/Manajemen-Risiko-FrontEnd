@@ -78,16 +78,6 @@
             <textarea [(ngModel)]="form.treatDescription" rows="4"></textarea>
           </div>
           <div class="field">
-            <label>Nama Risiko</label>
-            <div class="hint-box">
-              <i class="fa-solid fa-circle-info"></i>
-              <div>
-                Contoh pengisian: “Layanan loket berhenti beroperasi akibat gangguan sistem.”
-              </div>
-            </div>
-            <textarea [(ngModel)]="form.riskName" rows="4"></textarea>
-          </div>
-          <div class="field">
             <label>Deskripsi Dampak</label>
             <div class="hint-box">
               <i class="fa-solid fa-circle-info"></i>
@@ -96,6 +86,16 @@
               </div>
             </div>
             <textarea [(ngModel)]="form.impactDescription" rows="4"></textarea>
+          </div>
+          <div class="field">
+            <label>Nama Risiko</label>
+            <div class="hint-box">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                Contoh pengisian: “Layanan loket berhenti beroperasi akibat gangguan sistem.”
+              </div>
+            </div>
+            <textarea [(ngModel)]="form.riskName" rows="4"></textarea>
           </div>
         </div>
         <div class="card-overlay" *ngIf="!isStep1Card1Valid">

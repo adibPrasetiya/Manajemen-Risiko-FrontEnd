@@ -612,10 +612,6 @@ export class RiskRegisterComponent implements OnInit {
       inherentImpactDescription: this.editModel.inherentImpactDescription.trim(),
       existingControls: this.editModel.existingControls.trim(),
       controlEffectiveness: this.editModel.controlEffectiveness,
-      residualLikelihood: Number(this.editModel.residualLikelihood) || 0,
-      residualImpact: Number(this.editModel.residualImpact) || 0,
-      residualLikelihoodDescription: this.editModel.residualLikelihoodDescription.trim(),
-      residualImpactDescription: this.editModel.residualImpactDescription.trim(),
       treatmentOption: this.editModel.treatmentOption as RiskTreatmentOption,
       treatmentRationale: this.editModel.treatmentRationale.trim(),
       riskPriorityRank:

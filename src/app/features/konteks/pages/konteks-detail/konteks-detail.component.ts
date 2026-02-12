@@ -6,6 +6,7 @@ import { ConfirmModalComponent } from '../../../../shared/components/confirm-mod
 import { KonteksService } from '../../../../core/services/konteks.service';
 import { UiService } from '../../../../core/services/ui.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { forkJoin } from 'rxjs';
 import {
   Pagination,
   KonteksItem,
@@ -193,6 +194,7 @@ export class KonteksDetailComponent implements OnInit {
   matrixState: Map<string, RiskLevel> = new Map();
   matrixEditMode = false;
   isKomite = false;
+  isAdmin = false;
   matrixLoading = false;
   matrixSaving = false;
   matrixHasChanges = false;
@@ -236,8 +238,15 @@ export class KonteksDetailComponent implements OnInit {
     return this.isKomite && this.isKonteksActive;
   }
 
+  get canManageMatrix(): boolean {
+    return this.isKomite || this.isAdmin;
+  }
+
   ngOnInit(): void {
     this.isKomite = this.authService.hasRole('KOMITE_PUSAT');
+    this.isAdmin =
+      this.authService.hasRole('ADMINISTRATOR') ||
+      this.authService.hasRole('ADMIN');
     this.fetchKonteksOptions();
     this.route.paramMap.subscribe((params) => {
       const id = params.get('konteksId') || '';
@@ -1502,7 +1511,7 @@ export class KonteksDetailComponent implements OnInit {
   }
 
   onCellClick(likelihood: number, impact: number): void {
-    if (!this.matrixEditMode) return;
+    if (!this.matrixEditMode || !this.canManageMatrix) return;
 
     const key = this.getMatrixKey(likelihood, impact);
     const currentLevel = this.matrixState.get(key) || 'LOW';
@@ -1516,6 +1525,8 @@ export class KonteksDetailComponent implements OnInit {
   }
 
   toggleMatrixEditMode(): void {
+    if (!this.canManageMatrix) return;
+
     if (this.matrixEditMode && this.matrixHasChanges) {
       this.openConfirmModal({
         title: 'Perubahan Belum Disimpan',
@@ -1532,6 +1543,47 @@ export class KonteksDetailComponent implements OnInit {
     if (!this.matrixEditMode) {
       this.populateMatrixFromSaved();
     }
+  }
+
+  saveMatrixChanges(): void {
+    if (!this.canManageMatrix || !this.konteksId || !this.matrixEditMode) return;
+    if (!this.matrixHasChanges) {
+      this.ui.info('Tidak ada perubahan matrix untuk disimpan.');
+      return;
+    }
+
+    const updates = this.savedRiskMatrices
+      .map((item) => {
+        const key = this.getMatrixKey(item.likelihoodLevel, item.impactLevel);
+        const nextLevel = this.matrixState.get(key);
+        if (!nextLevel || nextLevel === item.riskLevel) return null;
+        return this.konteksService.updateRiskMatrix(this.konteksId, item.id, {
+          riskLevel: nextLevel,
+        });
+      })
+      .filter((x) => !!x) as any[];
+
+    if (updates.length === 0) {
+      this.matrixHasChanges = false;
+      this.matrixEditMode = false;
+      this.ui.info('Tidak ada perubahan matrix untuk disimpan.');
+      return;
+    }
+
+    this.matrixSaving = true;
+    forkJoin(updates).subscribe({
+      next: () => {
+        this.matrixSaving = false;
+        this.matrixEditMode = false;
+        this.matrixHasChanges = false;
+        this.ui.success('Perubahan risk matrix berhasil disimpan.');
+        this.fetchRiskMatrices();
+      },
+      error: (err) => {
+        this.matrixSaving = false;
+        this.ui.error(extractErrorMessage(err) || 'Gagal menyimpan perubahan risk matrix.');
+      },
+    });
   }
 
   fetchRiskMatrices(): void {

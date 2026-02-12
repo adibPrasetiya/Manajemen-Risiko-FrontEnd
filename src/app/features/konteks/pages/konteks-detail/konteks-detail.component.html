@@ -5,7 +5,6 @@
         <div class="konteks-picker">
           <label>Pilih Konteks</label>
           <select [(ngModel)]="selectedKonteksId" (ngModelChange)="onKonteksSelectChange($event)">
-            <option value="">Pilih konteks</option>
             <option *ngFor="let k of konteksOptions" [value]="k.id">
               {{ k.name }}{{ k.code ? ' (' + k.code + ')' : '' }}
             </option>
@@ -475,7 +474,7 @@
               <h3>Risk Matrix belum tersedia</h3>
               <p>Buat matrix untuk menentukan tingkat risiko berdasarkan kombinasi likelihood & impact.</p>
               <button
-                *ngIf="!isKomite || !isKonteksActive"
+                *ngIf="canManageMatrix"
                 class="btn primary"
                 type="button"
                 (click)="openMatrixConfigModal()">
@@ -504,7 +503,7 @@
               <div class="toolbar-right">
                 <!-- Edit Mode Toggle -->
                 <button
-                  *ngIf="!isKomite || !isKonteksActive"
+                  *ngIf="canManageMatrix"
                   class="btn"
                   [class.btn-edit-active]="matrixEditMode"
                   type="button"
@@ -514,9 +513,19 @@
                   {{ matrixEditMode ? 'Batal Edit' : 'Mode Edit' }}
                 </button>
 
+                <button
+                  *ngIf="canManageMatrix && matrixEditMode"
+                  class="btn primary"
+                  type="button"
+                  (click)="saveMatrixChanges()"
+                  [disabled]="matrixLoading || matrixSaving || matrixDeleting || !matrixHasChanges">
+                  <i class="fa-solid" [class.fa-floppy-disk]="!matrixSaving" [class.fa-spinner]="matrixSaving" [class.fa-spin]="matrixSaving"></i>
+                  {{ matrixSaving ? 'Menyimpan...' : 'Simpan Matrix' }}
+                </button>
+
                 <!-- Delete Matrix Button -->
                 <button
-                  *ngIf="!isKomite || !isKonteksActive"
+                  *ngIf="canManageMatrix"
                   class="btn btn-danger"
                   type="button"
                   (click)="confirmDeleteMatrix()"
